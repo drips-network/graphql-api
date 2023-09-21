@@ -4,36 +4,44 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
+import type { AddressLike } from 'ethers';
 import getSchema from '../utils/getSchema';
+import type { Forge, ProjectId } from '../common/types';
+import { FORGES_MAP } from '../common/constants';
+import type RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
+import type AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
 
-enum ProjectVerificationStatus {
+export enum ProjectVerificationStatus {
   Claimed = 'Claimed',
-  Started = 'Started',
+  OwnerUpdateRequested = 'OwnerUpdateRequested',
+  OwnerUpdated = 'OwnerUpdated',
   Unclaimed = 'Unclaimed',
   PendingOwner = 'PendingOwner',
   PendingMetadata = 'PendingMetadata',
 }
 
-export const SUPPORTED_FORGES = ['Github', 'Gitlab'] as const;
-export type Forge = (typeof SUPPORTED_FORGES)[number];
-
 export default class GitProjectModel extends Model<
   InferAttributes<GitProjectModel>,
   InferCreationAttributes<GitProjectModel>
 > {
-  // Properties from events.
-  public declare id: string; // The `accountId` from `OwnerUpdatedRequested` event.
-  public declare name: string;
-  public declare forge: Forge;
-  public declare owner: string | null;
+  // Properties from events
+  public declare id: ProjectId; // The `accountId` from `OwnerUpdatedRequested` event.
+  public declare name: string | null;
+  public declare forge: Forge | null;
+  public declare ownerAddress: AddressLike | null;
 
-  // Properties from metadata.
+  // Properties from metadata
   public declare url: string | null;
   public declare emoji: string | null;
   public declare color: string | null;
   public declare ownerName: string | null;
+  public declare splitsJson: string | null;
   public declare description: string | null;
   public declare verificationStatus: ProjectVerificationStatus;
+
+  // Associations
+  public declare projectRepoSplits?: RepoDriverSplitReceiverModel[];
+  public declare projectAddressSplits?: AddressDriverSplitReceiverModel[];
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -42,11 +50,15 @@ export default class GitProjectModel extends Model<
           type: DataTypes.STRING,
           primaryKey: true,
         },
+        splitsJson: {
+          type: DataTypes.JSON,
+          allowNull: true,
+        },
         name: {
           type: DataTypes.STRING,
           allowNull: false,
         },
-        owner: {
+        ownerAddress: {
           type: DataTypes.STRING,
           allowNull: true,
         },
@@ -75,14 +87,14 @@ export default class GitProjectModel extends Model<
           allowNull: false,
         },
         forge: {
-          type: DataTypes.ENUM(...Object.values(SUPPORTED_FORGES)),
+          type: DataTypes.ENUM(...Object.values(FORGES_MAP)),
           allowNull: false,
         },
       },
       {
+        sequelize,
         schema: getSchema(),
         tableName: 'GitProjects',
-        sequelize,
       },
     );
   }

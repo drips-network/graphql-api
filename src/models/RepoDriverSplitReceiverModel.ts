@@ -6,18 +6,29 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import getSchema from '../utils/getSchema';
-import GitProjectModel from './GitProjectModel';
+import GitProjectModel from '../git-project/GitProjectModel';
+import type { DripListId, ProjectId } from '../common/types';
+import DripListModel from '../drip-list/DripListModel';
+
+export enum RepoDriverSplitReceiverType {
+  ProjectDependency = 'ProjectDependency',
+  DripListDependency = 'DripListDependency',
+}
 
 export default class RepoDriverSplitReceiverModel extends Model<
   InferAttributes<RepoDriverSplitReceiverModel>,
   InferCreationAttributes<RepoDriverSplitReceiverModel>
 > {
   public declare id: CreationOptional<number>; // Primary key
-
-  public declare selfProjectId: string; // Foreign key
-  public declare funderProjectId: string; // Foreign key
+  public declare fundeeProjectId: ProjectId; // Foreign key
+  public declare funderProjectId: ProjectId | null; // Foreign key
+  public declare funderDripListId: DripListId | null; // Foreign key
 
   public declare weight: number;
+  public declare type: RepoDriverSplitReceiverType;
+
+  public declare projectFundeeProject?: GitProjectModel;
+  public declare projectFundeeList?: DripListModel;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -27,7 +38,7 @@ export default class RepoDriverSplitReceiverModel extends Model<
           autoIncrement: true,
           primaryKey: true,
         },
-        selfProjectId: {
+        fundeeProjectId: {
           // Foreign key
           type: DataTypes.STRING,
           references: {
@@ -43,17 +54,30 @@ export default class RepoDriverSplitReceiverModel extends Model<
             model: GitProjectModel,
             key: 'id',
           },
-          allowNull: false,
+          allowNull: true,
+        },
+        funderDripListId: {
+          // Foreign key
+          type: DataTypes.STRING,
+          references: {
+            model: DripListModel,
+            key: 'id',
+          },
+          allowNull: true,
         },
         weight: {
           type: DataTypes.INTEGER,
           allowNull: true,
         },
+        type: {
+          type: DataTypes.ENUM(...Object.values(RepoDriverSplitReceiverType)),
+          allowNull: false,
+        },
       },
       {
+        sequelize,
         schema: getSchema(),
         tableName: 'RepoDriverSplitReceivers',
-        sequelize,
       },
     );
   }
