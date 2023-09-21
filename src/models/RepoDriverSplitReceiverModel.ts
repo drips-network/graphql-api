@@ -27,8 +27,9 @@ export default class RepoDriverSplitReceiverModel extends Model<
   public declare weight: number;
   public declare type: RepoDriverSplitReceiverType;
 
+  // Associations
   public declare projectFundeeProject?: GitProjectModel;
-  public declare projectFundeeList?: DripListModel;
+  public declare listFundeeProject?: GitProjectModel;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(

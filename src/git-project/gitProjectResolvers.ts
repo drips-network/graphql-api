@@ -44,7 +44,7 @@ const gitProjectResolvers = {
           },
           {
             model: RepoDriverSplitReceiverModel,
-            as: 'projectSplits',
+            as: 'projectRepoSplits',
           },
         ],
       });

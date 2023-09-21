@@ -1,4 +1,5 @@
 import type { DripListId } from '../common/types';
+import GitProjectModel from '../git-project/GitProjectModel';
 import AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
@@ -18,15 +19,14 @@ const dripListResolvers = {
             as: 'listRepoSplits',
             include: [
               {
-                model: DripListModel,
-                as: 'projectFundeeList',
+                model: GitProjectModel,
+                as: 'listFundeeProject',
               },
             ],
           },
           {
             model: DripListSplitReceiverModel,
             as: 'listNftSplits',
-            separate: true,
             include: [
               {
                 model: DripListModel,
@@ -57,7 +57,6 @@ const dripListResolvers = {
           {
             model: DripListSplitReceiverModel,
             as: 'listNftSplits',
-            separate: true,
           },
         ],
       });
@@ -83,19 +82,19 @@ function toDto(dripList: DripListModel) {
 
   const dependenciesOfTypeProject = dripList.listRepoSplits?.map((p) => ({
     ...p.dataValues,
-    fundeeProject: p.projectFundeeProject?.dataValues
+    fundeeProject: p.listFundeeProject?.dataValues
       ? {
-          ...p.projectFundeeProject?.dataValues,
+          ...p.listFundeeProject?.dataValues,
         }
       : null,
     driver: Driver.RepoDriver,
   }));
 
-  const dependenciesOfTypeDripList = dripList.listNftSplits?.map((p) => ({
-    ...p.dataValues,
-    fundeeDripList: p.listFundeeList?.dataValues
+  const dependenciesOfTypeDripList = dripList.listNftSplits?.map((n) => ({
+    ...n.dataValues,
+    fundeeDripList: n.listFundeeList?.dataValues
       ? {
-          ...p.listFundeeList?.dataValues,
+          ...n.listFundeeList?.dataValues,
         }
       : null,
     driver: Driver.NftDriver,

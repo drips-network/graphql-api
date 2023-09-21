@@ -26,9 +26,9 @@ export default class DripListModel extends Model<
   // TODO: add description after metadata v3 is updated.
 
   // Associations
+  public declare listNftSplits?: DripListSplitReceiverModel[];
   public declare listRepoSplits?: RepoDriverSplitReceiverModel[];
   public declare listAddressSplits?: AddressDriverSplitReceiverModel[];
-  public declare listNftSplits?: DripListSplitReceiverModel[];
 
   public static initialize(sequelize: Sequelize): void {
     this.init(

@@ -25,8 +25,8 @@ type DripListRepoDriverSplitReceiver {
   id: ID!
   weight: Int!
   driver: RepoDriver!
-  funderProjectId: String!
   fundeeProject: GitProject
+  funderDripListId: String!
   type: DripListSplitReceiver!
 }
 

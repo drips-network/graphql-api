@@ -20,6 +20,7 @@ export default class DripListSplitReceiverModel extends Model<
   public declare weight: number;
 
   public declare listFundeeList?: DripListModel;
+  public declare projectFundeeList?: DripListModel;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
