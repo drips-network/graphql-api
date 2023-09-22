@@ -33,6 +33,10 @@ const gitProjectResolvers = {
         return null;
       }
 
+      if (!project.isValid) {
+        throw new Error('Git Project is not valid');
+      }
+
       return toDto(project);
     },
     async gitProjects() {

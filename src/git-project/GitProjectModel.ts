@@ -24,13 +24,12 @@ export default class GitProjectModel extends Model<
   InferAttributes<GitProjectModel>,
   InferCreationAttributes<GitProjectModel>
 > {
-  // Properties from events
   public declare id: ProjectId; // The `accountId` from `OwnerUpdatedRequested` event.
+  public declare isValid: boolean;
   public declare name: string | null;
   public declare forge: Forge | null;
   public declare ownerAddress: AddressLike | null;
 
-  // Properties from metadata
   public declare url: string | null;
   public declare emoji: string | null;
   public declare color: string | null;
@@ -49,6 +48,10 @@ export default class GitProjectModel extends Model<
         id: {
           type: DataTypes.STRING,
           primaryKey: true,
+        },
+        isValid: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
         },
         splitsJson: {
           type: DataTypes.JSON,

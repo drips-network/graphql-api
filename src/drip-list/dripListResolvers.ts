@@ -8,7 +8,7 @@ import DripListModel from './DripListModel';
 const dripListResolvers = {
   Query: {
     async dripList(_: any, args: { id: DripListId }) {
-      const project = await DripListModel.findByPk(args.id, {
+      const dripList = await DripListModel.findByPk(args.id, {
         include: [
           {
             model: AddressDriverSplitReceiverModel,
@@ -37,11 +37,15 @@ const dripListResolvers = {
         ],
       });
 
-      if (!project) {
+      if (!dripList) {
         return null;
       }
 
-      return toDto(project);
+      if (!dripList.isValid) {
+        throw new Error('Drip List is not valid');
+      }
+
+      return toDto(dripList);
     },
     async dripLists() {
       const projects = await DripListModel.findAll({
