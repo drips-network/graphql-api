@@ -9,6 +9,8 @@
     "lint": "prettier --check . && eslint src/**/*.ts",
     "commit": "npx cz",
     "start:dev": "NODE_ENV=development npx nodemon",
+    "build": "tsc",
+    "start": "node dist/index.js",
     "format": "prettier --write ."
   },
   "keywords": [],

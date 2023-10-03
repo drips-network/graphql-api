@@ -34,6 +34,7 @@ export default class GitProjectModel extends Model<
   public declare emoji: string | null;
   public declare color: string | null;
   public declare ownerName: string | null;
+  public declare repoName: string | null;
   public declare splitsJson: string | null;
   public declare description: string | null;
   public declare verificationStatus: ProjectVerificationStatus;
@@ -59,7 +60,7 @@ export default class GitProjectModel extends Model<
         },
         name: {
           type: DataTypes.STRING,
-          allowNull: false,
+          allowNull: true,
         },
         ownerAddress: {
           type: DataTypes.STRING,
@@ -85,13 +86,17 @@ export default class GitProjectModel extends Model<
           type: DataTypes.STRING,
           allowNull: true,
         },
+        repoName: {
+          type: DataTypes.STRING,
+          allowNull: true,
+        },
         verificationStatus: {
           type: DataTypes.ENUM(...Object.values(ProjectVerificationStatus)),
           allowNull: false,
         },
         forge: {
           type: DataTypes.ENUM(...Object.values(FORGES_MAP)),
-          allowNull: false,
+          allowNull: true,
         },
       },
       {

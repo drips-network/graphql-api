@@ -1,5 +1,5 @@
 import { Sequelize } from 'sequelize';
-import config from './config';
+import config from '../common/config';
 
 const {
   postgresHost,

@@ -134,3 +134,6 @@ dist
 
 # MacOS
 **/.DS_Store
+
+# Google Cloud
+app.yaml

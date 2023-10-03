@@ -9,6 +9,7 @@ declare global {
       POSTGRES_HOST: string;
       POSTGRES_PORT: number;
       NETWORK: SupportedNetwork;
+      PORT: number;
     }
   }
 }

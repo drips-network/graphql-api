@@ -21,7 +21,7 @@ function initModels() {
 }
 
 function defineAssociations() {
-  // ********************* Git Project *********************
+  // One-to-Many: A project can fund multiple address splits.
   GitProjectModel.hasMany(AddressDriverSplitReceiverModel, {
     foreignKey: 'funderProjectId',
     as: 'projectAddressSplits',
@@ -30,6 +30,7 @@ function defineAssociations() {
     foreignKey: 'funderProjectId',
   });
 
+  // One-to-Many: A project can fund multiple project splits.
   GitProjectModel.hasMany(RepoDriverSplitReceiverModel, {
     foreignKey: 'funderProjectId',
     as: 'projectRepoSplits',
@@ -38,6 +39,15 @@ function defineAssociations() {
     foreignKey: 'funderProjectId',
   });
 
+  // One-to-Many: A project can fund multiple drip list splits.
+  GitProjectModel.hasMany(DripListSplitReceiverModel, {
+    foreignKey: 'funderProjectId',
+  });
+  DripListSplitReceiverModel.belongsTo(GitProjectModel, {
+    foreignKey: 'funderProjectId',
+  });
+
+  // One-to-One: A RepoDriverSplitReceiver represents/is a project.
   GitProjectModel.hasOne(RepoDriverSplitReceiverModel, {
     foreignKey: 'fundeeProjectId',
   });
@@ -50,7 +60,7 @@ function defineAssociations() {
     as: 'listFundeeProject',
   });
 
-  // ********************* Drip List *********************
+  // One-to-Many: A drip list can fund multiple address splits.
   DripListModel.hasMany(AddressDriverSplitReceiverModel, {
     foreignKey: 'funderDripListId',
     as: 'listAddressSplits',
@@ -59,6 +69,7 @@ function defineAssociations() {
     foreignKey: 'funderDripListId',
   });
 
+  // One-to-Many: A drip list can fund multiple project splits.
   DripListModel.hasMany(RepoDriverSplitReceiverModel, {
     foreignKey: 'funderDripListId',
     as: 'listRepoSplits',
@@ -67,6 +78,7 @@ function defineAssociations() {
     foreignKey: 'funderDripListId',
   });
 
+  // One-to-Many: A drip list can fund multiple drip list splits.
   DripListModel.hasMany(DripListSplitReceiverModel, {
     foreignKey: 'funderDripListId',
     as: 'listNftSplits',
@@ -75,8 +87,13 @@ function defineAssociations() {
     foreignKey: 'funderDripListId',
   });
 
+  // One-to-One: A DripListSplitReceiverModel represents/is a drip list.
   DripListModel.hasOne(DripListSplitReceiverModel, {
     foreignKey: 'fundeeDripListId',
+  });
+  DripListSplitReceiverModel.belongsTo(DripListModel, {
+    foreignKey: 'fundeeDripListId',
+    as: 'projectFundeeList',
   });
   DripListSplitReceiverModel.belongsTo(DripListModel, {
     foreignKey: 'fundeeDripListId',
