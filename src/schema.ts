@@ -5,7 +5,7 @@ const rootType = `#graphql
   type Query {
     gitProjects(where: ProjectWhereInput): [GitProject!],
     gitProject(id: ID!): GitProject,
-    dripLists: [DripList!],
+    dripLists(where: DripListWhereInput): [DripList!],
     dripList(id: ID!): DripList,
   }
 `;

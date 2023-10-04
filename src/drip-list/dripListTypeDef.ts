@@ -57,6 +57,11 @@ type DripList {
   splits: DripListSplits
   previousOwnerAddress: String!
 }
+
+input DripListWhereInput {
+  id: String
+  ownerAddress: String
+}
 `;
 
 export default dripListTypeDef;

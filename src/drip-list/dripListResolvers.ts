@@ -47,8 +47,11 @@ const dripListResolvers = {
 
       return toDto(dripList);
     },
-    async dripLists() {
+    async dripLists(_: any, args: { where: any }) {
+      const { where } = args;
+
       const projects = await DripListModel.findAll({
+        where,
         include: [
           {
             model: AddressDriverSplitReceiverModel,
