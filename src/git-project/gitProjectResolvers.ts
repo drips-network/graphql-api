@@ -39,8 +39,11 @@ const gitProjectResolvers = {
 
       return toDto(project);
     },
-    async gitProjects() {
+    async gitProjects(_: any, args: { where: any }) {
+      const { where } = args;
+
       const projects = await GitProjectModel.findAll({
+        where,
         include: [
           {
             model: AddressDriverSplitReceiverModel,

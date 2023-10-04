@@ -66,6 +66,11 @@ type GitProject {
   splits: GitProjectSplits
   verificationStatus: ProjectVerificationStatus!
 }
+
+input ProjectWhereInput {
+  id: String
+  ownerAddress: String
+}
 `;
 
 export default gitProjectTypeDef;

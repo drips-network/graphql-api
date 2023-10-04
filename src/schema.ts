@@ -3,7 +3,7 @@ import gitProjectTypeDef from './git-project/gitProjectTypeDef';
 
 const rootType = `#graphql
   type Query {
-    gitProjects: [GitProject!],
+    gitProjects(where: ProjectWhereInput): [GitProject!],
     gitProject(id: ID!): GitProject,
     dripLists: [DripList!],
     dripList(id: ID!): DripList,
