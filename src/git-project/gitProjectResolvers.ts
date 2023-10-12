@@ -1,3 +1,4 @@
+import type { WhereOptions } from 'sequelize';
 import type { ProjectId } from '../common/types';
 import AddressDriverSplitReceiverModel, {
   AddressDriverSplitReceiverType,
@@ -9,7 +10,7 @@ import GitProjectModel from './GitProjectModel';
 
 const gitProjectResolvers = {
   Query: {
-    async gitProject(_: any, args: { id: ProjectId }) {
+    async gitProjectById(_: any, args: { id: ProjectId }) {
       const project = await GitProjectModel.findByPk(args.id, {
         include: [
           {
@@ -39,11 +40,11 @@ const gitProjectResolvers = {
 
       return toDto(project);
     },
-    async gitProjects(_: any, args: { where: any }) {
+    async gitProjects(_: any, args: { where?: WhereOptions }) {
       const { where } = args;
 
       const projects = await GitProjectModel.findAll({
-        where,
+        where: where || {},
         include: [
           {
             model: AddressDriverSplitReceiverModel,
@@ -52,6 +53,12 @@ const gitProjectResolvers = {
           {
             model: RepoDriverSplitReceiverModel,
             as: 'projectRepoSplits',
+            include: [
+              {
+                model: GitProjectModel,
+                as: 'projectFundeeProject',
+              },
+            ],
           },
         ],
       });

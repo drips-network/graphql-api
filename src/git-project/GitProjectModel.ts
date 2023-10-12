@@ -29,6 +29,7 @@ export default class GitProjectModel extends Model<
   public declare name: string | null;
   public declare forge: Forge | null;
   public declare ownerAddress: AddressLike | null;
+  public declare ownerAccountId: bigint | null;
 
   public declare url: string | null;
   public declare emoji: string | null;
@@ -63,6 +64,10 @@ export default class GitProjectModel extends Model<
           allowNull: true,
         },
         ownerAddress: {
+          type: DataTypes.STRING,
+          allowNull: true,
+        },
+        ownerAccountId: {
           type: DataTypes.STRING,
           allowNull: true,
         },

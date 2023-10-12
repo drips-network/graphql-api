@@ -55,21 +55,26 @@ type GitProjectSplits {
 
 type GitProject {
   id: ID!
-  url: String
-  forge: Forge
-  name: String
-  emoji: String
-  color: String
-  ownerName: String
+  url: String!
+  forge: Forge!
+  name: String!
+  emoji: String!
+  color: String!
+  repoName: String!
+  ownerName: String!
   description: String
-  ownerAddress: String
-  splits: GitProjectSplits
+  ownerAddress: String!
+  ownerAccountId: String!
+  splits: GitProjectSplits!
+  updatedAt: String!
   verificationStatus: ProjectVerificationStatus!
 }
 
 input ProjectWhereInput {
   id: String
+  url: String
   ownerAddress: String
+  verificationStatus: ProjectVerificationStatus
 }
 `;
 
