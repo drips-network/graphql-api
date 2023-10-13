@@ -6,18 +6,18 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import getSchema from '../utils/getSchema';
-import type { DripListId, ProjectId } from '../common/types';
+import type { DripListAccountId, ProjectAccountId } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
-import GitProjectModel from '../git-project/GitProjectModel';
+import ProjectModel from '../project/ProjectModel';
 
 export default class DripListSplitReceiverModel extends Model<
   InferAttributes<DripListSplitReceiverModel>,
   InferCreationAttributes<DripListSplitReceiverModel>
 > {
   public declare id: CreationOptional<number>; // Primary key
-  public declare fundeeDripListId: DripListId; // Foreign key
-  public declare funderProjectId: ProjectId | null; // Foreign key
-  public declare funderDripListId: DripListId | null; // Foreign key
+  public declare fundeeDripListId: DripListAccountId; // Foreign key
+  public declare funderProjectId: ProjectAccountId | null; // Foreign key
+  public declare funderDripListId: DripListAccountId | null; // Foreign key
 
   public declare weight: number;
 
@@ -45,7 +45,7 @@ export default class DripListSplitReceiverModel extends Model<
           // Foreign key
           type: DataTypes.STRING,
           references: {
-            model: GitProjectModel,
+            model: ProjectModel,
             key: 'id',
           },
           allowNull: true,

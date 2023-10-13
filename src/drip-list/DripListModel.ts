@@ -5,7 +5,7 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
-import type { DripListId } from '../common/types';
+import type { DripListAccountId } from '../common/types';
 import getSchema from '../utils/getSchema';
 import type RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import type AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
@@ -15,7 +15,7 @@ export default class DripListModel extends Model<
   InferAttributes<DripListModel>,
   InferCreationAttributes<DripListModel>
 > {
-  public declare id: DripListId; // The `tokenId` from `TransferEvent` event.
+  public declare id: DripListAccountId; // The `tokenId` from `TransferEvent` event.
   public declare isPublic: false;
   public declare isValid: boolean;
   public declare name: string | null;

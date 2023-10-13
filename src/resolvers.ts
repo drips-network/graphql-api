@@ -1,11 +1,15 @@
 import dripListResolvers from './drip-list/dripListResolvers';
-import gitProjectResolvers from './git-project/gitProjectResolvers';
+import projectResolvers from './project/projectResolvers';
 
 const resolvers = {
   Query: {
-    ...gitProjectResolvers.Query,
+    ...projectResolvers.Query,
     ...dripListResolvers.Query,
   },
+  Project: projectResolvers.Project,
+  SplitsReceiver: projectResolvers.SplitsReceiver,
+  ClaimedProject: projectResolvers.ClaimedProject,
+  UnclaimedProject: projectResolvers.UnclaimedProject,
 };
 
 export default resolvers;

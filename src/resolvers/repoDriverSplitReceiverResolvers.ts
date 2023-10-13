@@ -1,4 +1,4 @@
-// import GitProjectModel from '../git-project/GitProjectModel';
+// import ProjectModel from '../git-project/ProjectModel';
 
 // const repoDriverSplitReceiverResolvers = {
 //   Query: {
@@ -11,7 +11,7 @@
 //           funderProjectId: args.projectId,
 //         },
 //         include: {
-//           model: GitProjectModel,
+//           model: ProjectModel,
 //           as: 'fundeeProject',
 //         },
 //       });
@@ -23,7 +23,7 @@
 //   },
 //   RepoDriverSplitReceiver: {
 //     async fundeeProject(parent: { funderProjectId: any }) {
-//       return GitProjectModel.findByPk(parent.funderProjectId);
+//       return ProjectModel.findByPk(parent.funderProjectId);
 //     },
 //   },
 // };

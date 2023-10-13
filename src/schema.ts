@@ -1,15 +1,17 @@
+import gql from 'graphql-tag';
 import dripListTypeDef from './drip-list/dripListTypeDef';
-import gitProjectTypeDef from './git-project/gitProjectTypeDef';
+import gitProjectTypeDef from './project/projectTypeDef';
+import commonTypeDef from './common/typeDef';
 
-const rootType = `#graphql
+const rootType = gql`
   type Query {
-    gitProjects(where: ProjectWhereInput): [GitProject!],
-    gitProjectById(id: ID!): GitProject,
-    dripLists(where: DripListWhereInput): [DripList!],
-    dripList(id: ID!): DripList,
+    projects(where: ProjectWhereInput): [Project!]
+    project(id: ID!): Project
+    dripLists(where: DripListWhereInput): [DripList!]
+    dripList(id: ID!): DripList
   }
 `;
 
-const typeDefs = [rootType, dripListTypeDef, gitProjectTypeDef];
+const typeDefs = [rootType, dripListTypeDef, gitProjectTypeDef, commonTypeDef];
 
 export default typeDefs;

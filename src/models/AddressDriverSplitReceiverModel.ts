@@ -5,13 +5,14 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
+import type { AddressLike } from 'ethers';
 import getSchema from '../utils/getSchema';
-import GitProjectModel from '../git-project/GitProjectModel';
 import type {
-  AddressDriverAccountId,
-  DripListId,
-  ProjectId,
+  AddressAccountId,
+  DripListAccountId,
+  ProjectAccountId,
 } from '../common/types';
+import ProjectModel from '../project/ProjectModel';
 import DripListModel from '../drip-list/DripListModel';
 
 export enum AddressDriverSplitReceiverType {
@@ -25,12 +26,13 @@ export default class AddressDriverSplitReceiverModel extends Model<
   InferCreationAttributes<AddressDriverSplitReceiverModel>
 > {
   public declare id: CreationOptional<number>; // Primary key
-  public declare funderProjectId: ProjectId | null; // Foreign key
-  public declare funderDripListId: DripListId | null; // Foreign key
+  public declare funderProjectId: ProjectAccountId | null; // Foreign key
+  public declare funderDripListId: DripListAccountId | null; // Foreign key
 
   public declare weight: number;
   public declare type: AddressDriverSplitReceiverType;
-  public declare fundeeAccountId: AddressDriverAccountId;
+  public declare fundeeAccountId: AddressAccountId;
+  public declare fundeeAccountAddress: AddressLike;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -44,11 +46,15 @@ export default class AddressDriverSplitReceiverModel extends Model<
           type: DataTypes.STRING,
           allowNull: false,
         },
+        fundeeAccountAddress: {
+          type: DataTypes.STRING,
+          allowNull: false,
+        },
         funderProjectId: {
           // Foreign key
           type: DataTypes.STRING,
           references: {
-            model: GitProjectModel,
+            model: ProjectModel,
             key: 'id',
           },
           allowNull: true,

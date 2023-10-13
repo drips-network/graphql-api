@@ -1,4 +1,4 @@
-import GitProjectModel from '../git-project/GitProjectModel';
+import ProjectModel from '../project/ProjectModel';
 import AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
 import DripListModel from '../drip-list/DripListModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
@@ -14,7 +14,7 @@ export default async function initDb() {
 
 function initModels() {
   DripListModel.initialize(sequelizeInstance);
-  GitProjectModel.initialize(sequelizeInstance);
+  ProjectModel.initialize(sequelizeInstance);
   DripListSplitReceiverModel.initialize(sequelizeInstance);
   RepoDriverSplitReceiverModel.initialize(sequelizeInstance);
   AddressDriverSplitReceiverModel.initialize(sequelizeInstance);
@@ -22,40 +22,40 @@ function initModels() {
 
 function defineAssociations() {
   // One-to-Many: A project can fund multiple address splits.
-  GitProjectModel.hasMany(AddressDriverSplitReceiverModel, {
+  ProjectModel.hasMany(AddressDriverSplitReceiverModel, {
     foreignKey: 'funderProjectId',
     as: 'projectAddressSplits',
   });
-  AddressDriverSplitReceiverModel.belongsTo(GitProjectModel, {
+  AddressDriverSplitReceiverModel.belongsTo(ProjectModel, {
     foreignKey: 'funderProjectId',
   });
 
   // One-to-Many: A project can fund multiple project splits.
-  GitProjectModel.hasMany(RepoDriverSplitReceiverModel, {
+  ProjectModel.hasMany(RepoDriverSplitReceiverModel, {
     foreignKey: 'funderProjectId',
     as: 'projectRepoSplits',
   });
-  RepoDriverSplitReceiverModel.belongsTo(GitProjectModel, {
+  RepoDriverSplitReceiverModel.belongsTo(ProjectModel, {
     foreignKey: 'funderProjectId',
   });
 
   // One-to-Many: A project can fund multiple drip list splits.
-  GitProjectModel.hasMany(DripListSplitReceiverModel, {
+  ProjectModel.hasMany(DripListSplitReceiverModel, {
     foreignKey: 'funderProjectId',
   });
-  DripListSplitReceiverModel.belongsTo(GitProjectModel, {
+  DripListSplitReceiverModel.belongsTo(ProjectModel, {
     foreignKey: 'funderProjectId',
   });
 
   // One-to-One: A RepoDriverSplitReceiver represents/is a project.
-  GitProjectModel.hasOne(RepoDriverSplitReceiverModel, {
+  ProjectModel.hasOne(RepoDriverSplitReceiverModel, {
     foreignKey: 'fundeeProjectId',
   });
-  RepoDriverSplitReceiverModel.belongsTo(GitProjectModel, {
+  RepoDriverSplitReceiverModel.belongsTo(ProjectModel, {
     foreignKey: 'fundeeProjectId',
     as: 'projectFundeeProject',
   });
-  RepoDriverSplitReceiverModel.belongsTo(GitProjectModel, {
+  RepoDriverSplitReceiverModel.belongsTo(ProjectModel, {
     foreignKey: 'fundeeProjectId',
     as: 'listFundeeProject',
   });

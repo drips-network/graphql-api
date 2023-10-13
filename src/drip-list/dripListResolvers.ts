@@ -1,5 +1,5 @@
-import type { DripListId } from '../common/types';
-import GitProjectModel from '../git-project/GitProjectModel';
+import type { DripListAccountId } from '../common/types';
+import ProjectModel from '../project/ProjectModel';
 import AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
@@ -7,7 +7,7 @@ import DripListModel from './DripListModel';
 
 const dripListResolvers = {
   Query: {
-    async dripList(_: any, args: { id: DripListId }) {
+    async dripList(_: any, args: { id: DripListAccountId }) {
       const dripList = await DripListModel.findByPk(args.id, {
         include: [
           {
@@ -19,7 +19,7 @@ const dripListResolvers = {
             as: 'listRepoSplits',
             include: [
               {
-                model: GitProjectModel,
+                model: ProjectModel,
                 as: 'listFundeeProject',
               },
             ],
