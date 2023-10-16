@@ -49,7 +49,7 @@ const commonTypeDef = gql`
   type ProjectReceiver {
     type: ReceiverType!
     weight: Int!
-    account: ProjectAccount!
+    project: Project!
     source: Source!
   }
 

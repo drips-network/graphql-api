@@ -6,7 +6,12 @@ import shouldNeverHappen from '../utils/shouldNeverHappen';
 import AddressDriverSplitReceiverModel, {
   AddressDriverSplitReceiverType,
 } from '../models/AddressDriverSplitReceiverModel';
-import type { SplitsReceiver } from '../generated/graphql';
+import type {
+  AddressReceiver,
+  ProjectReceiver,
+  ProjectSplits,
+  SplitsReceiver,
+} from '../generated/graphql';
 import { AccountType, ReceiverType } from '../generated/graphql';
 import RepoDriverSplitReceiverModel, {
   RepoDriverSplitReceiverType,
@@ -92,20 +97,21 @@ const projectResolvers = {
         ownerName: parent.ownerName || shouldNeverHappen(),
       };
     },
-    async splits(parent: ProjectModel) {
-      const addressReceivers = await AddressDriverSplitReceiverModel.findAll({
-        where: {
-          funderProjectId: parent.id,
-          type: {
-            [Op.or]: [
-              AddressDriverSplitReceiverType.ProjectMaintainer,
-              AddressDriverSplitReceiverType.ProjectDependency,
-            ],
+    async splits(parent: ProjectModel): Promise<ProjectSplits> {
+      const addressReceiverEntities =
+        await AddressDriverSplitReceiverModel.findAll({
+          where: {
+            funderProjectId: parent.id,
+            type: {
+              [Op.or]: [
+                AddressDriverSplitReceiverType.ProjectMaintainer,
+                AddressDriverSplitReceiverType.ProjectDependency,
+              ],
+            },
           },
-        },
-      });
+        });
 
-      const apiAddressReceivers = addressReceivers.map((receiver) => ({
+      const addressReceiversDtos = addressReceiverEntities.map((receiver) => ({
         type: ReceiverType.Address,
         receiverType: receiver.type,
         weight: receiver.weight,
@@ -116,52 +122,60 @@ const projectResolvers = {
         },
       }));
 
-      const projectReceivers = await RepoDriverSplitReceiverModel.findAll({
-        where: {
-          funderProjectId: parent.id,
-          type: RepoDriverSplitReceiverType.ProjectDependency,
-        },
-      });
+      const addressReceiversMaintainersDtos: AddressReceiver[] =
+        addressReceiversDtos.filter(
+          (receiver) =>
+            receiver.receiverType ===
+            AddressDriverSplitReceiverType.ProjectMaintainer,
+        ) as AddressReceiver[];
 
-      const apiProjectReceivers = projectReceivers.map(async (receiver) => ({
-        type: ReceiverType.Project,
-        receiverType: receiver.type,
-        weight: receiver.weight,
-        account: {
-          driver: AccountType.RepoDriver,
-          accountId: receiver.funderProjectId || shouldNeverHappen(),
-        },
-        source: (async () => {
+      const addressReceiversDependenciesDtos: AddressReceiver[] =
+        addressReceiversDtos.filter(
+          (receiver) =>
+            receiver.receiverType ===
+            AddressDriverSplitReceiverType.ProjectDependency,
+        ) as AddressReceiver[];
+
+      const projectReceiverEntities =
+        await RepoDriverSplitReceiverModel.findAll({
+          where: {
+            funderProjectId: parent.id,
+            type: RepoDriverSplitReceiverType.ProjectDependency,
+          },
+        });
+
+      const projectReceiversDtos: ProjectReceiver[] = await Promise.all(
+        projectReceiverEntities.map(async (receiver) => {
           const fundeeProject = await ProjectModel.findByPk(
             receiver.fundeeProjectId || shouldNeverHappen(),
           );
 
           return {
-            forge: fundeeProject?.forge
-              ? toApiForge(fundeeProject.forge)
-              : shouldNeverHappen(),
-            url: fundeeProject?.url || shouldNeverHappen(),
-            repoName: fundeeProject?.repoName || shouldNeverHappen(),
-            ownerName: fundeeProject?.ownerName || shouldNeverHappen(),
+            type: ReceiverType.Project,
+            receiverType: receiver.type,
+            weight: receiver.weight,
+            account: {
+              driver: AccountType.RepoDriver,
+              accountId: receiver.funderProjectId || shouldNeverHappen(),
+            },
+            source: {
+              forge: fundeeProject?.forge
+                ? toApiForge(fundeeProject.forge)
+                : shouldNeverHappen(),
+              url: fundeeProject?.url || shouldNeverHappen(),
+              repoName: fundeeProject?.repoName || shouldNeverHappen(),
+              ownerName: fundeeProject?.ownerName || shouldNeverHappen(),
+            },
           };
-        })(),
-      }));
+        }),
+      );
 
       return {
-        maintainers: apiAddressReceivers.filter(
-          (receiver) =>
-            receiver.receiverType ===
-            AddressDriverSplitReceiverType.ProjectMaintainer,
-        ),
+        maintainers: addressReceiversMaintainersDtos,
         dependencies: [
-          ...apiAddressReceivers
-            .filter(
-              (receiver) =>
-                receiver.receiverType ===
-                AddressDriverSplitReceiverType.ProjectDependency,
-            )
-            .concat(apiProjectReceivers as any),
-        ],
+          ...addressReceiversDependenciesDtos,
+          ...projectReceiversDtos,
+        ] as SplitsReceiver[],
       };
     },
     verificationStatus(parent: ProjectModel) {
