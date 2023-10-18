@@ -1,41 +1,37 @@
-import { Op, type WhereOptions } from 'sequelize';
+import { type WhereOptions } from 'sequelize';
 import type { ProjectAccountId } from '../common/types';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
-import toApiForge from './project-utils';
+import { toApiForge } from './projectUtils';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import AddressDriverSplitReceiverModel, {
-  AddressDriverSplitReceiverType,
-} from '../models/AddressDriverSplitReceiverModel';
+import { ReceiverType, Driver } from '../generated/graphql';
 import type {
-  AddressReceiver,
-  ProjectReceiver,
-  ProjectSplits,
   SplitsReceiver,
+  Source,
+  ProjectAccount,
+  ProjectOwner,
+  ProjectSplits,
+  Project,
+  AddressReceiver,
 } from '../generated/graphql';
-import { AccountType, ReceiverType } from '../generated/graphql';
-import RepoDriverSplitReceiverModel, {
-  RepoDriverSplitReceiverType,
-} from '../models/RepoDriverSplitReceiverModel';
+import type { ContextValue } from '../server';
+import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
+import groupBy from '../utils/linq';
 
 const projectResolvers = {
   Query: {
     async project(
-      _: any,
+      _parent: any,
       args: { id: ProjectAccountId },
     ): Promise<ProjectModel | null> {
       const project = await ProjectModel.findByPk(args.id);
 
-      if (!project) {
-        return null;
-      }
-
-      if (!project.isValid) {
+      if (!project?.isValid) {
         throw new Error('Project not valid.');
       }
 
       return project;
     },
-    async projects(_: any, args: { where?: WhereOptions }) {
+    async projects(_parent: any, args: { where?: WhereOptions }) {
       const { where } = args;
 
       const projects = await ProjectModel.findAll({
@@ -46,162 +42,155 @@ const projectResolvers = {
     },
   },
   Project: {
-    __resolveType(project: ProjectModel) {
-      if (project.verificationStatus === ProjectVerificationStatus.Claimed) {
+    __resolveType(parent: ProjectModel) {
+      if (parent.verificationStatus === ProjectVerificationStatus.Claimed) {
         return 'ClaimedProject';
       }
 
       return 'UnclaimedProject';
     },
   },
-  SplitsReceiver: {
-    __resolveType(receiver: SplitsReceiver) {
-      if (receiver.type === ReceiverType.Address) {
-        return 'AddressReceiver';
-      }
-      if (receiver.type === ReceiverType.Project) {
-        return 'ProjectReceiver';
-      }
-      if (receiver.type === ReceiverType.DripList) {
-        return 'DripListReceiver';
-      }
-
-      return null;
-    },
-  },
   ClaimedProject: {
-    color(parent: ProjectModel) {
-      return parent.color || shouldNeverHappen();
-    },
-    description(parent: ProjectModel) {
-      return parent.description;
-    },
-    emoji(parent: ProjectModel) {
-      return parent.emoji || shouldNeverHappen();
-    },
-    ownerAccount(parent: ProjectModel) {
-      return {
-        accountId: parent.id || shouldNeverHappen(),
-        driver: AccountType.AddressDriver,
-        address: (parent.ownerAddress as string) || shouldNeverHappen(),
-      };
-    },
-    projectAccount(parent: ProjectModel) {
-      return { accountId: parent.id, driver: AccountType.RepoDriver };
-    },
-    source(parent: ProjectModel) {
-      return {
-        forge: parent.forge ? toApiForge(parent.forge) : shouldNeverHappen(),
-        url: parent.url || shouldNeverHappen(),
-        repoName: parent.repoName || shouldNeverHappen(),
-        ownerName: parent.ownerName || shouldNeverHappen(),
-      };
-    },
-    async splits(parent: ProjectModel): Promise<ProjectSplits> {
-      const addressReceiverEntities =
-        await AddressDriverSplitReceiverModel.findAll({
-          where: {
-            funderProjectId: parent.id,
-            type: {
-              [Op.or]: [
-                AddressDriverSplitReceiverType.ProjectMaintainer,
-                AddressDriverSplitReceiverType.ProjectDependency,
-              ],
-            },
-          },
-        });
-
-      const addressReceiversDtos = addressReceiverEntities.map((receiver) => ({
-        type: ReceiverType.Address,
-        receiverType: receiver.type,
-        weight: receiver.weight,
-        account: {
-          driver: AccountType.AddressDriver,
-          accountId: receiver.fundeeAccountId,
-          address: receiver.fundeeAccountAddress,
+    color: (project: ProjectModel): string =>
+      project.color || shouldNeverHappen(),
+    description: (project: ProjectModel): string | null => project.description,
+    emoji: (project: ProjectModel): string =>
+      project.emoji || shouldNeverHappen(),
+    owner: (project: ProjectModel): ProjectOwner => ({
+      driver: Driver.ADDRESS,
+      accountId: project.id || shouldNeverHappen(),
+      address: (project.ownerAddress as string) || shouldNeverHappen(),
+    }),
+    account: (project: ProjectModel): ProjectAccount => ({
+      driver: Driver.REPO,
+      accountId: project.id,
+    }),
+    source: (project: ProjectModel): Source => ({
+      url: project.url || shouldNeverHappen(),
+      repoName: project.repoName || shouldNeverHappen(),
+      ownerName: project.ownerName || shouldNeverHappen(),
+      forge: project.forge ? toApiForge(project.forge) : shouldNeverHappen(),
+    }),
+    verificationStatus: (project: ProjectModel): ProjectVerificationStatus =>
+      project.verificationStatus === ProjectVerificationStatus.Claimed
+        ? project.verificationStatus
+        : shouldNeverHappen(),
+    splits: async (
+      project: ProjectModel,
+      _: any,
+      context: ContextValue,
+    ): Promise<ProjectSplits> => {
+      const {
+        loaders: {
+          projectsByIdsLoader,
+          repoDriverSplitReceiversByProjectIdsLoader,
+          addressDriverSplitReceiversByProjectIdsLoader,
         },
-      }));
+      } = context;
 
-      const addressReceiversMaintainersDtos: AddressReceiver[] =
-        addressReceiversDtos.filter(
-          (receiver) =>
-            receiver.receiverType ===
-            AddressDriverSplitReceiverType.ProjectMaintainer,
-        ) as AddressReceiver[];
+      const addressDriverSplitReceivers =
+        await addressDriverSplitReceiversByProjectIdsLoader.load(project.id);
 
-      const addressReceiversDependenciesDtos: AddressReceiver[] =
-        addressReceiversDtos.filter(
-          (receiver) =>
-            receiver.receiverType ===
-            AddressDriverSplitReceiverType.ProjectDependency,
-        ) as AddressReceiver[];
-
-      const projectReceiverEntities =
-        await RepoDriverSplitReceiverModel.findAll({
-          where: {
-            funderProjectId: parent.id,
-            type: RepoDriverSplitReceiverType.ProjectDependency,
-          },
-        });
-
-      const projectReceiversDtos: ProjectReceiver[] = await Promise.all(
-        projectReceiverEntities.map(async (receiver) => {
-          const fundeeProject = await ProjectModel.findByPk(
-            receiver.fundeeProjectId || shouldNeverHappen(),
-          );
-
-          return {
-            type: ReceiverType.Project,
-            receiverType: receiver.type,
+      const maintainersAndAddressDependencies = groupBy(
+        addressDriverSplitReceivers
+          .filter(
+            (r) =>
+              r.type === AddressDriverSplitReceiverType.ProjectMaintainer ||
+              AddressDriverSplitReceiverType.ProjectDependency,
+          )
+          .map((receiver) => ({
+            driver: Driver.ADDRESS,
             weight: receiver.weight,
-            account: {
-              driver: AccountType.RepoDriver,
-              accountId: receiver.funderProjectId || shouldNeverHappen(),
-            },
-            source: {
-              forge: fundeeProject?.forge
-                ? toApiForge(fundeeProject.forge)
-                : shouldNeverHappen(),
-              url: fundeeProject?.url || shouldNeverHappen(),
-              repoName: fundeeProject?.repoName || shouldNeverHappen(),
-              ownerName: fundeeProject?.ownerName || shouldNeverHappen(),
-            },
-          };
+            type: ReceiverType.ADDRESS,
+            receiverType: receiver.type,
+            accountId: receiver.fundeeAccountId,
+            address: receiver.fundeeAccountAddress,
+          })),
+        (receiver) => receiver.receiverType,
+      );
+
+      const maintainers =
+        (maintainersAndAddressDependencies.get(
+          AddressDriverSplitReceiverType.ProjectMaintainer,
+        ) as AddressReceiver[]) || [];
+
+      const dependenciesOfTypeAddress =
+        (maintainersAndAddressDependencies.get(
+          AddressDriverSplitReceiverType.ProjectDependency,
+        ) as AddressReceiver[]) || [];
+
+      const repoDriverSplitReceivers =
+        await repoDriverSplitReceiversByProjectIdsLoader.load(project.id);
+
+      const splitsProjectIds: ProjectAccountId[] = [];
+      for (const receiver of repoDriverSplitReceivers) {
+        splitsProjectIds.push(receiver.fundeeProjectId || shouldNeverHappen());
+      }
+
+      const splitsProjects =
+        await projectsByIdsLoader.loadMany(splitsProjectIds);
+
+      const dependenciesOfTypeProject = repoDriverSplitReceivers.map(
+        (receiver) => ({
+          driver: Driver.REPO,
+          weight: receiver.weight,
+          type: ReceiverType.PROJECT,
+          receiverType: receiver.type,
+          project:
+            (splitsProjects
+              .filter(
+                (p): p is ProjectModel => p && (p as any).id !== undefined,
+              )
+              .find(
+                (p) => p.id === receiver.fundeeProjectId,
+              ) as unknown as Project) || shouldNeverHappen(),
         }),
       );
 
       return {
-        maintainers: addressReceiversMaintainersDtos,
+        maintainers,
         dependencies: [
-          ...addressReceiversDependenciesDtos,
-          ...projectReceiversDtos,
-        ] as SplitsReceiver[],
+          ...dependenciesOfTypeAddress,
+          ...dependenciesOfTypeProject,
+        ],
       };
     },
-    verificationStatus(parent: ProjectModel) {
-      return parent.verificationStatus === ProjectVerificationStatus.Claimed
-        ? parent.verificationStatus
-        : shouldNeverHappen();
+  },
+  SplitsReceiver: {
+    __resolveType(receiver: SplitsReceiver) {
+      if (receiver.type === ReceiverType.PROJECT) {
+        return 'ProjectReceiver';
+      }
+
+      if (receiver.type === ReceiverType.DRIP_LIST) {
+        return 'DripListReceiver';
+      }
+
+      if (receiver.type === ReceiverType.ADDRESS) {
+        return 'AddressReceiver';
+      }
+
+      return shouldNeverHappen();
     },
   },
   UnclaimedProject: {
-    projectAccount(parent: ProjectModel) {
+    account(project: ProjectModel): ProjectAccount {
       return {
-        accountId: parent.id || shouldNeverHappen(),
-        driver: AccountType.RepoDriver,
+        driver: Driver.REPO,
+        accountId: project.id,
       };
     },
-    source(parent: ProjectModel) {
+    source(project: ProjectModel): Source {
       return {
-        forge: parent.forge ? toApiForge(parent.forge) : shouldNeverHappen(),
-        url: parent.url || shouldNeverHappen(),
-        repoName: parent.repoName || shouldNeverHappen(),
-        ownerName: parent.ownerName || shouldNeverHappen(),
+        url: project.url || shouldNeverHappen(),
+        repoName: project.repoName || shouldNeverHappen(),
+        ownerName: project.ownerName || shouldNeverHappen(),
+        forge: project.forge ? toApiForge(project.forge) : shouldNeverHappen(),
       };
     },
-    verificationStatus(parent: ProjectModel) {
-      return parent.verificationStatus === ProjectVerificationStatus.Unclaimed
-        ? parent.verificationStatus
+    verificationStatus(project: ProjectModel): ProjectVerificationStatus {
+      return project.verificationStatus === ProjectVerificationStatus.Unclaimed
+        ? project.verificationStatus
         : shouldNeverHappen();
     },
   },

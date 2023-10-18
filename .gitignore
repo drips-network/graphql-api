@@ -2,7 +2,7 @@
 .vscode/settings.json
 
 # Generated code
-contracts
+src/generated
 
 # Logs
 logs

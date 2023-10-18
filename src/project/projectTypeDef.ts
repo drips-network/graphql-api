@@ -15,20 +15,31 @@ const projectTypeDef = gql`
     dependencies: [SplitsReceiver!]
   }
 
+  type ProjectOwner {
+    accountId: ID!
+    driver: Driver!
+    address: String!
+  }
+
+  type ProjectAccount {
+    driver: Driver!
+    accountId: ID!
+  }
+
   type ClaimedProject {
     source: Source!
     color: String!
     emoji: String!
     description: String
     splits: ProjectSplits!
-    ownerAccount: AddressAccount!
-    projectAccount: ProjectAccount!
+    owner: ProjectOwner!
+    account: ProjectAccount!
     verificationStatus: ProjectVerificationStatus!
   }
 
   type UnclaimedProject {
     source: Source!
-    projectAccount: ProjectAccount!
+    account: ProjectAccount!
     verificationStatus: ProjectVerificationStatus!
   }
 

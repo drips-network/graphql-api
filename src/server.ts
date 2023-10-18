@@ -4,14 +4,43 @@ import resolvers from './resolvers';
 import { initDb } from './database';
 import typeDefs from './schema';
 import config from './common/config';
+import {
+  projectsByIdsDataLoader,
+  repoDriverSplitReceiversByProjectIdsDataLoader,
+  addressDriverSplitReceiversByProjectIdsDataLoader,
+} from './project/projectDataLoaders';
 
-const server = new ApolloServer({ typeDefs, resolvers });
+export interface ContextValue {
+  loaders: {
+    projectsByIdsLoader: ReturnType<typeof projectsByIdsDataLoader>;
+    addressDriverSplitReceiversByProjectIdsLoader: ReturnType<
+      typeof addressDriverSplitReceiversByProjectIdsDataLoader
+    >;
+    repoDriverSplitReceiversByProjectIdsLoader: ReturnType<
+      typeof repoDriverSplitReceiversByProjectIdsDataLoader
+    >;
+  };
+}
+
+const server = new ApolloServer<ContextValue>({
+  typeDefs,
+  resolvers,
+});
 
 const startServer = async () => {
   await initDb();
 
   const { url } = await startStandaloneServer(server, {
     listen: { port: config.port || 8080 },
+    context: async () => ({
+      loaders: {
+        projectsByIdsLoader: projectsByIdsDataLoader(),
+        addressDriverSplitReceiversByProjectIdsLoader:
+          addressDriverSplitReceiversByProjectIdsDataLoader(),
+        repoDriverSplitReceiversByProjectIdsLoader:
+          repoDriverSplitReceiversByProjectIdsDataLoader(),
+      },
+    }),
   });
 
   console.log(`🚀 Server ready at: ${url}`);

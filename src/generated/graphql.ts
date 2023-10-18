@@ -1,63 +1,39 @@
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
-export type Exact<T extends { [key: string]: unknown }> = {
-  [K in keyof T]: T[K];
-};
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & {
-  [SubKey in K]?: Maybe<T[SubKey]>;
-};
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & {
-  [SubKey in K]: Maybe<T[SubKey]>;
-};
-export type MakeEmpty<
-  T extends { [key: string]: unknown },
-  K extends keyof T,
-> = { [_ in K]?: never };
-export type Incremental<T> =
-  | T
-  | {
-      [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never;
-    };
+export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
+export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
+export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string };
-  String: { input: string; output: string };
-  Boolean: { input: boolean; output: boolean };
-  Int: { input: number; output: number };
-  Float: { input: number; output: number };
-};
-
-export enum AccountType {
-  AddressDriver = 'AddressDriver',
-  NftDriver = 'NftDriver',
-  RepoDriver = 'RepoDriver',
-}
-
-export type AddressAccount = {
-  __typename?: 'AddressAccount';
-  accountId: Scalars['ID']['output'];
-  address: Scalars['String']['output'];
-  driver: AccountType;
+  ID: { input: string; output: string; }
+  String: { input: string; output: string; }
+  Boolean: { input: boolean; output: boolean; }
+  Int: { input: number; output: number; }
+  Float: { input: number; output: number; }
 };
 
 export enum AddressDriver {
-  AddressDriver = 'AddressDriver',
+  AddressDriver = 'AddressDriver'
 }
 
-export type AddressReceiver = {
+export type AddressReceiver = Receiver & {
   __typename?: 'AddressReceiver';
-  account: AddressAccount;
+  accountId: Scalars['ID']['output'];
+  address: Scalars['String']['output'];
+  driver: Driver;
   type: ReceiverType;
   weight: Scalars['Int']['output'];
 };
 
 export type ClaimedProject = {
   __typename?: 'ClaimedProject';
+  account: ProjectAccount;
   color: Scalars['String']['output'];
   description?: Maybe<Scalars['String']['output']>;
   emoji: Scalars['String']['output'];
-  ownerAccount: AddressAccount;
-  projectAccount: ProjectAccount;
+  owner: ProjectOwner;
   source: Source;
   splits: ProjectSplits;
   verificationStatus: ProjectVerificationStatus;
@@ -71,12 +47,6 @@ export type DripList = {
   ownerAddress: Scalars['String']['output'];
   previousOwnerAddress: Scalars['String']['output'];
   splits?: Maybe<DripListSplits>;
-};
-
-export type DripListAccount = {
-  __typename?: 'DripListAccount';
-  accountId: Scalars['ID']['output'];
-  driver: AccountType;
 };
 
 export type DripListAddressDriverSplitReceiver = {
@@ -99,9 +69,10 @@ export type DripListNftDriverSplitReceiver = {
   weight: Scalars['Int']['output'];
 };
 
-export type DripListReceiver = {
+export type DripListReceiver = Receiver & {
   __typename?: 'DripListReceiver';
-  account: DripListAccount;
+  dripList: DripList;
+  driver: Driver;
   type: ReceiverType;
   weight: Scalars['Int']['output'];
 };
@@ -117,7 +88,7 @@ export type DripListRepoDriverSplitReceiver = {
 };
 
 export enum DripListSplitReceiver {
-  DripListDependency = 'DripListDependency',
+  DripListDependency = 'DripListDependency'
 }
 
 export type DripListSplits = {
@@ -132,13 +103,19 @@ export type DripListWhereInput = {
   ownerAddress?: InputMaybe<Scalars['String']['input']>;
 };
 
+export enum Driver {
+  ADDRESS = 'ADDRESS',
+  NFT = 'NFT',
+  REPO = 'REPO'
+}
+
 export enum Forge {
-  GitHub = 'GitHub',
-  GitLab = 'GitLab',
+  GITHUB = 'GITHUB',
+  GITLAB = 'GITLAB'
 }
 
 export enum NftDriver {
-  NftDriver = 'NftDriver',
+  NftDriver = 'NftDriver'
 }
 
 export type Project = ClaimedProject | UnclaimedProject;
@@ -146,13 +123,20 @@ export type Project = ClaimedProject | UnclaimedProject;
 export type ProjectAccount = {
   __typename?: 'ProjectAccount';
   accountId: Scalars['ID']['output'];
-  driver: AccountType;
+  driver: Driver;
 };
 
-export type ProjectReceiver = {
+export type ProjectOwner = {
+  __typename?: 'ProjectOwner';
+  accountId: Scalars['ID']['output'];
+  address: Scalars['String']['output'];
+  driver: Driver;
+};
+
+export type ProjectReceiver = Receiver & {
   __typename?: 'ProjectReceiver';
-  account: ProjectAccount;
-  source: Source;
+  driver: Driver;
+  project: Project;
   type: ReceiverType;
   weight: Scalars['Int']['output'];
 };
@@ -169,7 +153,7 @@ export enum ProjectVerificationStatus {
   OwnerUpdated = 'OwnerUpdated',
   PendingMetadata = 'PendingMetadata',
   PendingOwner = 'PendingOwner',
-  Unclaimed = 'Unclaimed',
+  Unclaimed = 'Unclaimed'
 }
 
 export type ProjectWhereInput = {
@@ -187,30 +171,40 @@ export type Query = {
   projects?: Maybe<Array<Project>>;
 };
 
+
 export type QueryDripListArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryDripListsArgs = {
   where?: InputMaybe<DripListWhereInput>;
 };
 
+
 export type QueryProjectArgs = {
   id: Scalars['ID']['input'];
 };
+
 
 export type QueryProjectsArgs = {
   where?: InputMaybe<ProjectWhereInput>;
 };
 
+export type Receiver = {
+  driver: Driver;
+  type: ReceiverType;
+  weight: Scalars['Int']['output'];
+};
+
 export enum ReceiverType {
-  Address = 'Address',
-  DripList = 'DripList',
-  Project = 'Project',
+  ADDRESS = 'ADDRESS',
+  DRIP_LIST = 'DRIP_LIST',
+  PROJECT = 'PROJECT'
 }
 
 export enum RepoDriver {
-  RepoDriver = 'RepoDriver',
+  RepoDriver = 'RepoDriver'
 }
 
 export type Source = {
@@ -221,14 +215,11 @@ export type Source = {
   url: Scalars['String']['output'];
 };
 
-export type SplitsReceiver =
-  | AddressReceiver
-  | DripListReceiver
-  | ProjectReceiver;
+export type SplitsReceiver = AddressReceiver | DripListReceiver | ProjectReceiver;
 
 export type UnclaimedProject = {
   __typename?: 'UnclaimedProject';
-  projectAccount: ProjectAccount;
+  account: ProjectAccount;
   source: Source;
   verificationStatus: ProjectVerificationStatus;
 };
