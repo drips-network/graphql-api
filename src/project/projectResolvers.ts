@@ -9,7 +9,7 @@ import type {
   Source,
   ProjectAccount,
   ProjectOwner,
-  ProjectSplits,
+  Splits,
   Project,
   AddressReceiver,
 } from '../generated/graphql';
@@ -58,7 +58,7 @@ const projectResolvers = {
       project.emoji || shouldNeverHappen(),
     owner: (project: ProjectModel): ProjectOwner => ({
       driver: Driver.ADDRESS,
-      accountId: project.id || shouldNeverHappen(),
+      accountId: project.ownerAccountId || shouldNeverHappen(),
       address: (project.ownerAddress as string) || shouldNeverHappen(),
     }),
     account: (project: ProjectModel): ProjectAccount => ({
@@ -79,7 +79,7 @@ const projectResolvers = {
       project: ProjectModel,
       _: any,
       context: ContextValue,
-    ): Promise<ProjectSplits> => {
+    ): Promise<Splits> => {
       const {
         loaders: {
           projectsByIdsLoader,

@@ -41,6 +41,11 @@ const commonTypeDef = gql`
     dripList: DripList!
   }
 
+  type Splits {
+    maintainers: [AddressReceiver!]
+    dependencies: [SplitsReceiver!]
+  }
+
   union SplitsReceiver = AddressReceiver | ProjectReceiver | DripListReceiver
 
   enum Forge {

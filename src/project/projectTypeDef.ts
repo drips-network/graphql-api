@@ -10,11 +10,6 @@ const projectTypeDef = gql`
     PendingMetadata
   }
 
-  type ProjectSplits {
-    maintainers: [AddressReceiver!]
-    dependencies: [SplitsReceiver!]
-  }
-
   type ProjectOwner {
     accountId: ID!
     driver: Driver!
@@ -30,8 +25,8 @@ const projectTypeDef = gql`
     source: Source!
     color: String!
     emoji: String!
+    splits: Splits
     description: String
-    splits: ProjectSplits!
     owner: ProjectOwner!
     account: ProjectAccount!
     verificationStatus: ProjectVerificationStatus!

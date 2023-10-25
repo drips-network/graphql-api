@@ -6,7 +6,7 @@ import type {
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
 import getSchema from '../utils/getSchema';
-import type { Forge, ProjectAccountId } from '../common/types';
+import type { AccountId, Forge, ProjectAccountId } from '../common/types';
 import { FORGES_MAP } from '../common/constants';
 import type RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import type AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
@@ -29,7 +29,7 @@ export default class ProjectModel extends Model<
   public declare name: string | null;
   public declare forge: Forge | null;
   public declare ownerAddress: AddressLike | null;
-  public declare ownerAccountId: bigint | null;
+  public declare ownerAccountId: AccountId | null;
 
   public declare url: string | null;
   public declare emoji: string | null;

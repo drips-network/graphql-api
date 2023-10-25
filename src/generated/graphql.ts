@@ -14,10 +14,6 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
-export enum AddressDriver {
-  AddressDriver = 'AddressDriver'
-}
-
 export type AddressReceiver = Receiver & {
   __typename?: 'AddressReceiver';
   accountId: Scalars['ID']['output'];
@@ -35,7 +31,7 @@ export type ClaimedProject = {
   emoji: Scalars['String']['output'];
   owner: ProjectOwner;
   source: Source;
-  splits: ProjectSplits;
+  splits?: Maybe<Splits>;
   verificationStatus: ProjectVerificationStatus;
 };
 
@@ -44,29 +40,16 @@ export type DripList = {
   id: Scalars['ID']['output'];
   isPublic: Scalars['Boolean']['output'];
   name?: Maybe<Scalars['String']['output']>;
-  ownerAddress: Scalars['String']['output'];
+  owner: DripListOwner;
   previousOwnerAddress: Scalars['String']['output'];
-  splits?: Maybe<DripListSplits>;
+  splits?: Maybe<Splits>;
 };
 
-export type DripListAddressDriverSplitReceiver = {
-  __typename?: 'DripListAddressDriverSplitReceiver';
-  driver: AddressDriver;
-  fundeeAccountId: Scalars['String']['output'];
-  funderDripListId: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  type: DripListSplitReceiver;
-  weight: Scalars['Int']['output'];
-};
-
-export type DripListNftDriverSplitReceiver = {
-  __typename?: 'DripListNftDriverSplitReceiver';
-  driver: NftDriver;
-  fundeeDripList?: Maybe<DripList>;
-  funderDripListId: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  type: DripListSplitReceiver;
-  weight: Scalars['Int']['output'];
+export type DripListOwner = {
+  __typename?: 'DripListOwner';
+  accountId: Scalars['ID']['output'];
+  address: Scalars['String']['output'];
+  driver: Driver;
 };
 
 export type DripListReceiver = Receiver & {
@@ -75,27 +58,6 @@ export type DripListReceiver = Receiver & {
   driver: Driver;
   type: ReceiverType;
   weight: Scalars['Int']['output'];
-};
-
-export type DripListRepoDriverSplitReceiver = {
-  __typename?: 'DripListRepoDriverSplitReceiver';
-  driver: RepoDriver;
-  fundeeProject?: Maybe<Project>;
-  funderDripListId: Scalars['String']['output'];
-  id: Scalars['ID']['output'];
-  type: DripListSplitReceiver;
-  weight: Scalars['Int']['output'];
-};
-
-export enum DripListSplitReceiver {
-  DripListDependency = 'DripListDependency'
-}
-
-export type DripListSplits = {
-  __typename?: 'DripListSplits';
-  ofTypeAddress?: Maybe<Array<DripListAddressDriverSplitReceiver>>;
-  ofTypeDripList?: Maybe<Array<DripListNftDriverSplitReceiver>>;
-  ofTypeProject?: Maybe<Array<DripListRepoDriverSplitReceiver>>;
 };
 
 export type DripListWhereInput = {
@@ -112,10 +74,6 @@ export enum Driver {
 export enum Forge {
   GITHUB = 'GITHUB',
   GITLAB = 'GITLAB'
-}
-
-export enum NftDriver {
-  NftDriver = 'NftDriver'
 }
 
 export type Project = ClaimedProject | UnclaimedProject;
@@ -139,12 +97,6 @@ export type ProjectReceiver = Receiver & {
   project: Project;
   type: ReceiverType;
   weight: Scalars['Int']['output'];
-};
-
-export type ProjectSplits = {
-  __typename?: 'ProjectSplits';
-  dependencies?: Maybe<Array<SplitsReceiver>>;
-  maintainers?: Maybe<Array<AddressReceiver>>;
 };
 
 export enum ProjectVerificationStatus {
@@ -203,16 +155,18 @@ export enum ReceiverType {
   PROJECT = 'PROJECT'
 }
 
-export enum RepoDriver {
-  RepoDriver = 'RepoDriver'
-}
-
 export type Source = {
   __typename?: 'Source';
   forge: Forge;
   ownerName: Scalars['String']['output'];
   repoName: Scalars['String']['output'];
   url: Scalars['String']['output'];
+};
+
+export type Splits = {
+  __typename?: 'Splits';
+  dependencies?: Maybe<Array<SplitsReceiver>>;
+  maintainers?: Maybe<Array<AddressReceiver>>;
 };
 
 export type SplitsReceiver = AddressReceiver | DripListReceiver | ProjectReceiver;
