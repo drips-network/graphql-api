@@ -11,6 +11,7 @@ declare global {
       NETWORK: SupportedNetwork;
       PORT: number;
       infuraApiKey: string;
+      apiKeys: string;
     }
   }
 }

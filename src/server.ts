@@ -32,15 +32,23 @@ const startServer = async () => {
 
   const { url } = await startStandaloneServer(server, {
     listen: { port: config.port || 8080 },
-    context: async () => ({
-      loaders: {
-        projectsByIdsLoader: projectsByIdsDataLoader(),
-        addressDriverSplitReceiversByProjectIdsLoader:
-          addressDriverSplitReceiversByProjectIdsDataLoader(),
-        repoDriverSplitReceiversByProjectIdsLoader:
-          repoDriverSplitReceiversByProjectIdsDataLoader(),
-      },
-    }),
+    context: async ({ req }) => {
+      const apiKey = req.headers.authorization?.split(' ')[1];
+
+      if (!apiKey || !config.apiKeys.includes(apiKey)) {
+        throw new Error('Unauthorized');
+      }
+
+      return {
+        loaders: {
+          projectsByIdsLoader: projectsByIdsDataLoader(),
+          addressDriverSplitReceiversByProjectIdsLoader:
+            addressDriverSplitReceiversByProjectIdsDataLoader(),
+          repoDriverSplitReceiversByProjectIdsLoader:
+            repoDriverSplitReceiversByProjectIdsDataLoader(),
+        },
+      };
+    },
   });
 
   console.log(`🚀 Server ready at: ${url}`);
