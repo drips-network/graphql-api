@@ -72,8 +72,9 @@ const projectResolvers = {
     }),
     source: (project: ProjectModel): Source => ({
       url: project.url || shouldNeverHappen(),
-      repoName: splitProjectName(project.name || shouldNeverHappen()).ownerName,
-      ownerName: splitProjectName(project.name || shouldNeverHappen()).repoName,
+      repoName: splitProjectName(project.name || shouldNeverHappen()).repoName,
+      ownerName: splitProjectName(project.name || shouldNeverHappen())
+        .ownerName,
       forge: project.forge ? toApiForge(project.forge) : shouldNeverHappen(),
     }),
     verificationStatus: (project: ProjectModel): ProjectVerificationStatus =>
