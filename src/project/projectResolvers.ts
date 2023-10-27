@@ -194,9 +194,9 @@ const projectResolvers = {
       return {
         url: project.url || shouldNeverHappen(),
         repoName: splitProjectName(project.name || shouldNeverHappen())
-          .ownerName,
-        ownerName: splitProjectName(project.name || shouldNeverHappen())
           .repoName,
+        ownerName: splitProjectName(project.name || shouldNeverHappen())
+          .ownerName,
         forge: project.forge ? toApiForge(project.forge) : shouldNeverHappen(),
       };
     },
