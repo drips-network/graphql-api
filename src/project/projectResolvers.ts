@@ -1,7 +1,12 @@
 import { type WhereOptions } from 'sequelize';
 import type { ProjectAccountId } from '../common/types';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
-import { splitProjectName, toApiForge } from './projectUtils';
+import {
+  splitProjectName,
+  toApiForge,
+  toFakeUnclaimedProject,
+  verifyRepoExists,
+} from './projectUtils';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { ReceiverType, Driver } from '../generated/graphql';
 import type {
@@ -30,6 +35,28 @@ const projectResolvers = {
       }
 
       return project;
+    },
+    async projectByUrl(
+      _parent: any,
+      args: { url: string },
+    ): Promise<ProjectModel | null> {
+      const project = await ProjectModel.findOne({ where: { url: args.url } });
+
+      if (project) {
+        if (!project?.isValid) {
+          throw new Error('Project not valid.');
+        }
+
+        return project;
+      }
+
+      const repoExist = await verifyRepoExists(args.url);
+
+      if (!repoExist) {
+        return null;
+      }
+
+      return toFakeUnclaimedProject(args.url) as unknown as ProjectModel;
     },
     async projects(_parent: any, args: { where?: WhereOptions }) {
       const { where } = args;

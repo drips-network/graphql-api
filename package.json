@@ -12,7 +12,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "format": "prettier --write .",
-    "build:graphql": "graphql-codegen"
+    "build:graphql": "graphql-codegen",
+    "build:contracts": "typechain --target=ethers-v6 --out-dir ./src/generated/contracts ./src/abi/**.json"
   },
   "keywords": [],
   "author": "",
@@ -26,6 +27,7 @@
     "@graphql-codegen/cli": "^5.0.0",
     "@graphql-codegen/typescript": "^4.0.1",
     "@graphql-codegen/typescript-operations": "^4.0.1",
+    "@typechain/ethers-v6": "^0.5.1",
     "@types/node": "^20.5.7",
     "@typescript-eslint/eslint-plugin": "^6.5.0",
     "@typescript-eslint/parser": "^6.5.0",
@@ -38,6 +40,7 @@
     "husky": "^8.0.3",
     "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
+    "typechain": "^8.3.2",
     "typescript": "^5.2.2"
   },
   "dependencies": {

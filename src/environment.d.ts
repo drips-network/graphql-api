@@ -10,6 +10,7 @@ declare global {
       POSTGRES_PORT: number;
       NETWORK: SupportedNetwork;
       PORT: number;
+      infuraApiKey: string;
     }
   }
 }

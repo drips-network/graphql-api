@@ -10,4 +10,5 @@ export default {
   postgresUsername: process.env.POSTGRES_USER,
   postgresPassword: process.env.POSTGRES_PASSWORD,
   port: process.env.PORT as unknown as number,
+  infuraApiKey: process.env.INFURA_API_KEY,
 };
