@@ -1,7 +1,7 @@
 import { type WhereOptions } from 'sequelize';
 import type { ProjectAccountId } from '../common/types';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
-import { toApiForge } from './projectUtils';
+import { splitProjectName, toApiForge } from './projectUtils';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { ReceiverType, Driver } from '../generated/graphql';
 import type {
@@ -38,7 +38,9 @@ const projectResolvers = {
         where: where || {},
       });
 
-      return projects;
+      return projects.filter(
+        (p) => p.verificationStatus === ProjectVerificationStatus.Claimed,
+      );
     },
   },
   Project: {
@@ -46,8 +48,11 @@ const projectResolvers = {
       if (parent.verificationStatus === ProjectVerificationStatus.Claimed) {
         return 'ClaimedProject';
       }
+      if (parent.verificationStatus === ProjectVerificationStatus.Unclaimed) {
+        return 'UnclaimedProject';
+      }
 
-      return 'UnclaimedProject';
+      return shouldNeverHappen(`Invalid verification status: ${parent.id}.`);
     },
   },
   ClaimedProject: {
@@ -67,8 +72,8 @@ const projectResolvers = {
     }),
     source: (project: ProjectModel): Source => ({
       url: project.url || shouldNeverHappen(),
-      repoName: project.repoName || shouldNeverHappen(),
-      ownerName: project.ownerName || shouldNeverHappen(),
+      repoName: splitProjectName(project.name || shouldNeverHappen()).ownerName,
+      ownerName: splitProjectName(project.name || shouldNeverHappen()).repoName,
       forge: project.forge ? toApiForge(project.forge) : shouldNeverHappen(),
     }),
     verificationStatus: (project: ProjectModel): ProjectVerificationStatus =>
@@ -142,8 +147,13 @@ const projectResolvers = {
                 (p): p is ProjectModel => p && (p as any).id !== undefined,
               )
               .find(
-                (p) => p.id === receiver.fundeeProjectId,
-              ) as unknown as Project) || shouldNeverHappen(),
+                (p) => (p as any).id === receiver.fundeeProjectId,
+              ) as unknown as Project) ||
+            shouldNeverHappen(
+              `Project Id ${project.id}: Fundee project with id ${
+                receiver.fundeeProjectId
+              } not found in ${splitsProjects.map((p) => (p as any).id)}`,
+            ),
         }),
       );
 
@@ -183,8 +193,10 @@ const projectResolvers = {
     source(project: ProjectModel): Source {
       return {
         url: project.url || shouldNeverHappen(),
-        repoName: project.repoName || shouldNeverHappen(),
-        ownerName: project.ownerName || shouldNeverHappen(),
+        repoName: splitProjectName(project.name || shouldNeverHappen())
+          .ownerName,
+        ownerName: splitProjectName(project.name || shouldNeverHappen())
+          .repoName,
         forge: project.forge ? toApiForge(project.forge) : shouldNeverHappen(),
       };
     },

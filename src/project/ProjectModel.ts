@@ -34,9 +34,6 @@ export default class ProjectModel extends Model<
   public declare url: string | null;
   public declare emoji: string | null;
   public declare color: string | null;
-  public declare ownerName: string | null;
-  public declare repoName: string | null;
-  public declare splitsJson: string | null;
   public declare description: string | null;
   public declare verificationStatus: ProjectVerificationStatus;
 
@@ -55,12 +52,16 @@ export default class ProjectModel extends Model<
           type: DataTypes.BOOLEAN,
           allowNull: false,
         },
-        splitsJson: {
-          type: DataTypes.JSON,
-          allowNull: true,
-        },
         name: {
           type: DataTypes.STRING,
+          allowNull: true,
+        },
+        verificationStatus: {
+          type: DataTypes.ENUM(...Object.values(ProjectVerificationStatus)),
+          allowNull: false,
+        },
+        forge: {
+          type: DataTypes.ENUM(...Object.values(FORGES_MAP)),
           allowNull: true,
         },
         ownerAddress: {
@@ -85,22 +86,6 @@ export default class ProjectModel extends Model<
         },
         description: {
           type: DataTypes.STRING,
-          allowNull: true,
-        },
-        ownerName: {
-          type: DataTypes.STRING,
-          allowNull: true,
-        },
-        repoName: {
-          type: DataTypes.STRING,
-          allowNull: true,
-        },
-        verificationStatus: {
-          type: DataTypes.ENUM(...Object.values(ProjectVerificationStatus)),
-          allowNull: false,
-        },
-        forge: {
-          type: DataTypes.ENUM(...Object.values(FORGES_MAP)),
           allowNull: true,
         },
       },

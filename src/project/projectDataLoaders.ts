@@ -109,5 +109,8 @@ async function projectsByIdsLoader(
     },
   });
 
-  return projects;
+  return projectIds.map(
+    (projectId) =>
+      projects.find((p) => p.id === projectId) || shouldNeverHappen(),
+  );
 }

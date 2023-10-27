@@ -26,3 +26,16 @@ export async function getProjects(
     },
   });
 }
+
+export function splitProjectName(projectName: string): {
+  ownerName: string;
+  repoName: string;
+} {
+  const components = projectName.split('/');
+
+  if (components.length !== 2) {
+    throw new Error(`Invalid project name: ${projectName}.`);
+  }
+
+  return { ownerName: components[0], repoName: components[1] };
+}
