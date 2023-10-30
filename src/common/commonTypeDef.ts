@@ -42,8 +42,8 @@ const commonTypeDef = gql`
   }
 
   type Splits {
-    maintainers: [AddressReceiver!]
-    dependencies: [SplitsReceiver!]
+    maintainers: [AddressReceiver!]!
+    dependencies: [SplitsReceiver!]!
   }
 
   union SplitsReceiver = AddressReceiver | ProjectReceiver | DripListReceiver
