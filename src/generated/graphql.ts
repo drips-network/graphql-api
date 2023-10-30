@@ -19,7 +19,6 @@ export type AddressReceiver = Receiver & {
   accountId: Scalars['ID']['output'];
   address: Scalars['String']['output'];
   driver: Driver;
-  type: ReceiverType;
   weight: Scalars['Int']['output'];
 };
 
@@ -31,7 +30,7 @@ export type ClaimedProject = {
   emoji: Scalars['String']['output'];
   owner: ProjectOwner;
   source: Source;
-  splits?: Maybe<Splits>;
+  splits: Splits;
   verificationStatus: ProjectVerificationStatus;
 };
 
@@ -56,7 +55,6 @@ export type DripListReceiver = Receiver & {
   __typename?: 'DripListReceiver';
   dripList: DripList;
   driver: Driver;
-  type: ReceiverType;
   weight: Scalars['Int']['output'];
 };
 
@@ -95,7 +93,6 @@ export type ProjectReceiver = Receiver & {
   __typename?: 'ProjectReceiver';
   driver: Driver;
   project: Project;
-  type: ReceiverType;
   weight: Scalars['Int']['output'];
 };
 
@@ -151,15 +148,8 @@ export type QueryProjectsArgs = {
 
 export type Receiver = {
   driver: Driver;
-  type: ReceiverType;
   weight: Scalars['Int']['output'];
 };
-
-export enum ReceiverType {
-  ADDRESS = 'ADDRESS',
-  DRIP_LIST = 'DRIP_LIST',
-  PROJECT = 'PROJECT'
-}
 
 export type Source = {
   __typename?: 'Source';
@@ -171,8 +161,8 @@ export type Source = {
 
 export type Splits = {
   __typename?: 'Splits';
-  dependencies?: Maybe<Array<SplitsReceiver>>;
-  maintainers?: Maybe<Array<AddressReceiver>>;
+  dependencies: Array<SplitsReceiver>;
+  maintainers: Array<AddressReceiver>;
 };
 
 export type SplitsReceiver = AddressReceiver | DripListReceiver | ProjectReceiver;

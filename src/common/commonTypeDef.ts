@@ -1,12 +1,6 @@
 import gql from 'graphql-tag';
 
 const commonTypeDef = gql`
-  enum ReceiverType {
-    ADDRESS
-    PROJECT
-    DRIP_LIST
-  }
-
   enum Driver {
     ADDRESS
     REPO
@@ -16,13 +10,11 @@ const commonTypeDef = gql`
   interface Receiver {
     weight: Int!
     driver: Driver!
-    type: ReceiverType!
   }
 
   type AddressReceiver implements Receiver {
     weight: Int!
     driver: Driver!
-    type: ReceiverType!
     address: String!
     accountId: ID!
   }
@@ -30,14 +22,12 @@ const commonTypeDef = gql`
   type ProjectReceiver implements Receiver {
     weight: Int!
     driver: Driver!
-    type: ReceiverType!
     project: Project!
   }
 
   type DripListReceiver implements Receiver {
     weight: Int!
     driver: Driver!
-    type: ReceiverType!
     dripList: DripList!
   }
 

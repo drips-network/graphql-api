@@ -8,7 +8,7 @@ import {
   verifyRepoExists,
 } from './projectUtils';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import { ReceiverType, Driver } from '../generated/graphql';
+import { Driver } from '../generated/graphql';
 import type {
   SplitsReceiver,
   Source,
@@ -134,7 +134,6 @@ const projectResolvers = {
           .map((receiver) => ({
             driver: Driver.ADDRESS,
             weight: receiver.weight,
-            type: ReceiverType.ADDRESS,
             receiverType: receiver.type,
             accountId: receiver.fundeeAccountId,
             address: receiver.fundeeAccountAddress,
@@ -167,7 +166,6 @@ const projectResolvers = {
         (receiver) => ({
           driver: Driver.REPO,
           weight: receiver.weight,
-          type: ReceiverType.PROJECT,
           receiverType: receiver.type,
           project:
             (splitsProjects
@@ -196,15 +194,15 @@ const projectResolvers = {
   },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {
-      if (receiver.type === ReceiverType.PROJECT) {
+      if (receiver.driver === Driver.REPO) {
         return 'ProjectReceiver';
       }
 
-      if (receiver.type === ReceiverType.DRIP_LIST) {
+      if (receiver.driver === Driver.NFT) {
         return 'DripListReceiver';
       }
 
-      if (receiver.type === ReceiverType.ADDRESS) {
+      if (receiver.driver === Driver.ADDRESS) {
         return 'AddressReceiver';
       }
 
