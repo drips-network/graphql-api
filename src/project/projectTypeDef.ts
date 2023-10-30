@@ -10,15 +10,10 @@ const projectTypeDef = gql`
     PendingMetadata
   }
 
-  type ProjectOwner {
+  type AddressDriverAccount {
     accountId: ID!
     driver: Driver!
     address: String!
-  }
-
-  type ProjectAccount {
-    driver: Driver!
-    accountId: ID!
   }
 
   type ClaimedProject {
@@ -27,14 +22,14 @@ const projectTypeDef = gql`
     emoji: String!
     splits: Splits!
     description: String
-    owner: ProjectOwner!
-    account: ProjectAccount!
+    owner: AddressDriverAccount!
+    account: RepoDriverAccount!
     verificationStatus: ProjectVerificationStatus!
   }
 
   type UnclaimedProject {
     source: Source!
-    account: ProjectAccount!
+    account: RepoDriverAccount!
     verificationStatus: ProjectVerificationStatus!
   }
 

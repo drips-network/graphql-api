@@ -11,8 +11,8 @@ import { Driver } from '../generated/graphql';
 import type {
   SplitsReceiver,
   Source,
-  ProjectAccount,
-  ProjectOwner,
+  RepoDriverAccount,
+  AddressDriverAccount,
   Splits,
   Project,
   AddressReceiver,
@@ -88,12 +88,12 @@ const projectResolvers = {
     description: (project: ProjectModel): string | null => project.description,
     emoji: (project: ProjectModel): string =>
       project.emoji || shouldNeverHappen(),
-    owner: (project: ProjectModel): ProjectOwner => ({
+    owner: (project: ProjectModel): AddressDriverAccount => ({
       driver: Driver.ADDRESS,
       accountId: project.ownerAccountId || shouldNeverHappen(),
       address: (project.ownerAddress as string) || shouldNeverHappen(),
     }),
-    account: (project: ProjectModel): ProjectAccount => ({
+    account: (project: ProjectModel): RepoDriverAccount => ({
       driver: Driver.REPO,
       accountId: project.id,
     }),
@@ -210,7 +210,7 @@ const projectResolvers = {
     },
   },
   UnclaimedProject: {
-    account(project: ProjectModel): ProjectAccount {
+    account(project: ProjectModel): RepoDriverAccount {
       return {
         driver: Driver.REPO,
         accountId: project.id,

@@ -14,6 +14,18 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type Account = {
+  accountId: Scalars['ID']['output'];
+  driver: Driver;
+};
+
+export type AddressDriverAccount = Account & {
+  __typename?: 'AddressDriverAccount';
+  accountId: Scalars['ID']['output'];
+  address: Scalars['String']['output'];
+  driver: Driver;
+};
+
 export type AddressReceiver = Receiver & {
   __typename?: 'AddressReceiver';
   accountId: Scalars['ID']['output'];
@@ -24,11 +36,11 @@ export type AddressReceiver = Receiver & {
 
 export type ClaimedProject = {
   __typename?: 'ClaimedProject';
-  account: ProjectAccount;
+  account: RepoDriverAccount;
   color: Scalars['String']['output'];
   description?: Maybe<Scalars['String']['output']>;
   emoji: Scalars['String']['output'];
-  owner: ProjectOwner;
+  owner: AddressDriverAccount;
   source: Source;
   splits: Splits;
   verificationStatus: ProjectVerificationStatus;
@@ -74,20 +86,14 @@ export enum Forge {
   GitLab = 'GitLab'
 }
 
+export type NftDriverAccount = Account & {
+  __typename?: 'NftDriverAccount';
+  accountId: Scalars['ID']['output'];
+  driver: Driver;
+  owner: AddressDriverAccount;
+};
+
 export type Project = ClaimedProject | UnclaimedProject;
-
-export type ProjectAccount = {
-  __typename?: 'ProjectAccount';
-  accountId: Scalars['ID']['output'];
-  driver: Driver;
-};
-
-export type ProjectOwner = {
-  __typename?: 'ProjectOwner';
-  accountId: Scalars['ID']['output'];
-  address: Scalars['String']['output'];
-  driver: Driver;
-};
 
 export type ProjectReceiver = Receiver & {
   __typename?: 'ProjectReceiver';
@@ -151,6 +157,12 @@ export type Receiver = {
   weight: Scalars['Int']['output'];
 };
 
+export type RepoDriverAccount = Account & {
+  __typename?: 'RepoDriverAccount';
+  accountId: Scalars['ID']['output'];
+  driver: Driver;
+};
+
 export type Source = {
   __typename?: 'Source';
   forge: Forge;
@@ -169,7 +181,7 @@ export type SplitsReceiver = AddressReceiver | DripListReceiver | ProjectReceive
 
 export type UnclaimedProject = {
   __typename?: 'UnclaimedProject';
-  account: ProjectAccount;
+  account: RepoDriverAccount;
   source: Source;
   verificationStatus: ProjectVerificationStatus;
 };
