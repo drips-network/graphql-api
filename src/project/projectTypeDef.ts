@@ -25,7 +25,7 @@ const projectTypeDef = gql`
     source: Source!
     color: String!
     emoji: String!
-    splits: Splits
+    splits: Splits!
     description: String
     owner: ProjectOwner!
     account: ProjectAccount!

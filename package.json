@@ -8,12 +8,13 @@
     "prepare": "husky install",
     "lint": "prettier --check . && eslint src/**/*.ts",
     "commit": "npx cz",
-    "start:dev": "NODE_ENV=development npx nodemon",
-    "build": "tsc",
-    "start": "node dist/index.js",
     "format": "prettier --write .",
     "build:graphql": "graphql-codegen",
-    "build:contracts": "typechain --target=ethers-v6 --out-dir ./src/generated/contracts ./src/abi/**.json"
+    "build:contracts": "typechain --target=ethers-v6 --out-dir ./src/generated/contracts ./src/abi/**.json",
+    "build": "npm run build:contracts && npm run build:graphql && tsc",
+    "start:local": "NODE_ENV=local npx nodemon",
+    "start:goerli": "NODE_ENV=goerli npx nodemon",
+    "start:mainnet": "npm run build && NODE_ENV=mainnet node dist/index.js"
   },
   "keywords": [],
   "author": "",

@@ -31,7 +31,7 @@ const startServer = async () => {
   await initDb();
 
   const { url } = await startStandaloneServer(server, {
-    listen: { port: config.port || 8080 },
+    listen: { port: config.port },
     context: async ({ req }) => {
       const apiKey = req.headers.authorization?.split(' ')[1];
 

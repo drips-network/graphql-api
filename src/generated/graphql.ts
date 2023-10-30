@@ -120,6 +120,7 @@ export type Query = {
   dripList?: Maybe<DripList>;
   dripLists?: Maybe<Array<DripList>>;
   project?: Maybe<Project>;
+  projectByUrl?: Maybe<Project>;
   projects?: Maybe<Array<Project>>;
 };
 
@@ -136,6 +137,11 @@ export type QueryDripListsArgs = {
 
 export type QueryProjectArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryProjectByUrlArgs = {
+  url: Scalars['String']['input'];
 };
 
 

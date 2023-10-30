@@ -1,16 +1,8 @@
 import { Sequelize } from 'sequelize';
 import config from '../common/config';
 
-const {
-  postgresHost,
-  postgresPort,
-  postgresDatabase,
-  postgresPassword,
-  postgresUsername,
-} = config;
+const { postgresConnectionString } = config;
 
-const sequelizeInstance = new Sequelize(
-  `postgres://${postgresUsername}:${postgresPassword}@${postgresHost}:${postgresPort}/${postgresDatabase}`,
-);
+const sequelizeInstance = new Sequelize(`${postgresConnectionString}`, {});
 
 export default sequelizeInstance;
