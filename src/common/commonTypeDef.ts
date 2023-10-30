@@ -39,8 +39,8 @@ const commonTypeDef = gql`
   union SplitsReceiver = AddressReceiver | ProjectReceiver | DripListReceiver
 
   enum Forge {
-    GITHUB
-    GITLAB
+    GitHub
+    GitLab
   }
 
   type Source {

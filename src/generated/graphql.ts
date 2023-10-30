@@ -70,8 +70,8 @@ export enum Driver {
 }
 
 export enum Forge {
-  GITHUB = 'GITHUB',
-  GITLAB = 'GITLAB'
+  GitHub = 'GitHub',
+  GitLab = 'GitLab'
 }
 
 export type Project = ClaimedProject | UnclaimedProject;

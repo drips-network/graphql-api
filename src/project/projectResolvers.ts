@@ -3,7 +3,6 @@ import type { ProjectAccountId } from '../common/types';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
 import {
   splitProjectName,
-  toApiForge,
   toFakeUnclaimedProject,
   verifyRepoExists,
 } from './projectUtils';
@@ -17,6 +16,7 @@ import type {
   Splits,
   Project,
   AddressReceiver,
+  Forge,
 } from '../generated/graphql';
 import type { ContextValue } from '../server';
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
@@ -102,7 +102,7 @@ const projectResolvers = {
       repoName: splitProjectName(project.name || shouldNeverHappen()).repoName,
       ownerName: splitProjectName(project.name || shouldNeverHappen())
         .ownerName,
-      forge: project.forge ? toApiForge(project.forge) : shouldNeverHappen(),
+      forge: (project.forge as Forge) || shouldNeverHappen(),
     }),
     verificationStatus: (project: ProjectModel): ProjectVerificationStatus =>
       project.verificationStatus === ProjectVerificationStatus.Claimed
@@ -223,7 +223,7 @@ const projectResolvers = {
           .repoName,
         ownerName: splitProjectName(project.name || shouldNeverHappen())
           .ownerName,
-        forge: project.forge ? toApiForge(project.forge) : shouldNeverHappen(),
+        forge: (project.forge as Forge) || shouldNeverHappen(),
       };
     },
     verificationStatus(project: ProjectModel): ProjectVerificationStatus {

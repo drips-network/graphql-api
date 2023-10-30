@@ -1,21 +1,9 @@
 import { Op } from 'sequelize';
 import { WebSocketProvider, ethers } from 'ethers';
-import type { ProjectAccountId } from '../common/types';
-import { Forge as ApiForge } from '../generated/graphql';
+import type { Forge, ProjectAccountId } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
 import { RepoDriver__factory } from '../generated/contracts';
-
-export function toApiForge(forge: string): ApiForge {
-  switch (forge.toLocaleLowerCase()) {
-    case 'github':
-      return ApiForge.GITHUB;
-    case 'gitlab':
-      return ApiForge.GITLAB;
-    default:
-      return shouldNeverHappen(forge);
-  }
-}
 
 export async function getProjects(
   ids: ProjectAccountId[],
@@ -42,12 +30,14 @@ export function splitProjectName(projectName: string): {
   return { ownerName: components[0], repoName: components[1] };
 }
 
-function toContractForge(forge: ApiForge): 0 {
+function toContractForge(forge: Forge): 0 | 1 {
   switch (forge) {
-    case ApiForge.GITHUB:
+    case `GitHub`:
       return 0;
+    case `GitLab`:
+      return 1;
     default:
-      return shouldNeverHappen(forge);
+      return shouldNeverHappen(`Forge ${forge} not supported.`);
   }
 }
 
@@ -57,6 +47,17 @@ export async function verifyRepoExists(url: string) {
   return res.status === 200;
 }
 
+function toForge(forge: string): Forge {
+  switch (forge.toLocaleLowerCase()) {
+    case 'github':
+      return `GitHub`;
+    case 'gitlab':
+      return `GitLab`;
+    default:
+      return shouldNeverHappen(`Forge ${forge} not supported.`);
+  }
+}
+
 export async function toFakeUnclaimedProject(url: string) {
   const pattern =
     /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
@@ -64,7 +65,7 @@ export async function toFakeUnclaimedProject(url: string) {
 
   if (!match) return null;
 
-  const forge = toApiForge(match[1]);
+  const forge = toForge(match[1]);
   const ownerName = match[2];
   const repoName = match[3];
 
