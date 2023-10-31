@@ -1,119 +1,136 @@
-import type { DripListAccountId } from '../common/types';
-import ProjectModel from '../project/ProjectModel';
-import AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
-import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
-import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
+import type { WhereOptions } from 'sequelize';
+import type { DripListAccountId, ProjectAccountId } from '../common/types';
 import DripListModel from './DripListModel';
+import type {
+  AddressDriverAccount,
+  AddressReceiver,
+  DripList,
+  NftDriverAccount,
+  Project,
+  SplitsReceiver,
+} from '../generated/graphql';
+import { Driver } from '../generated/graphql';
+import shouldNeverHappen from '../utils/shouldNeverHappen';
+import type { ContextValue } from '../server';
+import type GitProjectModel from '../project/ProjectModel';
 
 const dripListResolvers = {
   Query: {
-    async dripList(_: any, args: { id: DripListAccountId }) {
-      const dripList = await DripListModel.findByPk(args.id, {
-        include: [
-          {
-            model: AddressDriverSplitReceiverModel,
-            as: 'listAddressSplits',
-          },
-          {
-            model: RepoDriverSplitReceiverModel,
-            as: 'listRepoSplits',
-            include: [
-              {
-                model: ProjectModel,
-                as: 'listFundeeProject',
-              },
-            ],
-          },
-          {
-            model: DripListSplitReceiverModel,
-            as: 'listNftSplits',
-            include: [
-              {
-                model: DripListModel,
-                as: 'listFundeeList',
-              },
-            ],
-          },
-        ],
-      });
+    async dripList(
+      _parent: any,
+      args: { id: DripListAccountId },
+    ): Promise<DripListModel | null> {
+      const dripList = await DripListModel.findByPk(args.id);
 
-      if (!dripList) {
-        return null;
+      if (!dripList?.isValid) {
+        throw new Error('Drip List not valid.');
       }
 
-      if (!dripList.isValid) {
-        throw new Error('Drip List is not valid');
-      }
-
-      return toDto(dripList);
+      return dripList;
     },
-    async dripLists(_: any, args: { where: any }) {
+    async dripLists(_parent: any, args: { where?: WhereOptions }) {
       const { where } = args;
 
-      const projects = await DripListModel.findAll({
-        where,
-        include: [
-          {
-            model: AddressDriverSplitReceiverModel,
-            as: 'listAddressSplits',
-          },
-          {
-            model: RepoDriverSplitReceiverModel,
-            as: 'listRepoSplits',
-          },
-          {
-            model: DripListSplitReceiverModel,
-            as: 'listNftSplits',
-          },
-        ],
+      const dripLists = await DripListModel.findAll({
+        where: where || {},
       });
 
-      return projects.map(toDto);
+      return dripLists.filter((p) => p.isValid);
+    },
+  },
+  DripList: {
+    name: (dripList: DripListModel) => dripList.name,
+    creator: (dripList: DripListModel) => dripList.creator,
+    description: (dripList: DripListModel) => dripList.description,
+    previousOwnerAddress: (dripList: DripListModel) =>
+      dripList.previousOwnerAddress,
+    owner: (dripList: DripListModel): AddressDriverAccount => ({
+      driver: Driver.ADDRESS,
+      accountId: dripList.id || shouldNeverHappen(),
+      address: (dripList.ownerAddress as string) || shouldNeverHappen(),
+    }),
+    account: (dripList: DripListModel): NftDriverAccount => ({
+      driver: Driver.NFT,
+      accountId: dripList.id,
+    }),
+    splits: async (
+      dripList: DripListModel,
+      _: any,
+      context: ContextValue,
+    ): Promise<SplitsReceiver[]> => {
+      const {
+        loaders: {
+          projectsByIdsLoader,
+          dripListsByIdsLoader,
+          repoDriverSplitReceiversByDripListIdsLoader,
+          addressDriverSplitReceiversByDripListIdsLoader,
+          nftDriverSplitReceiversByDripListIdsLoader,
+        },
+      } = context;
+
+      const addressDriverSplitReceivers =
+        await addressDriverSplitReceiversByDripListIdsLoader.load(dripList.id);
+
+      const addressSplits = addressDriverSplitReceivers.map((receiver) => ({
+        driver: Driver.ADDRESS,
+        weight: receiver.weight,
+        receiverType: receiver.type,
+        accountId: receiver.fundeeAccountId,
+        address: receiver.fundeeAccountAddress,
+      })) as AddressReceiver[];
+
+      const repoDriverSplitReceivers =
+        await repoDriverSplitReceiversByDripListIdsLoader.load(dripList.id);
+
+      const splitsProjectIds: ProjectAccountId[] = [];
+      for (const receiver of repoDriverSplitReceivers) {
+        splitsProjectIds.push(receiver.fundeeProjectId || shouldNeverHappen());
+      }
+
+      const projectSplits =
+        await projectsByIdsLoader.loadMany(splitsProjectIds);
+
+      const projectReceivers = repoDriverSplitReceivers.map((receiver) => ({
+        driver: Driver.REPO,
+        weight: receiver.weight,
+        receiverType: receiver.type,
+        project:
+          (projectSplits
+            .filter(
+              (p): p is GitProjectModel => p && (p as any).id !== undefined,
+            )
+            .find(
+              (p) => (p as any).id === receiver.fundeeProjectId,
+            ) as unknown as Project) || shouldNeverHappen(),
+      }));
+
+      const dripListSplitReceivers =
+        await nftDriverSplitReceiversByDripListIdsLoader.load(dripList.id);
+
+      const dripListProjectIds: DripListAccountId[] = [];
+      for (const receiver of dripListSplitReceivers) {
+        dripListProjectIds.push(
+          receiver.fundeeDripListId || shouldNeverHappen(),
+        );
+      }
+
+      const dripListSplits =
+        await dripListsByIdsLoader.loadMany(dripListProjectIds);
+
+      const dripListReceivers = dripListSplitReceivers.map((receiver) => ({
+        driver: Driver.NFT,
+        weight: receiver.weight,
+        dripList:
+          (dripListSplits
+            .filter((l): l is DripListModel => l && (l as any).id !== undefined)
+            .find(
+              (p) => (p as any).id === receiver.fundeeDripListId,
+            ) as unknown as DripList) || shouldNeverHappen(),
+      }));
+
+      return [...addressSplits, ...projectReceivers, ...dripListReceivers];
     },
   },
 };
 
 export default dripListResolvers;
-
-enum Driver {
-  AddressDriver = 'AddressDriver',
-  RepoDriver = 'RepoDriver',
-  NftDriver = 'NftDriver',
-}
-
-function toDto(dripList: DripListModel) {
-  const dependenciesOfTypeAddress = dripList.listAddressSplits?.map((a) => ({
-    ...a.dataValues,
-    driver: Driver.AddressDriver,
-  }));
-
-  const dependenciesOfTypeProject = dripList.listRepoSplits?.map((p) => ({
-    ...p.dataValues,
-    fundeeProject: p.listFundeeProject?.dataValues
-      ? {
-          ...p.listFundeeProject?.dataValues,
-        }
-      : null,
-    driver: Driver.RepoDriver,
-  }));
-
-  const dependenciesOfTypeDripList = dripList.listNftSplits?.map((n) => ({
-    ...n.dataValues,
-    fundeeDripList: n.listFundeeList?.dataValues
-      ? {
-          ...n.listFundeeList?.dataValues,
-        }
-      : null,
-    driver: Driver.NftDriver,
-    type: 'DripListDependency',
-  }));
-
-  return {
-    ...dripList?.dataValues,
-    splits: {
-      ofTypeAddress: dependenciesOfTypeAddress,
-      ofTypeProject: dependenciesOfTypeProject,
-      ofTypeDripList: dependenciesOfTypeDripList,
-    },
-  };
-}

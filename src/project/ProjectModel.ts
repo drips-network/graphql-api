@@ -8,8 +8,6 @@ import type { AddressLike } from 'ethers';
 import getSchema from '../utils/getSchema';
 import type { AccountId, Forge, ProjectAccountId } from '../common/types';
 import { FORGES_MAP } from '../common/constants';
-import type RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
-import type AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
 
 export enum ProjectVerificationStatus {
   Claimed = 'Claimed',
@@ -20,9 +18,9 @@ export enum ProjectVerificationStatus {
   PendingMetadata = 'PendingMetadata',
 }
 
-export default class ProjectModel extends Model<
-  InferAttributes<ProjectModel>,
-  InferCreationAttributes<ProjectModel>
+export default class GitProjectModel extends Model<
+  InferAttributes<GitProjectModel>,
+  InferCreationAttributes<GitProjectModel>
 > {
   public declare id: ProjectAccountId; // The `accountId` from `OwnerUpdatedRequested` event.
   public declare isValid: boolean;
@@ -36,10 +34,6 @@ export default class ProjectModel extends Model<
   public declare color: string | null;
   public declare description: string | null;
   public declare verificationStatus: ProjectVerificationStatus;
-
-  // Associations
-  public declare projectRepoSplits?: RepoDriverSplitReceiverModel[];
-  public declare projectAddressSplits?: AddressDriverSplitReceiverModel[];
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -85,7 +79,7 @@ export default class ProjectModel extends Model<
           allowNull: true,
         },
         description: {
-          type: DataTypes.STRING,
+          type: DataTypes.TEXT,
           allowNull: true,
         },
       },

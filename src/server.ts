@@ -5,10 +5,17 @@ import { initDb } from './database';
 import typeDefs from './schema';
 import config from './common/config';
 import {
+  nftDriverSplitReceiversByProjectDataLoader,
   projectsByIdsDataLoader,
   repoDriverSplitReceiversByProjectIdsDataLoader,
   addressDriverSplitReceiversByProjectIdsDataLoader,
 } from './project/projectDataLoaders';
+import {
+  nftDriverSplitReceiversByDripListIdsDataLoader,
+  dripListsByIdsDataLoader,
+  addressDriverSplitReceiversByDripListIdsDataLoader,
+  repoDriverSplitReceiversByDripListIdsDataLoader,
+} from './drip-list/dripListDataLoaders';
 
 export interface ContextValue {
   loaders: {
@@ -18,6 +25,19 @@ export interface ContextValue {
     >;
     repoDriverSplitReceiversByProjectIdsLoader: ReturnType<
       typeof repoDriverSplitReceiversByProjectIdsDataLoader
+    >;
+    nftDriverSplitReceiversByProjectDataLoader: ReturnType<
+      typeof nftDriverSplitReceiversByProjectDataLoader
+    >;
+    dripListsByIdsLoader: ReturnType<typeof dripListsByIdsDataLoader>;
+    addressDriverSplitReceiversByDripListIdsLoader: ReturnType<
+      typeof addressDriverSplitReceiversByDripListIdsDataLoader
+    >;
+    repoDriverSplitReceiversByDripListIdsLoader: ReturnType<
+      typeof repoDriverSplitReceiversByDripListIdsDataLoader
+    >;
+    nftDriverSplitReceiversByDripListIdsLoader: ReturnType<
+      typeof nftDriverSplitReceiversByDripListIdsDataLoader
     >;
   };
 }
@@ -46,11 +66,21 @@ const startServer = async () => {
             addressDriverSplitReceiversByProjectIdsDataLoader(),
           repoDriverSplitReceiversByProjectIdsLoader:
             repoDriverSplitReceiversByProjectIdsDataLoader(),
+          nftDriverSplitReceiversByProjectDataLoader:
+            nftDriverSplitReceiversByProjectDataLoader(),
+          dripListsByIdsLoader: dripListsByIdsDataLoader(),
+          addressDriverSplitReceiversByDripListIdsLoader:
+            addressDriverSplitReceiversByDripListIdsDataLoader(),
+          repoDriverSplitReceiversByDripListIdsLoader:
+            repoDriverSplitReceiversByDripListIdsDataLoader(),
+          nftDriverSplitReceiversByDripListIdsLoader:
+            nftDriverSplitReceiversByDripListIdsDataLoader(),
         },
       };
     },
   });
 
+  console.log(`config: ${JSON.stringify(config, null, 2)}`);
   console.log(`🚀 Server ready at: ${url}`);
 };
 

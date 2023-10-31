@@ -1,18 +1,13 @@
 import gql from 'graphql-tag';
 
 const dripListTypeDef = gql`
-  type DripListOwner {
-    accountId: ID!
-    driver: Driver!
-    address: String!
-  }
-
   type DripList {
-    id: ID!
     name: String
-    splits: Splits
-    isPublic: Boolean!
-    owner: DripListOwner!
+    creator: String!
+    description: String
+    splits: [SplitsReceiver!]!
+    account: NftDriverAccount!
+    owner: AddressDriverAccount!
     previousOwnerAddress: String!
   }
 

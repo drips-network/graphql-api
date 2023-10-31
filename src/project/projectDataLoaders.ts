@@ -10,6 +10,7 @@ import RepoDriverSplitReceiverModel, {
   RepoDriverSplitReceiverType,
 } from '../models/RepoDriverSplitReceiverModel';
 import ProjectModel from './ProjectModel';
+import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 
 export function projectReceiversDataLoader() {
   return new DataLoader(projectReceiversByProjectIds);
@@ -112,5 +113,30 @@ async function projectsByIdsLoader(
   return projectIds.map(
     (projectId) =>
       projects.find((p) => p.id === projectId) || shouldNeverHappen(),
+  );
+}
+
+export function nftDriverSplitReceiversByProjectDataLoader() {
+  return new DataLoader(nftDriverSplitReceiversByProjectIdsLoader);
+}
+
+async function nftDriverSplitReceiversByProjectIdsLoader(
+  projectIds: readonly ProjectAccountId[],
+): Promise<DripListSplitReceiverModel[][]> {
+  const receivers = await DripListSplitReceiverModel.findAll({
+    where: {
+      funderProjectId: {
+        [Op.in]: projectIds,
+      },
+    },
+  });
+
+  const receiversByProjectId = groupBy(
+    receivers,
+    (receiver) => receiver.funderProjectId || shouldNeverHappen(),
+  );
+
+  return projectIds.map(
+    (projectId) => receiversByProjectId.get(projectId) || [],
   );
 }

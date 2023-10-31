@@ -7,6 +7,7 @@ const resolvers = {
     ...dripListResolvers.Query,
   },
   Project: projectResolvers.Project,
+  DripList: dripListResolvers.DripList,
   SplitsReceiver: projectResolvers.SplitsReceiver,
   ClaimedProject: projectResolvers.ClaimedProject,
   UnclaimedProject: projectResolvers.UnclaimedProject,

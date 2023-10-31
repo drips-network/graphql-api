@@ -1,5 +1,5 @@
 import { type WhereOptions } from 'sequelize';
-import type { ProjectAccountId } from '../common/types';
+import type { DripListAccountId, ProjectAccountId } from '../common/types';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
 import {
   splitProjectName,
@@ -17,10 +17,12 @@ import type {
   Project,
   AddressReceiver,
   Forge,
+  DripList,
 } from '../generated/graphql';
 import type { ContextValue } from '../server';
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
 import groupBy from '../utils/linq';
+import type DripListModel from '../drip-list/DripListModel';
 
 const projectResolvers = {
   Query: {
@@ -66,7 +68,9 @@ const projectResolvers = {
       });
 
       return projects.filter(
-        (p) => p.verificationStatus === ProjectVerificationStatus.Claimed,
+        (p) =>
+          p.verificationStatus === ProjectVerificationStatus.Claimed &&
+          p.isValid,
       );
     },
   },
@@ -116,8 +120,10 @@ const projectResolvers = {
       const {
         loaders: {
           projectsByIdsLoader,
+          dripListsByIdsLoader,
           repoDriverSplitReceiversByProjectIdsLoader,
           addressDriverSplitReceiversByProjectIdsLoader,
+          nftDriverSplitReceiversByProjectDataLoader,
         },
       } = context;
 
@@ -125,19 +131,13 @@ const projectResolvers = {
         await addressDriverSplitReceiversByProjectIdsLoader.load(project.id);
 
       const maintainersAndAddressDependencies = groupBy(
-        addressDriverSplitReceivers
-          .filter(
-            (r) =>
-              r.type === AddressDriverSplitReceiverType.ProjectMaintainer ||
-              AddressDriverSplitReceiverType.ProjectDependency,
-          )
-          .map((receiver) => ({
-            driver: Driver.ADDRESS,
-            weight: receiver.weight,
-            receiverType: receiver.type,
-            accountId: receiver.fundeeAccountId,
-            address: receiver.fundeeAccountAddress,
-          })),
+        addressDriverSplitReceivers.map((receiver) => ({
+          driver: Driver.ADDRESS,
+          weight: receiver.weight,
+          receiverType: receiver.type,
+          accountId: receiver.fundeeAccountId,
+          address: receiver.fundeeAccountAddress,
+        })),
         (receiver) => receiver.receiverType,
       );
 
@@ -174,20 +174,40 @@ const projectResolvers = {
               )
               .find(
                 (p) => (p as any).id === receiver.fundeeProjectId,
-              ) as unknown as Project) ||
-            shouldNeverHappen(
-              `Project Id ${project.id}: Fundee project with id ${
-                receiver.fundeeProjectId
-              } not found in ${splitsProjects.map((p) => (p as any).id)}`,
-            ),
+              ) as unknown as Project) || shouldNeverHappen(),
         }),
       );
+
+      const dripListSplitReceivers =
+        await nftDriverSplitReceiversByProjectDataLoader.load(project.id);
+
+      const dripListProjectIds: DripListAccountId[] = [];
+      for (const receiver of dripListSplitReceivers) {
+        dripListProjectIds.push(
+          receiver.fundeeDripListId || shouldNeverHappen(),
+        );
+      }
+
+      const dripListSplits =
+        await dripListsByIdsLoader.loadMany(dripListProjectIds);
+
+      const dripListReceivers = dripListSplitReceivers.map((receiver) => ({
+        driver: Driver.NFT,
+        weight: receiver.weight,
+        dripList:
+          (dripListSplits
+            .filter((l): l is DripListModel => l && (l as any).id !== undefined)
+            .find(
+              (p) => (p as any).id === receiver.fundeeDripListId,
+            ) as unknown as DripList) || shouldNeverHappen(),
+      }));
 
       return {
         maintainers,
         dependencies: [
           ...dependenciesOfTypeAddress,
           ...dependenciesOfTypeProject,
+          ...dripListReceivers,
         ],
       };
     },

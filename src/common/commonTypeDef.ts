@@ -26,7 +26,6 @@ const commonTypeDef = gql`
   type NftDriverAccount implements Account {
     driver: Driver!
     accountId: ID!
-    owner: AddressDriverAccount!
   }
 
   interface Receiver {
