@@ -31,9 +31,10 @@ const dripListResolvers = {
     async dripLists(_parent: any, args: { where?: WhereOptions }) {
       const { where } = args;
 
-      const dripLists = await DripListModel.findAll({
-        where: where || {},
-      });
+      const dripLists =
+        (await DripListModel.findAll({
+          where: where || {},
+        })) || [];
 
       return dripLists.filter((p) => p.isValid);
     },

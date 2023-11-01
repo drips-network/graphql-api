@@ -7,10 +7,10 @@ const rootType = gql`
   type Query {
     project(id: ID!): Project
     projectByUrl(url: String!): Project
-    projects(where: ProjectWhereInput): [Project!]
+    projects(where: ProjectWhereInput): [Project!]!
 
     dripList(id: ID!): DripList
-    dripLists(where: DripListWhereInput): [DripList!]
+    dripLists(where: DripListWhereInput): [DripList!]!
   }
 `;
 

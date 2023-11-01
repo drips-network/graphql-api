@@ -63,9 +63,10 @@ const projectResolvers = {
     async projects(_parent: any, args: { where?: WhereOptions }) {
       const { where } = args;
 
-      const projects = await ProjectModel.findAll({
-        where: where || {},
-      });
+      const projects =
+        (await ProjectModel.findAll({
+          where: where || {},
+        })) || [];
 
       return projects.filter(
         (p) =>
