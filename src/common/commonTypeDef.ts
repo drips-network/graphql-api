@@ -31,25 +31,27 @@ const commonTypeDef = gql`
   interface Receiver {
     weight: Int!
     driver: Driver!
+    account: Account!
   }
 
   type AddressReceiver implements Receiver {
     weight: Int!
     driver: Driver!
-    address: String!
-    accountId: ID!
+    account: AddressDriverAccount!
   }
 
   type ProjectReceiver implements Receiver {
     weight: Int!
     driver: Driver!
     project: Project!
+    account: RepoDriverAccount!
   }
 
   type DripListReceiver implements Receiver {
     weight: Int!
     driver: Driver!
     dripList: DripList!
+    account: NftDriverAccount!
   }
 
   type Splits {

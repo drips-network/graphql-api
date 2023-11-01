@@ -75,8 +75,11 @@ const dripListResolvers = {
         driver: Driver.ADDRESS,
         weight: receiver.weight,
         receiverType: receiver.type,
-        accountId: receiver.fundeeAccountId,
-        address: receiver.fundeeAccountAddress,
+        account: {
+          driver: Driver.ADDRESS,
+          accountId: receiver.fundeeAccountId,
+          address: receiver.fundeeAccountAddress,
+        },
       })) as AddressReceiver[];
 
       const repoDriverSplitReceivers =
@@ -94,6 +97,10 @@ const dripListResolvers = {
         driver: Driver.REPO,
         weight: receiver.weight,
         receiverType: receiver.type,
+        account: {
+          driver: Driver.REPO,
+          accountId: receiver.fundeeProjectId,
+        },
         project:
           (projectSplits
             .filter(
@@ -120,6 +127,10 @@ const dripListResolvers = {
       const dripListReceivers = dripListSplitReceivers.map((receiver) => ({
         driver: Driver.NFT,
         weight: receiver.weight,
+        account: {
+          driver: Driver.NFT,
+          accountId: receiver.fundeeDripListId,
+        },
         dripList:
           (dripListSplits
             .filter((l): l is DripListModel => l && (l as any).id !== undefined)
