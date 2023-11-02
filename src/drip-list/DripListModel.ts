@@ -5,7 +5,7 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
-import type { DripListAccountId } from '../common/types';
+import type { AccountId, DripListAccountId } from '../common/types';
 import getSchema from '../utils/getSchema';
 
 export default class DripListModel extends Model<
@@ -15,9 +15,10 @@ export default class DripListModel extends Model<
   public declare id: DripListAccountId; // The `tokenId` from `TransferEvent` event.
   public declare isValid: boolean;
   public declare name: string | null;
-  public declare ownerAddress: AddressLike;
   public declare creator: AddressLike;
   public declare description: string | null;
+  public declare ownerAddress: AddressLike;
+  public declare ownerAccountId: AccountId | null;
   public declare previousOwnerAddress: AddressLike;
 
   public static initialize(sequelize: Sequelize): void {
@@ -34,6 +35,10 @@ export default class DripListModel extends Model<
         ownerAddress: {
           type: DataTypes.STRING,
           allowNull: false,
+        },
+        ownerAccountId: {
+          type: DataTypes.STRING,
+          allowNull: true,
         },
         name: {
           type: DataTypes.STRING,

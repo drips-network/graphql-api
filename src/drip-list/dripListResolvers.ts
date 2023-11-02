@@ -47,7 +47,7 @@ const dripListResolvers = {
       dripList.previousOwnerAddress,
     owner: (dripList: DripListModel): AddressDriverAccount => ({
       driver: Driver.ADDRESS,
-      accountId: dripList.id || shouldNeverHappen(),
+      accountId: dripList.ownerAccountId || shouldNeverHappen(),
       address: (dripList.ownerAddress as string) || shouldNeverHappen(),
     }),
     account: (dripList: DripListModel): NftDriverAccount => ({
