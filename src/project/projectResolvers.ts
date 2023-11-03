@@ -1,11 +1,7 @@
-import { type WhereOptions } from 'sequelize';
-import type { DripListAccountId, ProjectAccountId } from '../common/types';
-import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
-import {
-  splitProjectName,
-  toFakeUnclaimedProject,
-  verifyRepoExists,
-} from './projectUtils';
+import type { ProjectId } from '../common/types';
+import type ProjectModel from './ProjectModel';
+import { ProjectVerificationStatus } from './ProjectModel';
+import { splitProjectName } from './projectUtils';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { Driver } from '../generated/graphql';
 import type {
@@ -18,6 +14,7 @@ import type {
   AddressReceiver,
   Forge,
   DripList,
+  ProjectWhereInput,
 } from '../generated/graphql';
 import type { ContextValue } from '../server';
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
@@ -26,11 +23,12 @@ import type DripListModel from '../drip-list/DripListModel';
 
 const projectResolvers = {
   Query: {
-    async project(
-      _parent: any,
-      args: { id: ProjectAccountId },
-    ): Promise<ProjectModel | null> {
-      const project = await ProjectModel.findByPk(args.id);
+    projectById: async (
+      _: any,
+      { id }: { id: ProjectId },
+      { dataSources }: ContextValue,
+    ): Promise<ProjectModel | null> => {
+      const project = await dataSources.projectsDb.getProjectById(id);
 
       if (!project?.isValid) {
         throw new Error('Project not valid.');
@@ -38,53 +36,35 @@ const projectResolvers = {
 
       return project;
     },
-    async projectByUrl(
-      _parent: any,
-      args: { url: string },
-    ): Promise<ProjectModel | null> {
-      const project = await ProjectModel.findOne({ where: { url: args.url } });
-
-      if (project) {
-        if (!project?.isValid) {
-          throw new Error('Project not valid.');
-        }
-
-        return project;
-      }
-
-      const repoExist = await verifyRepoExists(args.url);
-
-      if (!repoExist) {
-        return null;
-      }
-
-      return toFakeUnclaimedProject(args.url) as unknown as ProjectModel;
-    },
-    async projects(_parent: any, args: { where?: WhereOptions }) {
-      const { where } = args;
-
-      const projects =
-        (await ProjectModel.findAll({
-          where: where || {},
-        })) || [];
-
-      return projects.filter(
-        (p) =>
-          p.verificationStatus === ProjectVerificationStatus.Claimed &&
-          p.isValid,
-      );
-    },
+    projectByUrl: async (
+      _: any,
+      { url }: { url: string },
+      { dataSources }: ContextValue,
+    ): Promise<ProjectModel | null> =>
+      dataSources.projectsDb.getProjectByUrl(url),
+    projects: async (
+      _: any,
+      { where }: { where: ProjectWhereInput },
+      { dataSources }: ContextValue,
+    ): Promise<ProjectModel[]> =>
+      dataSources.projectsDb.getProjectsByFilter(where),
   },
   Project: {
     __resolveType(parent: ProjectModel) {
       if (parent.verificationStatus === ProjectVerificationStatus.Claimed) {
         return 'ClaimedProject';
       }
+
       if (parent.verificationStatus === ProjectVerificationStatus.Unclaimed) {
         return 'UnclaimedProject';
       }
 
-      return shouldNeverHappen(`Invalid verification status: ${parent.id}.`);
+      // The API queries the database for projects that are VALID.
+      // Based on the backend implementation, this means that the returned projects should always be either claimed or unclaimed.
+      // If this error is thrown, it means that there probably is a bug in the backend.
+      return shouldNeverHappen(
+        `Unprocessable verification status: ${parent.id}.`,
+      );
     },
   },
   ClaimedProject: {
@@ -119,20 +99,22 @@ const projectResolvers = {
       context: ContextValue,
     ): Promise<Splits> => {
       const {
-        loaders: {
-          projectsByIdsLoader,
-          dripListsByIdsLoader,
-          repoDriverSplitReceiversByProjectIdsLoader,
-          addressDriverSplitReceiversByProjectIdsLoader,
-          nftDriverSplitReceiversByProjectDataLoader,
+        dataSources: {
+          projectsDb,
+          dripListsDb,
+          receiversOfTypeAddressDb,
+          receiversOfTypeProjectDb,
+          receiversOfTypeDripListDb,
         },
       } = context;
 
-      const addressDriverSplitReceivers =
-        await addressDriverSplitReceiversByProjectIdsLoader.load(project.id);
+      const receiversOfTypeAddressModels =
+        await receiversOfTypeAddressDb.getReceiversOfTypeAddressByProjectId(
+          project.id,
+        );
 
       const maintainersAndAddressDependencies = groupBy(
-        addressDriverSplitReceivers.map((receiver) => ({
+        receiversOfTypeAddressModels.map((receiver) => ({
           driver: Driver.ADDRESS,
           weight: receiver.weight,
           receiverType: receiver.type,
@@ -155,18 +137,16 @@ const projectResolvers = {
           AddressDriverSplitReceiverType.ProjectDependency,
         ) as AddressReceiver[]) || [];
 
-      const repoDriverSplitReceivers =
-        await repoDriverSplitReceiversByProjectIdsLoader.load(project.id);
+      const receiversOfTypeProjectModels =
+        await receiversOfTypeProjectDb.getReceiversOfTypeProjectByProjectId(
+          project.id,
+        );
 
-      const splitsProjectIds: ProjectAccountId[] = [];
-      for (const receiver of repoDriverSplitReceivers) {
-        splitsProjectIds.push(receiver.fundeeProjectId || shouldNeverHappen());
-      }
+      const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
+        receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
+      );
 
-      const splitsProjects =
-        await projectsByIdsLoader.loadMany(splitsProjectIds);
-
-      const dependenciesOfTypeProject = repoDriverSplitReceivers.map(
+      const dependenciesOfTypeProject = receiversOfTypeProjectModels.map(
         (receiver) => ({
           driver: Driver.REPO,
           weight: receiver.weight,
@@ -176,7 +156,7 @@ const projectResolvers = {
             accountId: receiver.fundeeProjectId,
           },
           project:
-            (splitsProjects
+            (splitsOfTypeProjectModels
               .filter(
                 (p): p is ProjectModel => p && (p as any).id !== undefined,
               )
@@ -186,33 +166,33 @@ const projectResolvers = {
         }),
       );
 
-      const dripListSplitReceivers =
-        await nftDriverSplitReceiversByProjectDataLoader.load(project.id);
-
-      const dripListProjectIds: DripListAccountId[] = [];
-      for (const receiver of dripListSplitReceivers) {
-        dripListProjectIds.push(
-          receiver.fundeeDripListId || shouldNeverHappen(),
+      const receiversOfTypeDripListModels =
+        await receiversOfTypeDripListDb.getReceiversOfTypeDripListByProjectId(
+          project.id,
         );
-      }
 
-      const dripListSplits =
-        await dripListsByIdsLoader.loadMany(dripListProjectIds);
+      const splitsOfTypeDripListModels = await dripListsDb.getDripListsByIds(
+        receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
+      );
 
-      const dripListReceivers = dripListSplitReceivers.map((receiver) => ({
-        driver: Driver.NFT,
-        weight: receiver.weight,
-        account: {
+      const dripListReceivers = receiversOfTypeDripListModels.map(
+        (receiver) => ({
           driver: Driver.NFT,
-          accountId: receiver.fundeeDripListId,
-        },
-        dripList:
-          (dripListSplits
-            .filter((l): l is DripListModel => l && (l as any).id !== undefined)
-            .find(
-              (p) => (p as any).id === receiver.fundeeDripListId,
-            ) as unknown as DripList) || shouldNeverHappen(),
-      }));
+          weight: receiver.weight,
+          account: {
+            driver: Driver.NFT,
+            accountId: receiver.fundeeDripListId,
+          },
+          dripList:
+            (splitsOfTypeDripListModels
+              .filter(
+                (l): l is DripListModel => l && (l as any).id !== undefined,
+              )
+              .find(
+                (p) => (p as any).id === receiver.fundeeDripListId,
+              ) as unknown as DripList) || shouldNeverHappen(),
+        }),
+      );
 
       return {
         maintainers,

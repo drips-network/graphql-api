@@ -1,13 +1,11 @@
 import { Op } from 'sequelize';
 import { WebSocketProvider, ethers } from 'ethers';
-import type { Forge, ProjectAccountId } from '../common/types';
+import type { Forge, ProjectId } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
 import { RepoDriver__factory } from '../generated/contracts';
 
-export async function getProjects(
-  ids: ProjectAccountId[],
-): Promise<ProjectModel[]> {
+export async function getProjects(ids: ProjectId[]): Promise<ProjectModel[]> {
   return ProjectModel.findAll({
     where: {
       id: {
@@ -41,7 +39,7 @@ function toContractForge(forge: Forge): 0 | 1 {
   }
 }
 
-export async function verifyRepoExists(url: string) {
+export async function doesRepoExists(url: string) {
   const res = await fetch(url);
 
   return res.status === 200;
@@ -78,6 +76,7 @@ export async function toFakeUnclaimedProject(url: string) {
   const repoDriver = RepoDriver__factory.connect(repoDriverAddress, provider);
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
+
   return {
     id: (
       await repoDriver.calcAccountId(toContractForge(forge), nameAsBytesLike)

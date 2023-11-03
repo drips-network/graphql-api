@@ -1,44 +1,22 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import resolvers from './resolvers';
-import { initDb } from './database';
 import typeDefs from './schema';
 import config from './common/config';
-import {
-  nftDriverSplitReceiversByProjectDataLoader,
-  projectsByIdsDataLoader,
-  repoDriverSplitReceiversByProjectIdsDataLoader,
-  addressDriverSplitReceiversByProjectIdsDataLoader,
-} from './project/projectDataLoaders';
-import {
-  nftDriverSplitReceiversByDripListIdsDataLoader,
-  dripListsByIdsDataLoader,
-  addressDriverSplitReceiversByDripListIdsDataLoader,
-  repoDriverSplitReceiversByDripListIdsDataLoader,
-} from './drip-list/dripListDataLoaders';
+import ProjectsDataSource from './dataLoaders/ProjectsDataSource';
+import connectToDatabase from './database/connectToDatabase';
+import ReceiversOfTypeProjectDataSource from './dataLoaders/ReceiversOfTypeProjectDataSource';
+import ReceiversOfTypeAddressDataSource from './dataLoaders/ReceiversOfTypeAddressDataSource';
+import DripListsDataSource from './dataLoaders/DripListsDataSource';
+import ReceiversOfTypeDripListDataSource from './dataLoaders/ReceiversOfTypeDripListDataSource';
 
 export interface ContextValue {
-  loaders: {
-    projectsByIdsLoader: ReturnType<typeof projectsByIdsDataLoader>;
-    addressDriverSplitReceiversByProjectIdsLoader: ReturnType<
-      typeof addressDriverSplitReceiversByProjectIdsDataLoader
-    >;
-    repoDriverSplitReceiversByProjectIdsLoader: ReturnType<
-      typeof repoDriverSplitReceiversByProjectIdsDataLoader
-    >;
-    nftDriverSplitReceiversByProjectDataLoader: ReturnType<
-      typeof nftDriverSplitReceiversByProjectDataLoader
-    >;
-    dripListsByIdsLoader: ReturnType<typeof dripListsByIdsDataLoader>;
-    addressDriverSplitReceiversByDripListIdsLoader: ReturnType<
-      typeof addressDriverSplitReceiversByDripListIdsDataLoader
-    >;
-    repoDriverSplitReceiversByDripListIdsLoader: ReturnType<
-      typeof repoDriverSplitReceiversByDripListIdsDataLoader
-    >;
-    nftDriverSplitReceiversByDripListIdsLoader: ReturnType<
-      typeof nftDriverSplitReceiversByDripListIdsDataLoader
-    >;
+  dataSources: {
+    projectsDb: ProjectsDataSource;
+    dripListsDb: DripListsDataSource;
+    receiversOfTypeAddressDb: ReceiversOfTypeAddressDataSource;
+    receiversOfTypeProjectDb: ReceiversOfTypeProjectDataSource;
+    receiversOfTypeDripListDb: ReceiversOfTypeDripListDataSource;
   };
 }
 
@@ -49,7 +27,7 @@ const server = new ApolloServer<ContextValue>({
 });
 
 const startServer = async () => {
-  await initDb();
+  await connectToDatabase();
 
   const { url } = await startStandaloneServer(server, {
     listen: { port: config.port },
@@ -61,21 +39,12 @@ const startServer = async () => {
       }
 
       return {
-        loaders: {
-          projectsByIdsLoader: projectsByIdsDataLoader(),
-          addressDriverSplitReceiversByProjectIdsLoader:
-            addressDriverSplitReceiversByProjectIdsDataLoader(),
-          repoDriverSplitReceiversByProjectIdsLoader:
-            repoDriverSplitReceiversByProjectIdsDataLoader(),
-          nftDriverSplitReceiversByProjectDataLoader:
-            nftDriverSplitReceiversByProjectDataLoader(),
-          dripListsByIdsLoader: dripListsByIdsDataLoader(),
-          addressDriverSplitReceiversByDripListIdsLoader:
-            addressDriverSplitReceiversByDripListIdsDataLoader(),
-          repoDriverSplitReceiversByDripListIdsLoader:
-            repoDriverSplitReceiversByDripListIdsDataLoader(),
-          nftDriverSplitReceiversByDripListIdsLoader:
-            nftDriverSplitReceiversByDripListIdsDataLoader(),
+        dataSources: {
+          projectsDb: new ProjectsDataSource(),
+          dripListsDb: new DripListsDataSource(),
+          receiversOfTypeAddressDb: new ReceiversOfTypeAddressDataSource(),
+          receiversOfTypeProjectDb: new ReceiversOfTypeProjectDataSource(),
+          receiversOfTypeDripListDb: new ReceiversOfTypeDripListDataSource(),
         },
       };
     },

@@ -1,5 +1,5 @@
 import type { WhereOptions } from 'sequelize';
-import type { DripListAccountId, ProjectAccountId } from '../common/types';
+import type { DripListId } from '../common/types';
 import DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
@@ -18,7 +18,7 @@ const dripListResolvers = {
   Query: {
     async dripList(
       _parent: any,
-      args: { id: DripListAccountId },
+      args: { id: DripListId },
     ): Promise<DripListModel | null> {
       const dripList = await DripListModel.findByPk(args.id);
 
@@ -60,19 +60,20 @@ const dripListResolvers = {
       context: ContextValue,
     ): Promise<SplitsReceiver[]> => {
       const {
-        loaders: {
-          projectsByIdsLoader,
-          dripListsByIdsLoader,
-          repoDriverSplitReceiversByDripListIdsLoader,
-          addressDriverSplitReceiversByDripListIdsLoader,
-          nftDriverSplitReceiversByDripListIdsLoader,
+        dataSources: {
+          projectsDb,
+          dripListsDb,
+          receiversOfTypeAddressDb,
+          receiversOfTypeProjectDb,
+          receiversOfTypeDripListDb,
         },
       } = context;
 
-      const addressDriverSplitReceivers =
-        await addressDriverSplitReceiversByDripListIdsLoader.load(dripList.id);
-
-      const addressSplits = addressDriverSplitReceivers.map((receiver) => ({
+      const receiversOfTypeAddressModels =
+        await receiversOfTypeAddressDb.getReceiversOfTypeAddressByDripListId(
+          dripList.id,
+        );
+      const addressSplits = receiversOfTypeAddressModels.map((receiver) => ({
         driver: Driver.ADDRESS,
         weight: receiver.weight,
         receiverType: receiver.type,
@@ -83,18 +84,16 @@ const dripListResolvers = {
         },
       })) as AddressReceiver[];
 
-      const repoDriverSplitReceivers =
-        await repoDriverSplitReceiversByDripListIdsLoader.load(dripList.id);
+      const receiversOfTypeProjectModels =
+        await receiversOfTypeProjectDb.getReceiversOfTypeProjectByDripListId(
+          dripList.id,
+        );
 
-      const splitsProjectIds: ProjectAccountId[] = [];
-      for (const receiver of repoDriverSplitReceivers) {
-        splitsProjectIds.push(receiver.fundeeProjectId || shouldNeverHappen());
-      }
+      const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
+        receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
+      );
 
-      const projectSplits =
-        await projectsByIdsLoader.loadMany(splitsProjectIds);
-
-      const projectReceivers = repoDriverSplitReceivers.map((receiver) => ({
+      const projectReceivers = receiversOfTypeProjectModels.map((receiver) => ({
         driver: Driver.REPO,
         weight: receiver.weight,
         receiverType: receiver.type,
@@ -103,7 +102,7 @@ const dripListResolvers = {
           accountId: receiver.fundeeProjectId,
         },
         project:
-          (projectSplits
+          (splitsOfTypeProjectModels
             .filter(
               (p): p is GitProjectModel => p && (p as any).id !== undefined,
             )
@@ -112,33 +111,33 @@ const dripListResolvers = {
             ) as unknown as Project) || shouldNeverHappen(),
       }));
 
-      const dripListSplitReceivers =
-        await nftDriverSplitReceiversByDripListIdsLoader.load(dripList.id);
-
-      const dripListProjectIds: DripListAccountId[] = [];
-      for (const receiver of dripListSplitReceivers) {
-        dripListProjectIds.push(
-          receiver.fundeeDripListId || shouldNeverHappen(),
+      const receiversOfTypeDripListModels =
+        await receiversOfTypeDripListDb.getReceiversOfTypeDripListByDripListId(
+          dripList.id,
         );
-      }
 
-      const dripListSplits =
-        await dripListsByIdsLoader.loadMany(dripListProjectIds);
+      const splitsOfTypeDripListModels = await dripListsDb.getDripListsByIds(
+        receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
+      );
 
-      const dripListReceivers = dripListSplitReceivers.map((receiver) => ({
-        driver: Driver.NFT,
-        weight: receiver.weight,
-        account: {
+      const dripListReceivers = receiversOfTypeDripListModels.map(
+        (receiver) => ({
           driver: Driver.NFT,
-          accountId: receiver.fundeeDripListId,
-        },
-        dripList:
-          (dripListSplits
-            .filter((l): l is DripListModel => l && (l as any).id !== undefined)
-            .find(
-              (p) => (p as any).id === receiver.fundeeDripListId,
-            ) as unknown as DripList) || shouldNeverHappen(),
-      }));
+          weight: receiver.weight,
+          account: {
+            driver: Driver.NFT,
+            accountId: receiver.fundeeDripListId,
+          },
+          dripList:
+            (splitsOfTypeDripListModels
+              .filter(
+                (l): l is DripListModel => l && (l as any).id !== undefined,
+              )
+              .find(
+                (p) => (p as any).id === receiver.fundeeDripListId,
+              ) as unknown as DripList) || shouldNeverHappen(),
+        }),
+      );
 
       return [...addressSplits, ...projectReceivers, ...dripListReceivers];
     },

@@ -5,7 +5,7 @@ import commonTypeDef from './common/commonTypeDef';
 
 const rootType = gql`
   type Query {
-    project(id: ID!): Project
+    projectById(id: ID!): Project
     projectByUrl(url: String!): Project
     projects(where: ProjectWhereInput): [Project!]!
 

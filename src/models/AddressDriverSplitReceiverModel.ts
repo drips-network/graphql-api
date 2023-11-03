@@ -7,13 +7,9 @@ import type {
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
 import getSchema from '../utils/getSchema';
-import type {
-  AddressAccountId,
-  DripListAccountId,
-  ProjectAccountId,
-} from '../common/types';
-import ProjectModel from '../project/ProjectModel';
+import type { AddressDriverId, DripListId, ProjectId } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
+import ProjectModel from '../project/ProjectModel';
 
 export enum AddressDriverSplitReceiverType {
   ProjectMaintainer = 'ProjectMaintainer',
@@ -26,12 +22,12 @@ export default class AddressDriverSplitReceiverModel extends Model<
   InferCreationAttributes<AddressDriverSplitReceiverModel>
 > {
   public declare id: CreationOptional<number>; // Primary key
-  public declare funderProjectId: ProjectAccountId | null; // Foreign key
-  public declare funderDripListId: DripListAccountId | null; // Foreign key
+  public declare funderProjectId: ProjectId | null; // Foreign key
+  public declare funderDripListId: DripListId | null; // Foreign key
 
   public declare weight: number;
   public declare type: AddressDriverSplitReceiverType;
-  public declare fundeeAccountId: AddressAccountId;
+  public declare fundeeAccountId: AddressDriverId;
   public declare fundeeAccountAddress: AddressLike;
 
   public static initialize(sequelize: Sequelize): void {

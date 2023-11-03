@@ -1,11 +1,7 @@
-import type {
-  AddressAccountId,
-  DripListAccountId,
-  ProjectAccountId,
-} from '../common/types';
+import type { AddressDriverId, DripListId, ProjectId } from '../common/types';
 import getContractNameByAccountId from './getContractNameByAccountId';
 
-export function isAddressDriverAccountId(id: string): id is AddressAccountId {
+export function isAddressDriverAccountId(id: string): id is AddressDriverId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfAddressDriver =
     getContractNameByAccountId(id) === 'addressDriver';
@@ -17,7 +13,7 @@ export function isAddressDriverAccountId(id: string): id is AddressAccountId {
   return true;
 }
 
-export function isNftDriverAccountId(id: string): id is DripListAccountId {
+export function isNftDriverAccountId(id: string): id is DripListId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfNftDriver = getContractNameByAccountId(id) === 'nftDriver';
 
@@ -28,7 +24,7 @@ export function isNftDriverAccountId(id: string): id is DripListAccountId {
   return true;
 }
 
-export function isRepoDiverAccountId(id: string): id is ProjectAccountId {
+export function isRepoDiverAccountId(id: string): id is ProjectId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfRepoDriver =
     getContractNameByAccountId(id) === 'repoDriver';
