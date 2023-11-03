@@ -43,6 +43,7 @@ export interface ContextValue {
 }
 
 const server = new ApolloServer<ContextValue>({
+  introspection: true,
   typeDefs,
   resolvers,
 });
