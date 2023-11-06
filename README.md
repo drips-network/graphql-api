@@ -10,7 +10,7 @@ As "read-only" services, Drips Event Processor and Drips GraphQL API together me
 
 <br />
 
-![Overview Diagram of Drips architecture](https://github.com/drips-network/drips-events-processor/blob/a512672c503d6aeaa1d106a5271bb913456f503b/docs/assets/drips-event-processor-diagram.png?raw=true)
+![Overview Diagram of Drips architecture](https://raw.githubusercontent.com/drips-network/events-processor/main/docs/assets/drips-event-processor-diagram.png)
 
 <br />
 
