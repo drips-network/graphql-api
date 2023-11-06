@@ -30,7 +30,11 @@ const projectResolvers = {
     ): Promise<ProjectModel | null> => {
       const project = await dataSources.projectsDb.getProjectById(id);
 
-      if (!project?.isValid) {
+      if (!project) {
+        return null;
+      }
+
+      if (!project.isValid) {
         throw new Error('Project not valid.');
       }
 

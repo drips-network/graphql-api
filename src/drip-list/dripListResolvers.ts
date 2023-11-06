@@ -22,7 +22,11 @@ const dripListResolvers = {
     ): Promise<DripListModel | null> {
       const dripList = await DripListModel.findByPk(args.id);
 
-      if (!dripList?.isValid) {
+      if (!dripList) {
+        return null;
+      }
+
+      if (!dripList.isValid) {
         throw new Error('Drip List not valid.');
       }
 
