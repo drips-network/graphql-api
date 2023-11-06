@@ -1,6 +1,10 @@
 import DataLoader from 'dataloader';
 import { Op } from 'sequelize';
-import type { DripListId, ProjectId } from '../common/types';
+import {
+  DependencyType,
+  type DripListId,
+  type ProjectId,
+} from '../common/types';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 
 export default class ReceiversOfTypeDripListDataSource {
@@ -11,6 +15,7 @@ export default class ReceiversOfTypeDripListDataSource {
           funderDripListId: {
             [Op.in]: projectIds,
           },
+          type: DependencyType.ProjectDependency,
         },
       });
 
@@ -44,6 +49,7 @@ export default class ReceiversOfTypeDripListDataSource {
           funderDripListId: {
             [Op.in]: dripListIds,
           },
+          type: DependencyType.DripListDependency,
         },
       });
 

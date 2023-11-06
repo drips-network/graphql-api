@@ -15,3 +15,8 @@ export type AccountId = AddressDriverId | DripListId | ProjectId;
 export type Forge = ValuesOf<typeof FORGES_MAP>;
 export type DbSchema = SupportedNetwork & { __brand: 'dbSchema' };
 export type SupportedNetwork = (typeof SUPPORTED_NETWORKS)[number];
+
+export enum DependencyType {
+  ProjectDependency = 'ProjectDependency',
+  DripListDependency = 'DripListDependency',
+}
