@@ -61,7 +61,9 @@ export async function toFakeUnclaimedProject(url: string) {
     /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
   const match = url.match(pattern);
 
-  if (!match) return null;
+  if (!match) {
+    throw new Error(`Unsupported repository url: ${url}.`);
+  }
 
   const forge = toForge(match[1]);
   const ownerName = match[2];
@@ -80,10 +82,9 @@ export async function toFakeUnclaimedProject(url: string) {
   return {
     id: (
       await repoDriver.calcAccountId(toContractForge(forge), nameAsBytesLike)
-    ).toString(),
+    ).toString() as ProjectId,
+    name: `${ownerName}/${repoName}`,
     forge,
-    ownerName,
-    repoName,
     url,
     verificationStatus: ProjectVerificationStatus.Unclaimed,
   };
