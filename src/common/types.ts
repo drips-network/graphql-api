@@ -1,3 +1,4 @@
+import type { ProjectVerificationStatus } from '../generated/graphql';
 import type { FORGES_MAP, SUPPORTED_NETWORKS } from './constants';
 
 export type KnownAny = any;
@@ -20,3 +21,11 @@ export enum DependencyType {
   ProjectDependency = 'ProjectDependency',
   DripListDependency = 'DripListDependency',
 }
+
+export type FakeUnclaimedProject = {
+  id: ProjectId;
+  name: string;
+  forge: Forge;
+  url: string;
+  verificationStatus: ProjectVerificationStatus;
+};

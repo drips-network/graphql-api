@@ -1,6 +1,15 @@
 import type { AddressDriverId, DripListId, ProjectId } from '../common/types';
 import getContractNameByAccountId from './getContractNameByAccountId';
 
+export default function assert(
+  condition: unknown,
+  message = 'Assertion Error',
+): asserts condition {
+  if (!condition) {
+    throw new Error(message);
+  }
+}
+
 export function isAddressDriverAccountId(id: string): id is AddressDriverId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfAddressDriver =

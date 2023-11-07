@@ -1,9 +1,10 @@
 import { Op } from 'sequelize';
 import { WebSocketProvider, ethers } from 'ethers';
-import type { Forge, ProjectId } from '../common/types';
+import type { FakeUnclaimedProject, Forge, ProjectId } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
 import { RepoDriver__factory } from '../generated/contracts';
+import assert from '../utils/assert';
 
 export async function getProjects(ids: ProjectId[]): Promise<ProjectModel[]> {
   return ProjectModel.findAll({
@@ -45,29 +46,44 @@ export async function doesRepoExists(url: string) {
   return res.status === 200;
 }
 
-function toForge(forge: string): Forge {
-  switch (forge.toLocaleLowerCase()) {
-    case 'github':
-      return `GitHub`;
-    case 'gitlab':
-      return `GitLab`;
+export function toApiProject(project: ProjectModel | null) {
+  if (!project) {
+    return null;
+  }
+
+  if (!project.isValid) {
+    throw new Error('Project not valid.');
+  }
+
+  if (!(project.name && project.forge)) {
+    // Means that the relevant `OwnerUpdateRequested` event has not been processed yet.
+    return null;
+  }
+
+  if (project.verificationStatus === ProjectVerificationStatus.Claimed) {
+    return project;
+  }
+
+  return toFakeUnclaimedProject(project);
+}
+
+function toUrl(forge: Forge, projectName: string): string {
+  switch (forge) {
+    case 'GitHub':
+      return `https://github.com/${projectName}`;
     default:
-      return shouldNeverHappen(`Forge ${forge} not supported.`);
+      throw new Error(`Unsupported forge: ${forge}.`);
   }
 }
 
-export async function toFakeUnclaimedProject(url: string) {
-  const pattern =
-    /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
-  const match = url.match(pattern);
+export async function toFakeUnclaimedProject(
+  project: ProjectModel,
+): Promise<FakeUnclaimedProject> {
+  const { name, forge } = project;
 
-  if (!match) {
-    throw new Error(`Unsupported repository url: ${url}.`);
-  }
+  assert(name && forge, 'Project name and forge must be defined.');
 
-  const forge = toForge(match[1]);
-  const ownerName = match[2];
-  const repoName = match[3];
+  const { ownerName, repoName } = splitProjectName(name);
 
   const provider = new WebSocketProvider(
     `wss://mainnet.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
@@ -85,7 +101,7 @@ export async function toFakeUnclaimedProject(url: string) {
     ).toString() as ProjectId,
     name: `${ownerName}/${repoName}`,
     forge,
-    url,
-    verificationStatus: ProjectVerificationStatus.Unclaimed,
+    url: toUrl(forge, name),
+    verificationStatus: project.verificationStatus,
   };
 }

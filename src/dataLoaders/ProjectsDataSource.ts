@@ -2,11 +2,8 @@ import type { WhereOptions } from 'sequelize';
 import { Op } from 'sequelize';
 import DataLoader from 'dataloader';
 import ProjectModel from '../project/ProjectModel';
-import type { ProjectId } from '../common/types';
-import {
-  toFakeUnclaimedProject,
-  doesRepoExists,
-} from '../project/projectUtils';
+import type { FakeUnclaimedProject, ProjectId } from '../common/types';
+import { doesRepoExists, toApiProject } from '../project/projectUtils';
 import type { ProjectWhereInput } from '../generated/graphql';
 
 export default class ProjectsDataSource {
@@ -33,35 +30,34 @@ export default class ProjectsDataSource {
     },
   );
 
-  public async getProjectById(id: ProjectId): Promise<ProjectModel> {
-    return this._batchProjectsByIds.load(id);
+  public async getProjectById(
+    id: ProjectId,
+  ): Promise<ProjectModel | FakeUnclaimedProject | null> {
+    return toApiProject(await this._batchProjectsByIds.load(id));
   }
 
-  public async getProjectByUrl(url: string): Promise<ProjectModel | null> {
-    const project = await ProjectModel.findOne({ where: { url } });
+  public async getProjectByUrl(
+    url: string,
+  ): Promise<ProjectModel | FakeUnclaimedProject | null> {
+    const project = toApiProject(
+      await ProjectModel.findOne({ where: { url } }),
+    );
 
-    if (project) {
-      if (!project.isValid) {
-        throw new Error('Project not valid.');
-      }
-
-      return project;
-    }
-
-    return (await doesRepoExists(url))
-      ? (toFakeUnclaimedProject(url) as unknown as ProjectModel)
-      : null;
+    return (await doesRepoExists(url)) ? project : null;
   }
 
   public async getProjectsByFilter(
     where: ProjectWhereInput,
-  ): Promise<ProjectModel[]> {
+  ): Promise<(ProjectModel | FakeUnclaimedProject)[]> {
     const projects =
       (await ProjectModel.findAll({
         where: (where as WhereOptions) || {},
       })) || [];
 
-    return projects.filter((p) => p.isValid);
+    return projects
+      .filter((p) => p.isValid)
+      .map(toApiProject)
+      .filter(Boolean) as (ProjectModel | FakeUnclaimedProject)[];
   }
 
   public async getProjectsByIds(ids: ProjectId[]): Promise<ProjectModel[]> {

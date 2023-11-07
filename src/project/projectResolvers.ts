@@ -1,4 +1,4 @@
-import type { ProjectId } from '../common/types';
+import type { FakeUnclaimedProject, ProjectId } from '../common/types';
 import type ProjectModel from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
 import { splitProjectName } from './projectUtils';
@@ -27,30 +27,19 @@ const projectResolvers = {
       _: any,
       { id }: { id: ProjectId },
       { dataSources }: ContextValue,
-    ): Promise<ProjectModel | null> => {
-      const project = await dataSources.projectsDb.getProjectById(id);
-
-      if (!project) {
-        return null;
-      }
-
-      if (!project.isValid) {
-        throw new Error('Project not valid.');
-      }
-
-      return project;
-    },
+    ): Promise<ProjectModel | FakeUnclaimedProject | null> =>
+      dataSources.projectsDb.getProjectById(id),
     projectByUrl: async (
       _: any,
       { url }: { url: string },
       { dataSources }: ContextValue,
-    ): Promise<ProjectModel | null> =>
+    ): Promise<ProjectModel | FakeUnclaimedProject | null> =>
       dataSources.projectsDb.getProjectByUrl(url),
     projects: async (
       _: any,
       { where }: { where: ProjectWhereInput },
       { dataSources }: ContextValue,
-    ): Promise<ProjectModel[]> =>
+    ): Promise<(ProjectModel | FakeUnclaimedProject)[]> =>
       dataSources.projectsDb.getProjectsByFilter(where),
   },
   Project: {
@@ -59,16 +48,7 @@ const projectResolvers = {
         return 'ClaimedProject';
       }
 
-      if (parent.verificationStatus === ProjectVerificationStatus.Unclaimed) {
-        return 'UnclaimedProject';
-      }
-
-      // The API queries the database for projects that are VALID.
-      // Based on the backend implementation, this means that the returned projects should always be either claimed or unclaimed.
-      // If this error is thrown, it means that there probably is a bug in the backend.
-      return shouldNeverHappen(
-        `Unprocessable verification status: ${parent.id}.`,
-      );
+      return 'UnclaimedProject';
     },
   },
   ClaimedProject: {
@@ -243,9 +223,7 @@ const projectResolvers = {
       };
     },
     verificationStatus(project: ProjectModel): ProjectVerificationStatus {
-      return project.verificationStatus === ProjectVerificationStatus.Unclaimed
-        ? project.verificationStatus
-        : shouldNeverHappen();
+      return project.verificationStatus;
     },
   },
 };
