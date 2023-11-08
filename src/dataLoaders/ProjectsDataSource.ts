@@ -3,7 +3,11 @@ import { Op } from 'sequelize';
 import DataLoader from 'dataloader';
 import ProjectModel from '../project/ProjectModel';
 import type { FakeUnclaimedProject, ProjectId } from '../common/types';
-import { doesRepoExists, toApiProject } from '../project/projectUtils';
+import {
+  doesRepoExists,
+  toApiProject,
+  toFakeUnclaimedProjectFromUrl,
+} from '../project/projectUtils';
 import type { ProjectWhereInput } from '../generated/graphql';
 
 export default class ProjectsDataSource {
@@ -39,11 +43,15 @@ export default class ProjectsDataSource {
   public async getProjectByUrl(
     url: string,
   ): Promise<ProjectModel | FakeUnclaimedProject | null> {
-    const project = toApiProject(
-      await ProjectModel.findOne({ where: { url } }),
-    );
+    const project = await ProjectModel.findOne({ where: { url } });
 
-    return (await doesRepoExists(url)) ? project : null;
+    if (project) {
+      return toApiProject(project);
+    }
+
+    return (await doesRepoExists(url))
+      ? toFakeUnclaimedProjectFromUrl(url)
+      : null;
   }
 
   public async getProjectsByFilter(

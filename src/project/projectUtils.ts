@@ -46,7 +46,7 @@ export async function doesRepoExists(url: string) {
   return res.status === 200;
 }
 
-export function toApiProject(project: ProjectModel | null) {
+export function toApiProject(project: ProjectModel) {
   if (!project) {
     return null;
   }
@@ -65,6 +65,51 @@ export function toApiProject(project: ProjectModel | null) {
   }
 
   return toFakeUnclaimedProject(project);
+}
+
+function toForge(forge: string): Forge {
+  switch (forge.toLocaleLowerCase()) {
+    case 'github':
+      return `GitHub`;
+    case 'gitlab':
+      return `GitLab`;
+    default:
+      return shouldNeverHappen(`Forge ${forge} not supported.`);
+  }
+}
+
+export async function toFakeUnclaimedProjectFromUrl(url: string) {
+  const pattern =
+    /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
+  const match = url.match(pattern);
+
+  if (!match) {
+    throw new Error(`Unsupported repository url: ${url}.`);
+  }
+
+  const forge = toForge(match[1]);
+  const ownerName = match[2];
+  const repoName = match[3];
+
+  const provider = new WebSocketProvider(
+    `wss://mainnet.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
+  );
+
+  const repoDriverAddress = '0x770023d55D09A9C110694827F1a6B32D5c2b373E';
+
+  const repoDriver = RepoDriver__factory.connect(repoDriverAddress, provider);
+
+  const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
+
+  return {
+    id: (
+      await repoDriver.calcAccountId(toContractForge(forge), nameAsBytesLike)
+    ).toString() as ProjectId,
+    name: `${ownerName}/${repoName}`,
+    forge,
+    url,
+    verificationStatus: ProjectVerificationStatus.Unclaimed,
+  };
 }
 
 function toUrl(forge: Forge, projectName: string): string {
@@ -102,6 +147,7 @@ export async function toFakeUnclaimedProject(
     name: `${ownerName}/${repoName}`,
     forge,
     url: toUrl(forge, name),
-    verificationStatus: project.verificationStatus,
+    verificationStatus:
+      project.verificationStatus ?? ProjectVerificationStatus.Unclaimed,
   };
 }

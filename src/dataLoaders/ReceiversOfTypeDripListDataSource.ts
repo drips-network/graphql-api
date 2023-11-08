@@ -8,11 +8,11 @@ import {
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 
 export default class ReceiversOfTypeDripListDataSource {
-  private readonly _batchReceiversOfTypeDripListByProjectListIds =
-    new DataLoader(async (projectIds: readonly ProjectId[]) => {
+  private readonly _batchReceiversOfTypeDripListByProjectIds = new DataLoader(
+    async (projectIds: readonly ProjectId[]) => {
       const receivers = await DripListSplitReceiverModel.findAll({
         where: {
-          funderDripListId: {
+          funderProjectId: {
             [Op.in]: projectIds,
           },
           type: DependencyType.ProjectDependency,
@@ -34,12 +34,13 @@ export default class ReceiversOfTypeDripListDataSource {
       return projectIds.map(
         (id) => receiversOfTypeDripListToProjectListMapping[id] || [],
       );
-    });
+    },
+  );
 
   public async getReceiversOfTypeDripListByProjectId(
     id: ProjectId,
   ): Promise<DripListSplitReceiverModel[]> {
-    return this._batchReceiversOfTypeDripListByProjectListIds.load(id);
+    return this._batchReceiversOfTypeDripListByProjectIds.load(id);
   }
 
   private readonly _batchReceiversOfTypeDripListByDripListIds = new DataLoader(
