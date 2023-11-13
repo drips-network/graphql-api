@@ -10,10 +10,9 @@ const projectTypeDef = gql`
     PendingMetadata
   }
 
-  type AddressDriverAccount {
-    accountId: ID!
-    driver: Driver!
-    address: String!
+  type Splits {
+    maintainers: [AddressReceiver!]!
+    dependencies: [SplitsReceiver!]!
   }
 
   type ClaimedProject {

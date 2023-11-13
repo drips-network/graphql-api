@@ -2,7 +2,7 @@ import gql from 'graphql-tag';
 
 const dripListTypeDef = gql`
   type DripList {
-    name: String
+    name: String!
     creator: String!
     description: String
     splits: [SplitsReceiver!]!

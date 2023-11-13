@@ -54,11 +54,6 @@ const commonTypeDef = gql`
     account: NftDriverAccount!
   }
 
-  type Splits {
-    maintainers: [AddressReceiver!]!
-    dependencies: [SplitsReceiver!]!
-  }
-
   union SplitsReceiver = AddressReceiver | ProjectReceiver | DripListReceiver
 
   enum Forge {
