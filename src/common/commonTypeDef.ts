@@ -7,6 +7,11 @@ const commonTypeDef = gql`
     NFT
   }
 
+  interface Amount {
+    tokenAddress: String!
+    amount: String!
+  }
+
   interface Account {
     driver: Driver!
     accountId: ID!

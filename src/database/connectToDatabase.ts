@@ -5,6 +5,7 @@ import DripListModel from '../drip-list/DripListModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import config from '../common/config';
+import GivenEventModel from '../given-event/GivenEventModel';
 
 export default async function connectToDatabase() {
   const dbConnection = new Sequelize(`${config.postgresConnectionString}`, {});
@@ -16,4 +17,5 @@ export default async function connectToDatabase() {
   DripListSplitReceiverModel.initialize(dbConnection);
   RepoDriverSplitReceiverModel.initialize(dbConnection);
   AddressDriverSplitReceiverModel.initialize(dbConnection);
+  GivenEventModel.initialize(dbConnection);
 }

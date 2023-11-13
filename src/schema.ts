@@ -2,6 +2,7 @@ import gql from 'graphql-tag';
 import dripListTypeDef from './drip-list/dripListTypeDef';
 import gitProjectTypeDef from './project/projectTypeDef';
 import commonTypeDef from './common/commonTypeDef';
+import givenEventTypeDef from './given-event/givenEventTypeDef';
 
 const rootTypeDef = gql`
   type Query {
@@ -11,6 +12,7 @@ const rootTypeDef = gql`
 
     dripList(id: ID!): DripList
     dripLists(where: DripListWhereInput): [DripList!]!
+    gives(where: GiveWhereInput): [Give!]!
   }
 `;
 
@@ -19,6 +21,7 @@ const typeDefs = [
   dripListTypeDef,
   gitProjectTypeDef,
   commonTypeDef,
+  givenEventTypeDef,
 ];
 
 export default typeDefs;
