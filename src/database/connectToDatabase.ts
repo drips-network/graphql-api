@@ -4,10 +4,13 @@ import AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceive
 import DripListModel from '../drip-list/DripListModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
-import config from '../common/config';
+import appSettings from '../common/appSettings';
 
 export default async function connectToDatabase() {
-  const dbConnection = new Sequelize(`${config.postgresConnectionString}`, {});
+  const dbConnection = new Sequelize(
+    `${appSettings.postgresConnectionString}`,
+    {},
+  );
 
   await dbConnection.authenticate();
 

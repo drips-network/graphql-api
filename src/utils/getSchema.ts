@@ -1,6 +1,6 @@
 import type { DbSchema } from '../common/types';
-import config from '../common/config';
+import appSettings from '../common/appSettings';
 
 export default function getSchema(): DbSchema {
-  return config.network as DbSchema;
+  return appSettings.network as DbSchema;
 }

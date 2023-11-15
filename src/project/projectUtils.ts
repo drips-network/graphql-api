@@ -5,7 +5,7 @@ import shouldNeverHappen from '../utils/shouldNeverHappen';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
 import { RepoDriver__factory } from '../generated/contracts';
 import assert from '../utils/assert';
-import config from '../common/config';
+import appSettings from '../common/appSettings';
 
 export async function getProjects(ids: ProjectId[]): Promise<ProjectModel[]> {
   return ProjectModel.findAll({
@@ -42,7 +42,7 @@ function toContractForge(forge: Forge): 0 | 1 {
 }
 
 export async function doesRepoExists(url: string) {
-  if (config.pretendAllReposExist) return true;
+  if (appSettings.pretendAllReposExist) return true;
 
   const res = await fetch(url);
 
