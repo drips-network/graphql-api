@@ -1,5 +1,9 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
+import {
+  ApolloServerPluginLandingPageLocalDefault,
+  ApolloServerPluginLandingPageProductionDefault,
+} from '@apollo/server/plugin/landingPage/default';
 import resolvers from './resolvers';
 import typeDefs from './schema';
 import config from './common/config';
@@ -24,6 +28,11 @@ const server = new ApolloServer<ContextValue>({
   introspection: true,
   typeDefs,
   resolvers,
+  plugins: [
+    config.environment === 'mainnet'
+      ? ApolloServerPluginLandingPageProductionDefault()
+      : ApolloServerPluginLandingPageLocalDefault(),
+  ],
 });
 
 const startServer = async () => {
