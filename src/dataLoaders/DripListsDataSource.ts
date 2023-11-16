@@ -15,7 +15,6 @@ export default class DripListsDataSource {
           },
           isValid: true,
           name: { [Op.not]: null },
-          description: { [Op.not]: null },
         },
       });
 
@@ -43,7 +42,7 @@ export default class DripListsDataSource {
         where: (where as WhereOptions) || {},
       })) || [];
 
-    return dripLists.filter((p) => p.isValid && p.name && p.description);
+    return dripLists.filter((p) => p.isValid && p.name);
   }
 
   public async getDripListsByIds(ids: DripListId[]): Promise<DripListModel[]> {
