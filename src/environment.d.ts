@@ -9,6 +9,7 @@ declare global {
       NETWORK: SupportedNetwork;
       ENV: 'local' | SupportedNetwork;
       POSTGRES_CONNECTION_STRING: string;
+      PRETEND_ALL_REPOS_EXIST: boolean;
     }
   }
 }
