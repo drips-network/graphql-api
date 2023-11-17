@@ -1,10 +1,10 @@
-import type { WhereOptions } from 'sequelize';
 import type { DripListId } from '../common/types';
-import DripListModel from './DripListModel';
+import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
   AddressReceiver,
   DripList,
+  DripListWhereInput,
   NftDriverAccount,
   Project,
   SplitsReceiver,
@@ -16,32 +16,18 @@ import type GitProjectModel from '../project/ProjectModel';
 
 const dripListResolvers = {
   Query: {
-    async dripList(
-      _parent: any,
-      args: { id: DripListId },
-    ): Promise<DripListModel | null> {
-      const dripList = await DripListModel.findByPk(args.id);
-
-      if (!dripList) {
-        return null;
-      }
-
-      if (!dripList.isValid) {
-        throw new Error('Drip List not valid.');
-      }
-
-      return dripList;
-    },
-    async dripLists(_parent: any, args: { where?: WhereOptions }) {
-      const { where } = args;
-
-      const dripLists =
-        (await DripListModel.findAll({
-          where: where || {},
-        })) || [];
-
-      return dripLists.filter((p) => p.isValid);
-    },
+    dripList: async (
+      _: any,
+      { id }: { id: DripListId },
+      { dataSources }: ContextValue,
+    ): Promise<DripListModel | null> =>
+      dataSources.dripListsDb.getDripListById(id),
+    dripLists: async (
+      _: any,
+      { where }: { where: DripListWhereInput },
+      { dataSources }: ContextValue,
+    ): Promise<DripListModel[]> =>
+      dataSources.dripListsDb.getDripListsByFilter(where),
   },
   DripList: {
     name: (dripList: DripListModel) => dripList.name,
