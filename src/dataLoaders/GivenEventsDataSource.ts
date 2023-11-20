@@ -1,74 +1,54 @@
 import type { WhereOptions } from 'sequelize';
 import { Op } from 'sequelize';
 import DataLoader from 'dataloader';
-import ProjectModel from '../project/ProjectModel';
-import type { FakeUnclaimedProject, ProjectId } from '../common/types';
-import {
-  doesRepoExists,
-  toApiProject,
-  toFakeUnclaimedProjectFromUrl,
-} from '../project/projectUtils';
-import type { ProjectWhereInput } from '../generated/graphql';
+import type { GiveWhereInput } from '../generated/graphql';
+import GivenEventModel from '../given-event/GivenEventModel';
+
+function unwrapGivenEventIds(ids: readonly [string, string][], value: 'transactionHash' | 'logIndex') {
+  return ids.map((v) => v[value === "transactionHash" ? 0 : 1]);
+}
 
 export default class GivenEventsDataSource {
-  private readonly _batchProjectsByIds = new DataLoader(
-    async (projectIds: readonly ProjectId[]): Promise<ProjectModel[]> => {
-      const projects = await ProjectModel.findAll({
+  private readonly _batchGivenEventsByIds = new DataLoader(
+    async (givenEventIds: readonly [string, string][]): Promise<GivenEventModel[]> => {
+      const givenEvents = await GivenEventModel.findAll({
         where: {
-          id: {
-            [Op.in]: projectIds,
+          transactionHash: {
+            [Op.in]: unwrapGivenEventIds(givenEventIds, 'transactionHash'),
           },
-          isValid: true,
+          logIndex: {
+            [Op.in]: unwrapGivenEventIds(givenEventIds, 'logIndex'),
+          },
         },
       });
 
-      const projectIdToProjectMap = projects.reduce<
-        Record<ProjectId, ProjectModel>
-      >((mapping, project) => {
-        mapping[project.id] = project; // eslint-disable-line no-param-reassign
+      const idToEventMap = givenEvents.reduce<
+        Record<`${string}-${string}`, GivenEventModel>
+      >((mapping, event) => {
+        mapping[`${event.transactionHash}-${event.logIndex}`] = event; // eslint-disable-line no-param-reassign
 
         return mapping;
       }, {});
 
-      return projectIds.map((id) => projectIdToProjectMap[id]);
+      return givenEventIds.map((id) => idToEventMap[`${id[0]}-${id[1]}`]);
     },
   );
 
-  public async getProjectById(
-    id: ProjectId,
-  ): Promise<ProjectModel | FakeUnclaimedProject | null> {
-    return toApiProject(await this._batchProjectsByIds.load(id));
-  }
-
-  public async getProjectByUrl(
-    url: string,
-  ): Promise<ProjectModel | FakeUnclaimedProject | null> {
-    const project = await ProjectModel.findOne({ where: { url } });
-
-    if (project) {
-      return toApiProject(project);
-    }
-
-    return (await doesRepoExists(url))
-      ? toFakeUnclaimedProjectFromUrl(url)
-      : null;
-  }
-
-  public async getProjectsByFilter(
-    where: ProjectWhereInput,
-  ): Promise<(ProjectModel | FakeUnclaimedProject)[]> {
-    const projects =
-      (await ProjectModel.findAll({
+  public async getGivenEventsByFilter(
+    where: GiveWhereInput,
+  ): Promise<GivenEventModel[]> {
+    const givenEvents =
+      (await GivenEventModel.findAll({
         where: (where as WhereOptions) || {},
       })) || [];
 
-    return projects
-      .filter((p) => p.isValid)
-      .map(toApiProject)
-      .filter(Boolean) as (ProjectModel | FakeUnclaimedProject)[];
+    return givenEvents
   }
 
-  public async getProjectsByIds(ids: ProjectId[]): Promise<ProjectModel[]> {
-    return this._batchProjectsByIds.loadMany(ids) as Promise<ProjectModel[]>;
+  /**
+   * @param ids - Array of [transactionHash, logIndex] tuples. 
+   */
+  public async getGivenEventsByIds(ids: [string, string][]): Promise<GivenEventModel[]> {
+    return this._batchGivenEventsByIds.loadMany(ids)  as Promise<GivenEventModel[]>;
   }
 }

@@ -1,5 +1,5 @@
 import { Op } from 'sequelize';
-import { WebSocketProvider, ethers } from 'ethers';
+import { JsonRpcProvider, WebSocketProvider, ethers } from 'ethers';
 import type { FakeUnclaimedProject, Forge, ProjectId } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
@@ -94,8 +94,8 @@ export async function toFakeUnclaimedProjectFromUrl(url: string) {
   const ownerName = match[2];
   const repoName = match[3];
 
-  const provider = new WebSocketProvider(
-    `wss://mainnet.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
+  const provider = new JsonRpcProvider(
+    `mainnet.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
   );
 
   const repoDriverAddress = '0x770023d55D09A9C110694827F1a6B32D5c2b373E';
@@ -134,7 +134,7 @@ export async function toFakeUnclaimedProject(
   const { ownerName, repoName } = splitProjectName(name);
 
   const provider = new WebSocketProvider(
-    `wss://mainnet.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
+    `wss://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
   );
 
   const repoDriverAddress = '0x770023d55D09A9C110694827F1a6B32D5c2b373E';

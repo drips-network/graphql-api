@@ -9,10 +9,12 @@ import ReceiversOfTypeProjectDataSource from './dataLoaders/ReceiversOfTypeProje
 import ReceiversOfTypeAddressDataSource from './dataLoaders/ReceiversOfTypeAddressDataSource';
 import DripListsDataSource from './dataLoaders/DripListsDataSource';
 import ReceiversOfTypeDripListDataSource from './dataLoaders/ReceiversOfTypeDripListDataSource';
+import GivenEventsDataSource from './dataLoaders/GivenEventsDataSource';
 
 export interface ContextValue {
   dataSources: {
     projectsDb: ProjectsDataSource;
+    givenEventsDb: GivenEventsDataSource;
     dripListsDb: DripListsDataSource;
     receiversOfTypeAddressDb: ReceiversOfTypeAddressDataSource;
     receiversOfTypeProjectDb: ReceiversOfTypeProjectDataSource;
@@ -41,6 +43,7 @@ const startServer = async () => {
       return {
         dataSources: {
           projectsDb: new ProjectsDataSource(),
+          givenEventsDb: new GivenEventsDataSource(),
           dripListsDb: new DripListsDataSource(),
           receiversOfTypeAddressDb: new ReceiversOfTypeAddressDataSource(),
           receiversOfTypeProjectDb: new ReceiversOfTypeProjectDataSource(),
