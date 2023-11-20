@@ -1,4 +1,4 @@
-GQL_URL=http://localhost:8080
+GQL_URL=http://drips-gql-api:8080
 GQL_ACCESS_TOKEN=afdb8b7e-8fa7-4de9-bd95-b650b839e745
 
 PINATA_SDK_KEY=1234

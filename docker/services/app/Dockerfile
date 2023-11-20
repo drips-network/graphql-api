@@ -1,7 +1,13 @@
-FROM node:20-alpine3.16
+FROM node:20
 
-COPY ./app/startup.sh /
+RUN git clone -b main --single-branch https://github.com/drips-network/app.git
+COPY ./services/app/envfile /app/.env
+COPY ./services/app/scripts /
 
-RUN apk add --no-cache git
+WORKDIR /app
 
-CMD ["/startup.sh"]
+RUN npm ci
+
+WORKDIR /
+
+CMD ["sh", "build-and-start-tests.sh"]

@@ -1,8 +1,6 @@
 services:
   postgres-event-processor:
     image: postgres
-    ports:
-      - '5433:5432'
     command: ["postgres", "-cshared_preload_libraries=pg_stat_statements"]
     environment:
       POSTGRES_USER: user
@@ -20,5 +18,3 @@ services:
   redis:
     image: redis:latest
     restart: unless-stopped
-    ports:
-      - '6379:6379'

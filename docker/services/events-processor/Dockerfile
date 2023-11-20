@@ -7,7 +7,7 @@ WORKDIR /app
 RUN git clone https://github.com/drips-network/events-processor.git
 
 WORKDIR /app/events-processor
-COPY ./events-processor/envfile .env.local
+COPY ./services/events-processor/envfile .env.local
 
 RUN npm ci
 RUN npm run build
