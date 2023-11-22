@@ -9,6 +9,7 @@
     "lint": "prettier --check . && eslint src/**/*.ts",
     "commit": "npx cz",
     "format": "prettier --write .",
+    "test:e2e": "docker compose up --attach app --build --exit-code-from app && docker compose down",
     "build:graphql": "graphql-codegen",
     "build:contracts": "typechain --target=ethers-v6 --out-dir ./src/generated/contracts ./src/abi/**.json",
     "build": "npm run build:contracts && npm run build:graphql && tsc",
