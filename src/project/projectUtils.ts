@@ -1,10 +1,11 @@
 import { Op } from 'sequelize';
-import { WebSocketProvider, ethers } from 'ethers';
+import { JsonRpcProvider, WebSocketProvider, ethers } from 'ethers';
 import type { FakeUnclaimedProject, Forge, ProjectId } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
 import { RepoDriver__factory } from '../generated/contracts';
 import assert from '../utils/assert';
+import config from '../common/config';
 
 export async function getProjects(ids: ProjectId[]): Promise<ProjectModel[]> {
   return ProjectModel.findAll({
@@ -130,13 +131,12 @@ export async function toFakeUnclaimedProject(
 
   const { ownerName, repoName } = splitProjectName(name);
 
-  const provider = new WebSocketProvider(
-    `wss://mainnet.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
+  const provider = new JsonRpcProvider(config.rpcUrl);
+
+  const repoDriver = RepoDriver__factory.connect(
+    config.repoDriverAddress,
+    provider,
   );
-
-  const repoDriverAddress = '0x770023d55D09A9C110694827F1a6B32D5c2b373E';
-
-  const repoDriver = RepoDriver__factory.connect(repoDriverAddress, provider);
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
 

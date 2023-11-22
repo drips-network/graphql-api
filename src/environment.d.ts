@@ -8,6 +8,8 @@ declare global {
       INFURA_API_KEY: string;
       NETWORK: SupportedNetwork;
       POSTGRES_CONNECTION_STRING: string;
+      RPC_URL: string | undefined;
+      REPO_DRIVER_ADDRESS: string | undefined;
     }
   }
 }
