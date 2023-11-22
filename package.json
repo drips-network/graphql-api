@@ -12,9 +12,11 @@
     "build:graphql": "graphql-codegen",
     "build:contracts": "typechain --target=ethers-v6 --out-dir ./src/generated/contracts ./src/abi/**.json",
     "build": "npm run build:contracts && npm run build:graphql && tsc",
-    "start:local": "NODE_ENV=local npx nodemon",
-    "start:goerli": "NODE_ENV=goerli npx nodemon",
-    "start:mainnet": "npm run build && NODE_ENV=mainnet node dist/index.js"
+    "start:local": "ENV=local npx nodemon",
+    "start:goerli": "ENV=goerli npx nodemon",
+    "start:mainnet": "export ENV=mainnet && npm run build && node dist/index.js",
+    "start": "npm run build && node dist/index.js",
+    "check": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
