@@ -1,11 +1,12 @@
 import { Op } from 'sequelize';
-import { JsonRpcProvider, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import type { FakeUnclaimedProject, Forge, ProjectId } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
 import { RepoDriver__factory } from '../generated/contracts';
 import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
+import provider from '../common/provider';
 
 export async function getProjects(ids: ProjectId[]): Promise<ProjectModel[]> {
   return ProjectModel.findAll({
@@ -94,13 +95,10 @@ export async function toFakeUnclaimedProjectFromUrl(url: string) {
   const ownerName = match[2];
   const repoName = match[3];
 
-  const provider = new JsonRpcProvider(
-    `mainnet.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
+  const repoDriver = RepoDriver__factory.connect(
+    appSettings.repoDriverAddress,
+    provider,
   );
-
-  const repoDriverAddress = '0x770023d55D09A9C110694827F1a6B32D5c2b373E';
-
-  const repoDriver = RepoDriver__factory.connect(repoDriverAddress, provider);
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
 
@@ -133,13 +131,10 @@ export async function toFakeUnclaimedProject(
 
   const { ownerName, repoName } = splitProjectName(name);
 
-  const provider = new JsonRpcProvider(
-    `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+  const repoDriver = RepoDriver__factory.connect(
+    appSettings.repoDriverAddress,
+    provider,
   );
-
-  const repoDriverAddress = '0x770023d55D09A9C110694827F1a6B32D5c2b373E';
-
-  const repoDriver = RepoDriver__factory.connect(repoDriverAddress, provider);
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
 

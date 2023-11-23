@@ -49,9 +49,9 @@ export default class ProjectsDataSource {
       return toApiProject(project);
     }
 
-    return (await doesRepoExists(url))
-      ? toFakeUnclaimedProjectFromUrl(url)
-      : null;
+    const exists = await doesRepoExists(url);
+
+    return exists ? toFakeUnclaimedProjectFromUrl(url) : null;
   }
 
   public async getProjectsByFilter(
