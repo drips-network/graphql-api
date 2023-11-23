@@ -1,0 +1,63 @@
+services:
+  postgres-event-processor:
+    extends:
+      file: ./docker/events-processor-services.yml
+      service: postgres-event-processor
+  redis:
+    extends:
+      file: ./docker/events-processor-services.yml
+      service: redis
+  events-processor:
+    extends:
+      file: ./docker/events-processor-services.yml
+      service: events-processor
+
+  graph-node:
+    extends:
+      file: ./docker/graph-node-services.yml
+      service: graph-node
+  graph-node-postgres:
+    extends:
+      file: ./docker/graph-node-services.yml
+      service: graph-node-postgres
+  ipfs:
+    extends:
+      file: ./docker/graph-node-services.yml
+      service: ipfs
+  subgraph-deployer:
+    extends:
+      file: ./docker/graph-node-services.yml
+      service: subgraph-deployer
+
+  testnet:
+    build:
+      dockerfile: ./services/testnet/Dockerfile
+      context: ./docker
+
+  fake-pinata:
+    build:
+      dockerfile: ./services/fake-pinata/Dockerfile
+      context: ./docker
+
+  app:
+    build:
+      dockerfile: ./services/app/Dockerfile
+      context: ./docker
+    depends_on:
+      drips-gql-api:
+        condition: service_healthy
+    ports:
+      - 3001:3001
+
+  drips-gql-api:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    depends_on:
+      - postgres-event-processor
+      - events-processor
+    healthcheck:
+      test: ["CMD", "curl", "http://drips-gql-api:8080"]
+      interval: 10s
+      timeout: 20s
+      retries: 10

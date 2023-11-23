@@ -1,0 +1,20 @@
+services:
+  postgres-event-processor:
+    image: postgres
+    command: ["postgres", "-cshared_preload_libraries=pg_stat_statements"]
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: dripsdb
+      POSTGRES_INITDB_ARGS: -E UTF8 --locale=C
+
+  events-processor:
+    build:
+      dockerfile: ./services/events-processor/Dockerfile
+      context: .
+    depends_on:
+      - postgres-event-processor
+
+  redis:
+    image: redis:latest
+    restart: unless-stopped

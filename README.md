@@ -33,3 +33,13 @@ npm run start:dev
 ```
 
 to start the server.
+
+## 🧪 Running E2E Tests
+
+The repo comes with a `docker-compose.yml` configuration that runs the entire Drips stack locally in Docker, builds the frontend app, and executes its E2E test suite. This allows you to make local changes to the API, and test them against the app's current production version to ensure nothing is broken.
+
+To get started, simply run `npm run build` (to build your version of the API locally), and then `npm run test:e2e`. On first run, this will take a while to pull and build all images. Subsequent runs will be a lot faster.
+
+After you run the command, you'll see the app build, and afterwards execute tests. Once it's done, the command will exit with either 0 or 1, and display test results.
+
+If you make local changes or a new version of external services (such as the app) was published, the command will automatically rebuild the affected images.
