@@ -7,11 +7,6 @@ const commonTypeDef = gql`
     NFT
   }
 
-  interface Amount {
-    tokenAddress: String!
-    amount: String!
-  }
-
   interface Account {
     driver: Driver!
     accountId: ID!
@@ -72,6 +67,36 @@ const commonTypeDef = gql`
     repoName: String!
     ownerName: String!
   }
+
+  type DripListSupport {
+    account: NftDriverAccount!
+  }
+
+  type ProjectSupport {
+    account: RepoDriverAccount!
+  }
+
+  type OneTimeDonationSupport {
+    account: AddressDriverAccount!
+    amount: Amount!
+  }
+
+  type Amount {
+    tokenAddress: String!
+    amount: String!
+  }
+
+  type SupportGroup {
+    items: [Support!]
+  }
+
+  union SupportItem =
+      DripListSupport
+    | ProjectSupport
+    | OneTimeDonationSupport
+    | SupportGroup
+
+  union Support = DripListSupport | ProjectSupport | OneTimeDonationSupport
 `;
 
 export default commonTypeDef;

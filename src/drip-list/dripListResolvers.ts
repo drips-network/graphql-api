@@ -1,4 +1,4 @@
-import type { DripListId } from '../common/types';
+import { type DripListId } from '../common/types';
 import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
@@ -130,6 +130,26 @@ const dripListResolvers = {
       );
 
       return [...addressSplits, ...projectReceivers, ...dripListReceivers];
+    },
+    support: async (dripList: DripListModel, _: any, context: ContextValue) => {
+      const {
+        dataSources: { projectAndDripListSupportDb },
+      } = context;
+
+      const projectAndDripListSupport =
+        projectAndDripListSupportDb.getProjectAndDripListSupportByDripListId(
+          dripList.id,
+        );
+
+      const oneTimeDonationSupport =
+        projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
+          dripList.id,
+        );
+
+      return [
+        ...(await projectAndDripListSupport),
+        ...(await oneTimeDonationSupport),
+      ];
     },
   },
 };

@@ -1,9 +1,11 @@
 import DataLoader from 'dataloader';
 import { Op } from 'sequelize';
-import type { DripListId, ProjectId } from '../common/types';
-import RepoDriverSplitReceiverModel, {
-  RepoDriverSplitReceiverType,
-} from '../models/RepoDriverSplitReceiverModel';
+import {
+  DependencyType,
+  type DripListId,
+  type ProjectId,
+} from '../common/types';
+import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 
 export default class ReceiversOfTypeProjectDataSource {
   private readonly _batchReceiversOfTypeProjectByProjectIds = new DataLoader(
@@ -13,7 +15,7 @@ export default class ReceiversOfTypeProjectDataSource {
           funderProjectId: {
             [Op.in]: projectIds,
           },
-          type: RepoDriverSplitReceiverType.ProjectDependency,
+          type: DependencyType.ProjectDependency,
         },
       });
 
@@ -48,7 +50,7 @@ export default class ReceiversOfTypeProjectDataSource {
           funderDripListId: {
             [Op.in]: dripListIds,
           },
-          type: RepoDriverSplitReceiverType.DripListDependency,
+          type: DependencyType.DripListDependency,
         },
       });
 

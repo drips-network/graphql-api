@@ -7,13 +7,10 @@ import type {
 import { DataTypes, Model } from 'sequelize';
 import getSchema from '../utils/getSchema';
 import type { DripListId, ProjectId } from '../common/types';
+import { DependencyType } from '../common/types';
 import ProjectModel from '../project/ProjectModel';
 import DripListModel from '../drip-list/DripListModel';
 
-export enum RepoDriverSplitReceiverType {
-  ProjectDependency = 'ProjectDependency',
-  DripListDependency = 'DripListDependency',
-}
 export default class RepoDriverSplitReceiverModel extends Model<
   InferAttributes<RepoDriverSplitReceiverModel>,
   InferCreationAttributes<RepoDriverSplitReceiverModel>
@@ -24,7 +21,7 @@ export default class RepoDriverSplitReceiverModel extends Model<
   public declare funderDripListId: DripListId | null; // Foreign key
 
   public declare weight: number;
-  public declare type: RepoDriverSplitReceiverType;
+  public declare type: DependencyType;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -66,7 +63,7 @@ export default class RepoDriverSplitReceiverModel extends Model<
           allowNull: true,
         },
         type: {
-          type: DataTypes.ENUM(...Object.values(RepoDriverSplitReceiverType)),
+          type: DataTypes.ENUM(...Object.values(DependencyType)),
           allowNull: false,
         },
       },

@@ -24,12 +24,14 @@ const projectTypeDef = gql`
     owner: AddressDriverAccount!
     account: RepoDriverAccount!
     verificationStatus: ProjectVerificationStatus!
+    support: [SupportItem!]!
   }
 
   type UnclaimedProject {
     source: Source!
     account: RepoDriverAccount!
     verificationStatus: ProjectVerificationStatus!
+    support: [SupportItem!]!
   }
 
   input ProjectWhereInput {

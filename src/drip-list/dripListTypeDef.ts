@@ -9,6 +9,7 @@ const dripListTypeDef = gql`
     account: NftDriverAccount!
     owner: AddressDriverAccount!
     previousOwnerAddress: String!
+    support: [SupportItem!]!
   }
 
   input DripListWhereInput {

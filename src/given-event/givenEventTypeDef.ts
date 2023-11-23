@@ -1,6 +1,6 @@
-import gql from "graphql-tag";
+import gql from 'graphql-tag';
 
-export default gql`
+const givenEventTypeDef = gql`
   type Give {
     sender: Account!
     receiver: Account!
@@ -14,3 +14,5 @@ export default gql`
     tokenAddress: String
   }
 `;
+
+export default givenEventTypeDef;

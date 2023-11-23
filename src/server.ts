@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
 import {
@@ -14,6 +15,7 @@ import ReceiversOfTypeAddressDataSource from './dataLoaders/ReceiversOfTypeAddre
 import DripListsDataSource from './dataLoaders/DripListsDataSource';
 import ReceiversOfTypeDripListDataSource from './dataLoaders/ReceiversOfTypeDripListDataSource';
 import GivenEventsDataSource from './dataLoaders/GivenEventsDataSource';
+import ProjectAndDripListSupportDataSource from './dataLoaders/ProjectAndDripListSupportDataSource';
 
 export interface ContextValue {
   dataSources: {
@@ -23,6 +25,8 @@ export interface ContextValue {
     receiversOfTypeAddressDb: ReceiversOfTypeAddressDataSource;
     receiversOfTypeProjectDb: ReceiversOfTypeProjectDataSource;
     receiversOfTypeDripListDb: ReceiversOfTypeDripListDataSource;
+    projectAndDripListSupportDb: ProjectAndDripListSupportDataSource;
+    givesDb: GivenEventsDataSource;
   };
 }
 
@@ -57,6 +61,9 @@ const startServer = async () => {
           receiversOfTypeAddressDb: new ReceiversOfTypeAddressDataSource(),
           receiversOfTypeProjectDb: new ReceiversOfTypeProjectDataSource(),
           receiversOfTypeDripListDb: new ReceiversOfTypeDripListDataSource(),
+          projectAndDripListSupportDb:
+            new ProjectAndDripListSupportDataSource(),
+          givesDb: new GivenEventsDataSource(),
         },
       };
     },

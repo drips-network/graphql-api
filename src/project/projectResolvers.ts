@@ -187,6 +187,26 @@ const projectResolvers = {
         ],
       };
     },
+    support: async (project: ProjectModel, _: any, context: ContextValue) => {
+      const {
+        dataSources: { projectAndDripListSupportDb },
+      } = context;
+
+      const projectAndDripListSupport =
+        projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
+          project.id,
+        );
+
+      const oneTimeDonationSupport =
+        projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
+          project.id,
+        );
+
+      return [
+        ...(await projectAndDripListSupport),
+        ...(await oneTimeDonationSupport),
+      ];
+    },
   },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {
@@ -224,6 +244,26 @@ const projectResolvers = {
     },
     verificationStatus(project: ProjectModel): ProjectVerificationStatus {
       return project.verificationStatus;
+    },
+    support: async (project: ProjectModel, _: any, context: ContextValue) => {
+      const {
+        dataSources: { projectAndDripListSupportDb },
+      } = context;
+
+      const projectAndDripListSupport =
+        projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
+          project.id,
+        );
+
+      const oneTimeDonationSupport =
+        projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
+          project.id,
+        );
+
+      return [
+        ...(await projectAndDripListSupport),
+        ...(await oneTimeDonationSupport),
+      ];
     },
   },
 };
