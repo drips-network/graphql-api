@@ -96,7 +96,7 @@ const commonResolvers = {
 
       return {
         driver: Driver.ADDRESS,
-        accountId: givenEvent.dataValues.accountId,
+        accountId: givenEvent.accountId,
         address: getUserAddress(givenEvent.accountId),
       };
     },

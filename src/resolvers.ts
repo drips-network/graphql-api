@@ -15,6 +15,7 @@ const resolvers = {
   SupportItem: commonResolvers.SupportItem,
   ProjectSupport: commonResolvers.ProjectSupport,
   DripListSupport: commonResolvers.DripListSupport,
+  OneTimeDonationSupport: commonResolvers.OneTimeDonationSupport,
 };
 
 export default resolvers;

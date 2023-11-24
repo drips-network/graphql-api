@@ -15,7 +15,7 @@ export default class GivenEventsDataSource {
     ): Promise<GivenEventModel[]> => {
       const givenEvents = await GivenEventModel.findAll({
         where: {
-          [Op.and]: givenEventIds.map(([transactionHash, logIndex]) => ({
+          [Op.or]: givenEventIds.map(([transactionHash, logIndex]) => ({
             transactionHash,
             logIndex,
           })),
