@@ -74,12 +74,14 @@ const commonTypeDef = gql`
     account: NftDriverAccount!
     date: Date!
     weight: Int!
+    dripList: DripList!
   }
 
   type ProjectSupport {
     account: RepoDriverAccount!
     date: Date!
     weight: Int!
+    project: Project!
   }
 
   type OneTimeDonationSupport {

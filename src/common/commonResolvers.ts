@@ -58,6 +58,17 @@ const commonResolvers = {
     },
     date: (parent: { createdAt: Date }): Date => parent.createdAt,
     weight: (parent: { weight: number }): number => parent.weight,
+    project: (
+      parent: { funderProjectId: ProjectId },
+      _: any,
+      context: ContextValue,
+    ) => {
+      const {
+        dataSources: { projectsDb },
+      } = context;
+
+      return projectsDb.getProjectById(parent.funderProjectId);
+    },
   },
   DripListSupport: {
     account: async (
@@ -80,6 +91,17 @@ const commonResolvers = {
     },
     date: (parent: { createdAt: Date }): Date => parent.createdAt,
     weight: (parent: { weight: number }): number => parent.weight,
+    dripList: (
+      parent: { funderDripListId: DripListId },
+      _: any,
+      context: ContextValue,
+    ) => {
+      const {
+        dataSources: { dripListsDb },
+      } = context;
+
+      return dripListsDb.getDripListById(parent.funderDripListId);
+    },
   },
   OneTimeDonationSupport: {
     account: async (
