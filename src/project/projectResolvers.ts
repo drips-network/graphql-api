@@ -248,19 +248,16 @@ const projectResolvers = {
       } = context;
 
       const projectAndDripListSupport =
-        projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
+        await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
           project.id,
         );
 
       const oneTimeDonationSupport =
-        projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
+        await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
           project.id,
         );
 
-      return [
-        ...(await projectAndDripListSupport),
-        ...(await oneTimeDonationSupport),
-      ];
+      return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
   },
 };

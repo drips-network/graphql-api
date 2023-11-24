@@ -41,7 +41,7 @@ const commonResolvers = {
   },
   ProjectSupport: {
     account: async (
-      parent: { funderProjectId: ProjectId },
+      parent: { funderProjectId: ProjectId; weight: number },
       _: any,
       context: ContextValue,
     ): Promise<RepoDriverAccount> => {
@@ -56,10 +56,12 @@ const commonResolvers = {
         accountId: project ? project.id : shouldNeverHappen(),
       };
     },
+    date: (parent: { createdAt: Date }): Date => parent.createdAt,
+    weight: (parent: { weight: number }): number => parent.weight,
   },
   DripListSupport: {
     account: async (
-      parent: { funderDripListId: DripListId },
+      parent: { funderDripListId: DripListId; weight: number },
       _: any,
       context: ContextValue,
     ): Promise<NftDriverAccount> => {
@@ -76,6 +78,8 @@ const commonResolvers = {
         accountId: dripList ? dripList.id : shouldNeverHappen(),
       };
     },
+    date: (parent: { createdAt: Date }): Date => parent.createdAt,
+    weight: (parent: { weight: number }): number => parent.weight,
   },
   OneTimeDonationSupport: {
     account: async (
@@ -104,6 +108,7 @@ const commonResolvers = {
       tokenAddress: parent.erc20,
       amount: parent.amt,
     }),
+    date: (parent: { createdAt: Date }): Date => parent.createdAt,
   },
   SupportGroup: {
     // TODO: implement.

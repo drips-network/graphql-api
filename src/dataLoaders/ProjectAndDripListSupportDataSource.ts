@@ -67,7 +67,7 @@ export default class ProjectAndDripListSupportDataSource {
 
   private readonly _batchOneTimeDonationSupportByAccountIds = new DataLoader(
     async (dripListIds: readonly (DripListId | ProjectId)[]) => {
-      const oneTimeDonationSuppport = await GivenEventModel.findAll({
+      const oneTimeDonationSupport = await GivenEventModel.findAll({
         where: {
           receiver: {
             [Op.in]: dripListIds,
@@ -75,8 +75,8 @@ export default class ProjectAndDripListSupportDataSource {
         },
       });
 
-      const oneTimeDonationSuppportToDripListMapping =
-        oneTimeDonationSuppport.reduce<Record<AccountId, GivenEventModel[]>>(
+      const oneTimeDonationSupportToDripListMapping =
+        oneTimeDonationSupport.reduce<Record<AccountId, GivenEventModel[]>>(
           (mapping, givenEvent) => {
             if (!mapping[givenEvent.receiver]) {
               mapping[givenEvent.receiver] = []; // eslint-disable-line no-param-reassign
@@ -90,7 +90,7 @@ export default class ProjectAndDripListSupportDataSource {
         );
 
       return dripListIds.map(
-        (id) => oneTimeDonationSuppportToDripListMapping[id] || [],
+        (id) => oneTimeDonationSupportToDripListMapping[id] || [],
       );
     },
   );

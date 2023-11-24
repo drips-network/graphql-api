@@ -137,19 +137,16 @@ const dripListResolvers = {
       } = context;
 
       const projectAndDripListSupport =
-        projectAndDripListSupportDb.getProjectAndDripListSupportByDripListId(
+        await projectAndDripListSupportDb.getProjectAndDripListSupportByDripListId(
           dripList.id,
         );
 
       const oneTimeDonationSupport =
-        projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
+        await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
           dripList.id,
         );
 
-      return [
-        ...(await projectAndDripListSupport),
-        ...(await oneTimeDonationSupport),
-      ];
+      return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
   },
 };

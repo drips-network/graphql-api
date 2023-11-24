@@ -1,6 +1,8 @@
 import gql from 'graphql-tag';
 
 const commonTypeDef = gql`
+  scalar Date
+
   enum Driver {
     ADDRESS
     REPO
@@ -70,15 +72,20 @@ const commonTypeDef = gql`
 
   type DripListSupport {
     account: NftDriverAccount!
+    date: Date!
+    weight: Int!
   }
 
   type ProjectSupport {
     account: RepoDriverAccount!
+    date: Date!
+    weight: Int!
   }
 
   type OneTimeDonationSupport {
     account: AddressDriverAccount!
     amount: Amount!
+    date: Date!
   }
 
   type Amount {

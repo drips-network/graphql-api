@@ -24,9 +24,9 @@ export default function getUserAddress(accountId: string): string {
   }
 
   const mask = BigInt(2) ** BigInt(160) - BigInt(1);
-  const address = (accountIdAsBn & mask).toString(16);
+  let address = (accountIdAsBn & mask).toString(16);
 
-  const paddedAddress = ethers.zeroPadValue(`0x${address}`, 20);
+  address = address.padStart(40, '0');
 
-  return ethers.getAddress(paddedAddress);
+  return ethers.getAddress(address);
 }

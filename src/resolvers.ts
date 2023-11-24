@@ -1,4 +1,5 @@
 import commonResolvers from './common/commonResolvers';
+import dateScalar from './common/date';
 import dripListResolvers from './drip-list/dripListResolvers';
 import projectResolvers from './project/projectResolvers';
 
@@ -16,6 +17,7 @@ const resolvers = {
   ProjectSupport: commonResolvers.ProjectSupport,
   DripListSupport: commonResolvers.DripListSupport,
   OneTimeDonationSupport: commonResolvers.OneTimeDonationSupport,
+  Date: dateScalar,
 };
 
 export default resolvers;
