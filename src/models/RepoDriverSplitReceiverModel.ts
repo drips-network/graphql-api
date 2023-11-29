@@ -22,6 +22,7 @@ export default class RepoDriverSplitReceiverModel extends Model<
 
   public declare weight: number;
   public declare type: DependencyType;
+  public declare blockTimestamp: Date;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -64,6 +65,10 @@ export default class RepoDriverSplitReceiverModel extends Model<
         },
         type: {
           type: DataTypes.ENUM(...Object.values(DependencyType)),
+          allowNull: false,
+        },
+        blockTimestamp: {
+          type: DataTypes.DATE,
           allowNull: false,
         },
       },

@@ -56,7 +56,7 @@ const commonResolvers = {
         accountId: project ? project.id : shouldNeverHappen(),
       };
     },
-    date: (parent: { createdAt: Date }): Date => parent.createdAt,
+    date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
     project: (
       parent: { funderProjectId: ProjectId },
@@ -89,7 +89,7 @@ const commonResolvers = {
         accountId: dripList ? dripList.id : shouldNeverHappen(),
       };
     },
-    date: (parent: { createdAt: Date }): Date => parent.createdAt,
+    date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
     dripList: (
       parent: { funderDripListId: DripListId },
@@ -130,7 +130,7 @@ const commonResolvers = {
       tokenAddress: parent.erc20,
       amount: parent.amt,
     }),
-    date: (parent: { createdAt: Date }): Date => parent.createdAt,
+    date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
   },
   SupportGroup: {
     // TODO: implement.
