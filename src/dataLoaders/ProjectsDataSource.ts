@@ -43,6 +43,12 @@ export default class ProjectsDataSource {
   public async getProjectByUrl(
     url: string,
   ): Promise<ProjectModel | FakeUnclaimedProject | null> {
+    const githubUrlRegex = /^https:\/\/github\.com\/[\w-]+\/[\w-]+$/;
+
+    if (!githubUrlRegex.test(url)) {
+      throw new Error('Invalid GitHub URL');
+    }
+
     const project = await ProjectModel.findOne({ where: { url } });
 
     if (project) {
