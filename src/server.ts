@@ -8,14 +8,15 @@ import {
 import resolvers from './resolvers';
 import typeDefs from './schema';
 import appSettings from './common/appSettings';
-import ProjectsDataSource from './dataLoaders/ProjectsDataSource';
+import ProjectsDataSource from './dataSources/ProjectsDataSource';
 import connectToDatabase from './database/connectToDatabase';
-import ReceiversOfTypeProjectDataSource from './dataLoaders/ReceiversOfTypeProjectDataSource';
-import ReceiversOfTypeAddressDataSource from './dataLoaders/ReceiversOfTypeAddressDataSource';
-import DripListsDataSource from './dataLoaders/DripListsDataSource';
-import ReceiversOfTypeDripListDataSource from './dataLoaders/ReceiversOfTypeDripListDataSource';
-import GivenEventsDataSource from './dataLoaders/GivenEventsDataSource';
-import ProjectAndDripListSupportDataSource from './dataLoaders/ProjectAndDripListSupportDataSource';
+import ReceiversOfTypeProjectDataSource from './dataSources/ReceiversOfTypeProjectDataSource';
+import ReceiversOfTypeAddressDataSource from './dataSources/ReceiversOfTypeAddressDataSource';
+import DripListsDataSource from './dataSources/DripListsDataSource';
+import ReceiversOfTypeDripListDataSource from './dataSources/ReceiversOfTypeDripListDataSource';
+import GivenEventsDataSource from './dataSources/GivenEventsDataSource';
+import ProjectAndDripListSupportDataSource from './dataSources/ProjectAndDripListSupportDataSource';
+import StreamsDataSource from './dataSources/StreamsDataSource';
 
 export interface ContextValue {
   dataSources: {
@@ -27,6 +28,7 @@ export interface ContextValue {
     receiversOfTypeDripListDb: ReceiversOfTypeDripListDataSource;
     projectAndDripListSupportDb: ProjectAndDripListSupportDataSource;
     givesDb: GivenEventsDataSource;
+    streamsDb: StreamsDataSource;
   };
 }
 
@@ -64,6 +66,7 @@ const startServer = async () => {
           projectAndDripListSupportDb:
             new ProjectAndDripListSupportDataSource(),
           givesDb: new GivenEventsDataSource(),
+          streamsDb: new StreamsDataSource(),
         },
       };
     },
