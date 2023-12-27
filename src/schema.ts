@@ -4,6 +4,7 @@ import gitProjectTypeDef from './project/projectTypeDef';
 import commonTypeDef from './common/commonTypeDef';
 import givenEventTypeDef from './given-event/givenEventTypeDef';
 import accountTypeDef from './account/accountTypeDef';
+import userTypeDef from './user/userTypeDef';
 
 const rootTypeDef = gql`
   type Query {
@@ -14,6 +15,8 @@ const rootTypeDef = gql`
     dripLists(where: DripListWhereInput): [DripList!]!
     gives(where: GiveWhereInput): [Give!]!
     account(accountId: ID!): UserAccount
+    userById(accountId: ID!): User!
+    userByAddress(address: String!): User!
   }
 `;
 
@@ -24,6 +27,7 @@ const typeDefs = [
   commonTypeDef,
   givenEventTypeDef,
   accountTypeDef,
+  userTypeDef,
 ];
 
 export default typeDefs;

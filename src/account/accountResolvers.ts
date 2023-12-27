@@ -9,8 +9,7 @@ const accountResolvers = {
       _: any,
       { accountId }: { accountId: AddressDriverId },
       { dataSources }: ContextValue,
-    ): Promise<UserAccount> =>
-      dataSources.accountsDb.getStreamsByAccountId(accountId),
+    ): Promise<UserAccount> => dataSources.accountsDb.getUserAccount(accountId),
   },
   StreamReceiver: {
     __resolveType(parent: { driver: Driver }) {

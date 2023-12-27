@@ -17,6 +17,7 @@ import ReceiversOfTypeDripListDataSource from './dataSources/ReceiversOfTypeDrip
 import GivenEventsDataSource from './dataSources/GivenEventsDataSource';
 import ProjectAndDripListSupportDataSource from './dataSources/ProjectAndDripListSupportDataSource';
 import AccountsDataSource from './dataSources/Accounts/AccountsDataSource';
+import UsersDataSource from './dataSources/UserDataSource';
 
 export interface ContextValue {
   dataSources: {
@@ -29,6 +30,7 @@ export interface ContextValue {
     projectAndDripListSupportDb: ProjectAndDripListSupportDataSource;
     givesDb: GivenEventsDataSource;
     accountsDb: AccountsDataSource;
+    usersDb: UsersDataSource;
   };
 }
 
@@ -67,6 +69,7 @@ const startServer = async () => {
             new ProjectAndDripListSupportDataSource(),
           givesDb: new GivenEventsDataSource(),
           accountsDb: new AccountsDataSource(),
+          usersDb: new UsersDataSource(),
         },
       };
     },

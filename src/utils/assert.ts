@@ -22,6 +22,14 @@ export function isAddressDriverAccountId(id: string): id is AddressDriverId {
   return true;
 }
 
+export function assertAddressDiverId(
+  id: string,
+): asserts id is AddressDriverId {
+  if (!isAddressDriverAccountId(id)) {
+    throw new Error(`String ${id} is not a valid 'AddressDriverId'.`);
+  }
+}
+
 export function isNftDriverAccountId(id: string): id is DripListId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfNftDriver = getContractNameByAccountId(id) === 'nftDriver';

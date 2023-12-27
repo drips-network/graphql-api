@@ -8,7 +8,7 @@ import getStreamsSetEventsWithReceivers from './getStreamsSetEventsWithReceivers
 import getLatestAccountMetadata from './getLatestAccountMetadata';
 
 export default class AccountsDataSource {
-  public async getStreamsByAccountId(
+  public async getUserAccount(
     accountId: AddressDriverId,
   ): Promise<UserAccount> {
     const { metadata, ipfsHash } = await getLatestAccountMetadata(accountId);
