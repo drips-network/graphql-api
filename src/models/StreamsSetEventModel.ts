@@ -4,17 +4,23 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import type { AccountId, Address, BigIntString } from '../common/types';
 import getSchema from '../utils/getSchema';
+import type { AccountId, BigIntString, IEventModel } from '../common/types';
+import getCommonEventAttributes from '../utils/getCommonEventAttributes';
 
-export default class GivenEventModel extends Model<
-  InferAttributes<GivenEventModel>,
-  InferCreationAttributes<GivenEventModel>
-> {
-  public declare accountId: AccountId; // Sender of the Give
-  public declare receiver: AccountId;
-  public declare erc20: Address;
-  public declare amt: BigIntString;
+export default class StreamsSetEventModel
+  extends Model<
+    InferAttributes<StreamsSetEventModel>,
+    InferCreationAttributes<StreamsSetEventModel>
+  >
+  implements IEventModel
+{
+  public declare accountId: AccountId;
+  public declare erc20: string;
+  public declare receiversHash: string;
+  public declare streamsHistoryHash: string;
+  public declare balance: BigIntString;
+  public declare maxEnd: BigIntString;
 
   // Common event log properties.
   public declare logIndex: number;
@@ -29,41 +35,32 @@ export default class GivenEventModel extends Model<
           type: DataTypes.STRING,
           allowNull: false,
         },
-        receiver: {
-          type: DataTypes.STRING,
-          allowNull: false,
-        },
         erc20: {
           type: DataTypes.STRING,
           allowNull: false,
         },
-        amt: {
+        receiversHash: {
           type: DataTypes.STRING,
           allowNull: false,
         },
-        transactionHash: {
+        streamsHistoryHash: {
           type: DataTypes.STRING,
           allowNull: false,
-          primaryKey: true,
         },
-        logIndex: {
-          type: DataTypes.INTEGER,
-          allowNull: false,
-          primaryKey: true,
-        },
-        blockTimestamp: {
-          type: DataTypes.DATE,
+        balance: {
+          type: DataTypes.STRING,
           allowNull: false,
         },
-        blockNumber: {
-          type: DataTypes.INTEGER,
+        maxEnd: {
+          type: DataTypes.STRING,
           allowNull: false,
         },
+        ...getCommonEventAttributes(),
       },
       {
         sequelize,
         schema: getSchema(),
-        tableName: 'GivenEvents',
+        tableName: 'StreamsSetEvents',
       },
     );
   }

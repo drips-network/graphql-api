@@ -33,3 +33,10 @@ export type FakeUnclaimedProject = {
   url: string;
   verificationStatus: ProjectVerificationStatus;
 };
+
+export interface IEventModel {
+  logIndex: number;
+  blockNumber: number;
+  blockTimestamp: Date;
+  transactionHash: string;
+}

@@ -9,7 +9,7 @@ import GivenEventModel from '../given-event/GivenEventModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { ContextValue } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { DripListId, ProjectId } from './types';
+import type { AddressDriverId, DripListId, ProjectId } from './types';
 import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
@@ -123,7 +123,7 @@ const commonResolvers = {
       return {
         driver: Driver.ADDRESS,
         accountId: givenEvent.accountId,
-        address: getUserAddress(givenEvent.accountId),
+        address: getUserAddress(givenEvent.accountId as AddressDriverId),
       };
     },
     amount: (parent: GivenEventModel): Amount => ({
