@@ -2,6 +2,7 @@ import commonResolvers from './common/commonResolvers';
 import dateScalar from './common/date';
 import dripListResolvers from './drip-list/dripListResolvers';
 import projectResolvers from './project/projectResolvers';
+import streamResolvers from './stream/streamResolvers';
 import userResolvers from './user/userResolvers';
 
 const resolvers = {
@@ -9,6 +10,7 @@ const resolvers = {
     ...projectResolvers.Query,
     ...dripListResolvers.Query,
     ...userResolvers.Query,
+    ...streamResolvers.Query,
   },
   Project: projectResolvers.Project,
   DripList: dripListResolvers.DripList,

@@ -17,6 +17,7 @@ const rootTypeDef = gql`
     userById(accountId: ID!): User!
     userByAddress(address: String!): User!
     userAccount(accountId: ID!): UserAccount
+    streams(where: StreamWhereInput): [Stream!]!
   }
 `;
 

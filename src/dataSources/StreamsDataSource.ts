@@ -1,5 +1,5 @@
 import type { AddressDriverId } from '../common/types';
-import type { Stream } from '../generated/graphql';
+import type { Stream, StreamWhereInput } from '../generated/graphql';
 import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
 import { assertIsAddressDriverId } from '../utils/assert';
 import getUserAccount from '../utils/getUserAccount';
@@ -50,5 +50,31 @@ export default class StreamsDataSource {
     );
 
     return incomingStreams;
+  }
+
+  public async getStreamsByFilter(where: StreamWhereInput): Promise<Stream[]> {
+    const streams: Stream[] = [];
+
+    if (where.senderId) {
+      assertIsAddressDriverId(where.senderId);
+
+      const senderOutgoingStreams = await this.getUserOutgoingStreams(
+        where.senderId,
+      );
+
+      streams.push(...senderOutgoingStreams);
+    }
+
+    if (where.receiverId) {
+      assertIsAddressDriverId(where.receiverId);
+
+      const receiverIncomingStreams = await this.getUserIncomingStreams(
+        where.receiverId,
+      );
+
+      streams.push(...receiverIncomingStreams);
+    }
+
+    return streams;
   }
 }
