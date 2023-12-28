@@ -2,14 +2,12 @@ import commonResolvers from './common/commonResolvers';
 import dateScalar from './common/date';
 import dripListResolvers from './drip-list/dripListResolvers';
 import projectResolvers from './project/projectResolvers';
-import accountResolvers from './account/accountResolvers';
 import userResolvers from './user/userResolvers';
 
 const resolvers = {
   Query: {
     ...projectResolvers.Query,
     ...dripListResolvers.Query,
-    ...accountResolvers.Query,
     ...userResolvers.Query,
   },
   Project: projectResolvers.Project,
@@ -21,7 +19,7 @@ const resolvers = {
   ProjectSupport: commonResolvers.ProjectSupport,
   DripListSupport: commonResolvers.DripListSupport,
   OneTimeDonationSupport: commonResolvers.OneTimeDonationSupport,
-  StreamReceiver: accountResolvers.StreamReceiver,
+  StreamReceiver: userResolvers.StreamReceiver,
   Date: dateScalar,
   User: userResolvers.User,
   UserStreams: userResolvers.UserStreams,

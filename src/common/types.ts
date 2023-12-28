@@ -1,4 +1,8 @@
+import type { AnyVersion } from '@efstajas/versioned-parser';
 import type { ProjectVerificationStatus } from '../generated/graphql';
+import type StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
+import type StreamsSetEventModel from '../models/StreamsSetEventModel';
+import type { addressDriverAccountMetadataParser } from '../schemas';
 import type { FORGES_MAP, SUPPORTED_NETWORKS } from './constants';
 
 export type KnownAny = any;
@@ -40,3 +44,24 @@ export interface IEventModel {
   blockTimestamp: Date;
   transactionHash: string;
 }
+
+export type StreamsSetEventWithReceivers = Pick<
+  StreamsSetEventModel,
+  | 'accountId'
+  | 'erc20'
+  | 'receiversHash'
+  | 'streamsHistoryHash'
+  | 'balance'
+  | 'maxEnd'
+  | 'blockTimestamp'
+> & {
+  receivers: Pick<
+    StreamReceiverSeenEventModel,
+    'receiversHash' | 'accountId' | 'config'
+  >[];
+};
+
+export type AccountMetadata = AnyVersion<
+  typeof addressDriverAccountMetadataParser
+>;
+export type AssetConfigMetadata = AccountMetadata['assetConfigs'][number];

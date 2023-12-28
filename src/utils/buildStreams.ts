@@ -1,21 +1,24 @@
-import type { AccountMetadata, StreamsSetEventWithReceivers } from './types';
-import assert from '../../utils/assert';
+import assert from './assert';
 import buildStreamReceiver, {
   makeStreamId,
   matchMetadataStreamToReceiver,
   mapReceiverToStream,
   fromUint256,
-} from './accountUtils';
+} from './streamUtils';
 import type {
   AddressDriverAccount,
   AssetConfig,
   AssetConfigHistoryItem,
   HistoricalStream,
-} from '../../generated/graphql';
-import getUserAddress from '../../utils/getUserAddress';
-import type { AddressDriverId } from '../../common/types';
-import { AMT_PER_SEC_MULTIPLIER } from '../../common/constants';
-import toBigIntString from '../../utils/toBigIntString';
+} from '../generated/graphql';
+import getUserAddress from './getUserAddress';
+import type {
+  AccountMetadata,
+  AddressDriverId,
+  StreamsSetEventWithReceivers,
+} from '../common/types';
+import { AMT_PER_SEC_MULTIPLIER } from '../common/constants';
+import toBigIntString from './toBigIntString';
 
 export default function buildAssetConfigs(
   accountId: AddressDriverId,

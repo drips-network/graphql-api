@@ -2,13 +2,19 @@ import appSettings from '../common/appSettings';
 import provider from '../common/provider';
 import type { Address, AddressDriverId } from '../common/types';
 import { AddressDriver__factory } from '../generated/contracts';
-import { Driver, type Stream, type User } from '../generated/graphql';
-import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import { assertAddressDiverId } from '../utils/assert';
+import { Driver } from '../generated/graphql';
+import type { User, UserAccount } from '../generated/graphql';
+import { assertIsAddressDriverId } from '../utils/assert';
+import getUserAccount from '../utils/getUserAccount';
 import getUserAddress from '../utils/getUserAddress';
-import AccountsDataSource from './Accounts/AccountsDataSource';
 
 export default class UsersDataSource {
+  public async getUserAccount(
+    accountId: AddressDriverId,
+  ): Promise<UserAccount> {
+    return getUserAccount(accountId);
+  }
+
   public async getUserByAccountId(accountId: AddressDriverId): Promise<User> {
     return {
       account: {
@@ -25,59 +31,6 @@ export default class UsersDataSource {
     };
   }
 
-  public async getUserIncomingStreams(
-    accountId: AddressDriverId,
-  ): Promise<Stream[]> {
-    const accountsDataSource = new AccountsDataSource();
-
-    // For the incoming streams:
-    const streamReceiverSeenEventsForUser =
-      await StreamReceiverSeenEventModel.findAll({
-        where: {
-          accountId,
-        },
-      });
-    const accountIdsStreamingToUser = streamReceiverSeenEventsForUser.reduce<
-      string[]
-    >((acc, event) => {
-      const receiverId = event.accountId.toString();
-      return !acc.includes(receiverId) ? [...acc, receiverId] : acc;
-    }, []);
-
-    const accountsStreamingToUser = await Promise.all(
-      accountIdsStreamingToUser.map((id) => {
-        assertAddressDiverId(id);
-        return accountsDataSource.getUserAccount(id);
-      }),
-    );
-
-    const incomingStreams = accountsStreamingToUser.reduce<Stream[]>(
-      (acc, account) => {
-        const streams = account.assetConfigs
-          .flatMap((assetConfig) => assetConfig.streams)
-          .filter((stream) => stream.receiver.accountId === accountId);
-
-        return [...acc, ...streams];
-      },
-      [],
-    );
-
-    return incomingStreams;
-  }
-
-  public async getUserOutgoingStreams(
-    accountId: AddressDriverId,
-  ): Promise<Stream[]> {
-    const accountsDataSource = new AccountsDataSource();
-
-    const userAccount = await accountsDataSource.getUserAccount(accountId);
-    const outgoingStreams = userAccount.assetConfigs.flatMap(
-      (assetConfig) => assetConfig.streams,
-    );
-
-    return outgoingStreams;
-  }
-
   public async getUserByAccountAddress(address: Address): Promise<User> {
     const addressDriver = AddressDriver__factory.connect(
       appSettings.addressDriverAddress,
@@ -86,7 +39,7 @@ export default class UsersDataSource {
 
     const accountId = (await addressDriver.calcAccountId(address)).toString();
 
-    assertAddressDiverId(accountId);
+    assertIsAddressDriverId(accountId);
 
     return this.getUserByAccountId(accountId);
   }

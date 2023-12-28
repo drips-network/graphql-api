@@ -1,8 +1,9 @@
 import type { Address, AddressDriverId } from '../common/types';
-import type { User } from '../generated/graphql';
+import { Driver, type User, type UserAccount } from '../generated/graphql';
 import type { ContextValue } from '../server';
-import { assertAddressDiverId } from '../utils/assert';
+import { assertIsAddressDriverId } from '../utils/assert';
 import getUserAddress from '../utils/getUserAddress';
+import shouldNeverHappen from '../utils/shouldNeverHappen';
 
 const userResolvers = {
   Query: {
@@ -16,6 +17,11 @@ const userResolvers = {
       { address }: { address: Address },
       { dataSources }: ContextValue,
     ): Promise<User> => dataSources.usersDb.getUserByAccountAddress(address),
+    userAccount: async (
+      _: any,
+      { accountId }: { accountId: AddressDriverId },
+      { dataSources }: ContextValue,
+    ): Promise<UserAccount> => dataSources.usersDb.getUserAccount(accountId),
   },
   User: {
     streams: async (parent: User) => ({
@@ -23,8 +29,7 @@ const userResolvers = {
     }),
     projects: (parent: User, _: any, { dataSources }: ContextValue) => {
       const { accountId } = parent.account;
-
-      assertAddressDiverId(accountId);
+      assertIsAddressDriverId(accountId);
 
       return dataSources.projectsDb.getProjectsByFilter({
         ownerAddress: getUserAddress(accountId),
@@ -32,8 +37,7 @@ const userResolvers = {
     },
     dripLists: (parent: User, _: any, { dataSources }: ContextValue) => {
       const { accountId } = parent.account;
-
-      assertAddressDiverId(accountId);
+      assertIsAddressDriverId(accountId);
 
       return dataSources.dripListsDb.getDripListsByFilter({
         ownerAddress: getUserAddress(accountId),
@@ -47,10 +51,9 @@ const userResolvers = {
       { dataSources }: ContextValue,
     ) => {
       const { accountId } = parent;
+      assertIsAddressDriverId(accountId);
 
-      assertAddressDiverId(accountId);
-
-      return dataSources.usersDb.getUserOutgoingStreams(accountId);
+      return dataSources.streamsDb.getUserOutgoingStreams(accountId);
     },
     incoming: async (
       parent: { accountId: AddressDriverId },
@@ -58,10 +61,24 @@ const userResolvers = {
       { dataSources }: ContextValue,
     ) => {
       const { accountId } = parent;
+      assertIsAddressDriverId(accountId);
 
-      assertAddressDiverId(accountId);
+      return dataSources.streamsDb.getUserIncomingStreams(accountId);
+    },
+  },
+  StreamReceiver: {
+    __resolveType(parent: { driver: Driver }) {
+      if (parent.driver === Driver.ADDRESS) {
+        return 'AddressDriverAccount';
+      }
 
-      return dataSources.usersDb.getUserIncomingStreams(accountId);
+      if (parent.driver === Driver.NFT) {
+        return 'NftDriverAccount';
+      }
+
+      return shouldNeverHappen(
+        `Cannot resolve 'StreamReceiver' type for driver '${parent.driver}'.`,
+      );
     },
   },
 };

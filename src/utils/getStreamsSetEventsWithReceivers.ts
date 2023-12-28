@@ -1,8 +1,10 @@
 import { Op } from 'sequelize';
-import type { AddressDriverId } from '../../common/types';
-import StreamReceiverSeenEventModel from '../../models/StreamReceiverSeenEventModel';
-import StreamsSetEventModel from '../../models/StreamsSetEventModel';
-import type { StreamsSetEventWithReceivers } from './types';
+import type {
+  AddressDriverId,
+  StreamsSetEventWithReceivers,
+} from '../common/types';
+import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
+import StreamsSetEventModel from '../models/StreamsSetEventModel';
 
 export default async function getStreamsSetEventsWithReceivers(
   accountId: AddressDriverId,

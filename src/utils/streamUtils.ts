@@ -1,25 +1,25 @@
 /* eslint-disable no-bitwise */
 import { isAddress } from 'ethers';
 import type { AnyVersion } from '@efstajas/versioned-parser';
-import type { addressDriverAccountMetadataParser } from '../../schemas';
-import type { AssetConfigMetadata } from './types';
+import type { addressDriverAccountMetadataParser } from '../schemas';
 import type {
   AccountId,
   AddressDriverId,
+  AssetConfigMetadata,
   BigIntString,
-} from '../../common/types';
-import { Driver } from '../../generated/graphql';
+} from '../common/types';
+import { Driver } from '../generated/graphql';
 import type {
   NftDriverAccount,
   AddressDriverAccount,
   Stream,
   StreamConfig,
   HistoricalStream,
-} from '../../generated/graphql';
-import getContractNameByAccountId from '../../utils/getContractNameByAccountId';
-import getUserAddress from '../../utils/getUserAddress';
-import assert from '../../utils/assert';
-import toBigIntString from '../../utils/toBigIntString';
+} from '../generated/graphql';
+import getContractNameByAccountId from './getContractNameByAccountId';
+import getUserAddress from './getUserAddress';
+import assert from './assert';
+import toBigIntString from './toBigIntString';
 
 const numericTest = /^\d+$/;
 

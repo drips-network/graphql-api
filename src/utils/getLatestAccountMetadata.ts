@@ -1,9 +1,9 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
 import { ethers } from 'ethers';
-import { addressDriverAccountMetadataParser } from '../../schemas';
-import type { AddressDriverId, IpfsHash } from '../../common/types';
-import appSettings from '../../common/appSettings';
-import AccountMetadataEmittedEventModel from '../../models/AccountMetadataEmittedEventModel';
+import { addressDriverAccountMetadataParser } from '../schemas';
+import type { AddressDriverId, IpfsHash } from '../common/types';
+import appSettings from '../common/appSettings';
+import AccountMetadataEmittedEventModel from '../models/AccountMetadataEmittedEventModel';
 
 function toIpfsHash(str: string): IpfsHash {
   const ipfsHash = ethers.toUtf8String(str);

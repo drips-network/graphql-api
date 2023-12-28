@@ -22,7 +22,7 @@ export function isAddressDriverAccountId(id: string): id is AddressDriverId {
   return true;
 }
 
-export function assertAddressDiverId(
+export function assertIsAddressDriverId(
   id: string,
 ): asserts id is AddressDriverId {
   if (!isAddressDriverAccountId(id)) {
