@@ -28,6 +28,7 @@ const projectTypeDef = gql`
   type ClaimedProject {
     source: Source!
     color: String!
+    emoji: String! @deprecated(reason: "Use avatar instead")
     avatar: Avatar!
     splits: Splits!
     description: String
