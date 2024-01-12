@@ -15,10 +15,20 @@ const projectTypeDef = gql`
     dependencies: [SplitsReceiver!]!
   }
 
+  type EmojiAvatar {
+    emoji: String!
+  }
+
+  type ImageAvatar {
+    cid: String!
+  }
+
+  union Avatar = EmojiAvatar | ImageAvatar
+
   type ClaimedProject {
     source: Source!
     color: String!
-    emoji: String!
+    avatar: Avatar!
     splits: Splits!
     description: String
     owner: AddressDriverAccount!
