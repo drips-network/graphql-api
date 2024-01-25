@@ -51,12 +51,31 @@ const projectResolvers = {
       return 'UnclaimedProject';
     },
   },
+  Avatar: {
+    __resolveType(parent: { cid: string } | { emoji: string }) {
+      if ('cid' in parent) {
+        return 'ImageAvatar';
+      }
+
+      return 'EmojiAvatar';
+    },
+  },
   ClaimedProject: {
     color: (project: ProjectModel): string =>
       project.color || shouldNeverHappen(),
     description: (project: ProjectModel): string | null => project.description,
-    emoji: (project: ProjectModel): string =>
-      project.emoji || shouldNeverHappen(),
+    emoji: (project: ProjectModel): string => project.emoji || '💧',
+    avatar: (project: ProjectModel): any => {
+      if (project.avatarCid) {
+        return {
+          cid: project.avatarCid,
+        };
+      }
+
+      return {
+        emoji: project.emoji || '💧',
+      };
+    },
     owner: (project: ProjectModel): AddressDriverAccount => ({
       driver: Driver.ADDRESS,
       accountId: project.ownerAccountId || shouldNeverHappen(),

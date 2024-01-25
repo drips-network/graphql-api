@@ -31,6 +31,7 @@ export default class ProjectModel extends Model<
 
   public declare url: string | null;
   public declare emoji: string | null;
+  public declare avatarCid: string | null;
   public declare color: string | null;
   public declare description: string | null;
   public declare verificationStatus: ProjectVerificationStatus;
@@ -71,6 +72,10 @@ export default class ProjectModel extends Model<
           allowNull: true,
         },
         emoji: {
+          type: DataTypes.STRING,
+          allowNull: true,
+        },
+        avatarCid: {
           type: DataTypes.STRING,
           allowNull: true,
         },

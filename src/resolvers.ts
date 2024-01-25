@@ -18,6 +18,7 @@ const resolvers = {
   ClaimedProject: projectResolvers.ClaimedProject,
   UnclaimedProject: projectResolvers.UnclaimedProject,
   SupportItem: commonResolvers.SupportItem,
+  Avatar: projectResolvers.Avatar,
   ProjectSupport: commonResolvers.ProjectSupport,
   DripListSupport: commonResolvers.DripListSupport,
   OneTimeDonationSupport: commonResolvers.OneTimeDonationSupport,
