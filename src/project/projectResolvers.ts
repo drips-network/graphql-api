@@ -1,3 +1,4 @@
+import { isAddress } from 'ethers';
 import type { FakeUnclaimedProject, ProjectId } from '../common/types';
 import type ProjectModel from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
@@ -20,6 +21,11 @@ import type { Context } from '../server';
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
 import groupBy from '../utils/linq';
 import type DripListModel from '../drip-list/DripListModel';
+import assert, {
+  isGitHubUrl,
+  isProjectVerificationStatus,
+  isRepoDiverAccountId,
+} from '../utils/assert';
 
 const projectResolvers = {
   Query: {
@@ -27,20 +33,43 @@ const projectResolvers = {
       _: any,
       { id }: { id: ProjectId },
       { dataSources }: Context,
-    ): Promise<ProjectModel | FakeUnclaimedProject | null> =>
-      dataSources.projectsDb.getProjectById(id),
+    ): Promise<ProjectModel | FakeUnclaimedProject | null> => {
+      assert(isRepoDiverAccountId(id));
+
+      return dataSources.projectsDb.getProjectById(id);
+    },
     projectByUrl: async (
       _: any,
       { url }: { url: string },
       { dataSources }: Context,
-    ): Promise<ProjectModel | FakeUnclaimedProject | null> =>
-      dataSources.projectsDb.getProjectByUrl(url),
+    ): Promise<ProjectModel | FakeUnclaimedProject | null> => {
+      assert(isGitHubUrl(url));
+
+      return dataSources.projectsDb.getProjectByUrl(url);
+    },
     projects: async (
       _: any,
       { where }: { where: ProjectWhereInput },
       { dataSources }: Context,
-    ): Promise<(ProjectModel | FakeUnclaimedProject)[]> =>
-      dataSources.projectsDb.getProjectsByFilter(where),
+    ): Promise<(ProjectModel | FakeUnclaimedProject)[]> => {
+      if (where?.id) {
+        assert(isRepoDiverAccountId(where.id));
+      }
+
+      if (where?.ownerAddress) {
+        assert(isAddress(where.ownerAddress));
+      }
+
+      if (where?.url) {
+        assert(isGitHubUrl(where.url));
+      }
+
+      if (where?.verificationStatus) {
+        assert(isProjectVerificationStatus(where.verificationStatus));
+      }
+
+      return dataSources.projectsDb.getProjectsByFilter(where);
+    },
   },
   Project: {
     __resolveType(parent: ProjectModel) {

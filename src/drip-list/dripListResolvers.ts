@@ -1,3 +1,4 @@
+import { isAddress } from 'ethers';
 import { type DripListId } from '../common/types';
 import type DripListModel from './DripListModel';
 import type {
@@ -13,6 +14,7 @@ import { Driver } from '../generated/graphql';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Context } from '../server';
 import type GitProjectModel from '../project/ProjectModel';
+import assert, { isNftDriverAccountId } from '../utils/assert';
 
 const dripListResolvers = {
   Query: {
@@ -20,14 +22,25 @@ const dripListResolvers = {
       _: any,
       { id }: { id: DripListId },
       { dataSources }: Context,
-    ): Promise<DripListModel | null> =>
-      dataSources.dripListsDb.getDripListById(id),
+    ): Promise<DripListModel | null> => {
+      assert(isNftDriverAccountId(id));
+
+      return dataSources.dripListsDb.getDripListById(id);
+    },
     dripLists: async (
       _: any,
       { where }: { where: DripListWhereInput },
       { dataSources }: Context,
-    ): Promise<DripListModel[]> =>
-      dataSources.dripListsDb.getDripListsByFilter(where),
+    ): Promise<DripListModel[]> => {
+      if (where?.id) {
+        assert(isNftDriverAccountId(where.id));
+      }
+      if (where?.ownerAddress) {
+        assert(isAddress(where.ownerAddress));
+      }
+
+      return dataSources.dripListsDb.getDripListsByFilter(where);
+    },
   },
   DripList: {
     name: (dripList: DripListModel) => dripList.name,

@@ -1,4 +1,5 @@
 import type { AddressDriverId, DripListId, ProjectId } from '../common/types';
+import { ProjectVerificationStatus } from '../generated/graphql';
 import getContractNameByAccountId from './getContractNameByAccountId';
 
 export default function assert(
@@ -43,4 +44,35 @@ export function isRepoDiverAccountId(id: string): id is ProjectId {
   }
 
   return true;
+}
+
+export function isGitHubUrl(url: string): boolean {
+  const githubUrlRegex = /^https:\/\/github\.com\/[\w-]+\/[\w.-]+$/;
+
+  if (!githubUrlRegex.test(url)) {
+    return false;
+  }
+
+  return true;
+}
+
+export function isProjectVerificationStatus(
+  status: string,
+): status is ProjectVerificationStatus {
+  return (
+    status === ProjectVerificationStatus.Claimed ||
+    status === ProjectVerificationStatus.OwnerUpdateRequested ||
+    status === ProjectVerificationStatus.OwnerUpdated ||
+    status === ProjectVerificationStatus.PendingMetadata ||
+    status === ProjectVerificationStatus.PendingOwner ||
+    status === ProjectVerificationStatus.Unclaimed
+  );
+}
+
+export function isAccountId(id: string): boolean {
+  return (
+    isAddressDriverAccountId(id) ||
+    isNftDriverAccountId(id) ||
+    isRepoDiverAccountId(id)
+  );
 }
