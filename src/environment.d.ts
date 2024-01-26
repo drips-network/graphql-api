@@ -16,6 +16,7 @@ declare global {
       RATE_LIMIT_WINDOW_IN_MINUTES: string;
       RATE_LIMIT_MAX_REQUESTS_PER_WINDOW: string;
       MAX_QUERY_DEPTH: string;
+      TIMEOUT_IN_SECONDS: string;
     }
   }
 }

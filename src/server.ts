@@ -99,6 +99,14 @@ const startServer = async () => {
 
   app.use(customRateLimiter);
 
+  app.use((req, res, next) => {
+    res.setTimeout(appSettings.timeoutInSeconds * 1000, () => {
+      res.send(408);
+    });
+
+    next();
+  });
+
   app.use(
     '/',
     cors<cors.CorsRequest>(),

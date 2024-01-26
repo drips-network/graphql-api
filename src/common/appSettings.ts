@@ -27,4 +27,5 @@ export default {
     10,
   ),
   maxQueryDepth: parseInt(process.env.MAX_QUERY_DEPTH ?? '4', 10),
+  timeoutInSeconds: parseInt(process.env.TIMEOUT_IN_SECONDS ?? '20', 10),
 };
