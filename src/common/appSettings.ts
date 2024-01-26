@@ -19,11 +19,11 @@ export default {
   pretendAllReposExist:
     (process.env.PRETEND_ALL_REPOS_EXIST as unknown as string) === 'true',
   rateLimitWindowInMinutes: parseInt(
-    process.env.RATE_LIMIT_WINDOW_IN_MINUTES ?? '10',
+    process.env.RATE_LIMIT_WINDOW_IN_MINUTES ?? '2',
     10,
   ),
   rateLimitMaxRequestsPerWindow: parseInt(
-    process.env.RATE_LIMIT_MAX_REQUESTS_PER_WINDOW ?? '50',
+    process.env.RATE_LIMIT_MAX_REQUESTS_PER_WINDOW ?? '1000',
     10,
   ),
   maxQueryDepth: parseInt(process.env.MAX_QUERY_DEPTH ?? '4', 10),
