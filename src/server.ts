@@ -19,6 +19,7 @@ import type {
 import type { ParsedQs } from 'qs';
 import depthLimit from 'graphql-depth-limit';
 import cors from 'cors';
+import { BaseError } from 'sequelize';
 import resolvers from './resolvers';
 import typeDefs from './schema';
 import appSettings from './common/appSettings';
@@ -48,6 +49,15 @@ const app = express();
 const httpServer = http.createServer(app);
 
 const server = new ApolloServer<Context>({
+  formatError: (formattedError, error: any) => {
+    if (error instanceof BaseError) {
+      console.error(formattedError.message);
+
+      return { message: 'Internal server error' };
+    }
+
+    return formattedError;
+  },
   introspection: true,
   validationRules: [depthLimit(appSettings.maxQueryDepth)],
   typeDefs,
