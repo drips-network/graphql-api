@@ -11,7 +11,7 @@ import type {
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { ContextValue } from '../server';
+import type { Context } from '../server';
 import type GitProjectModel from '../project/ProjectModel';
 
 const dripListResolvers = {
@@ -19,13 +19,13 @@ const dripListResolvers = {
     dripList: async (
       _: any,
       { id }: { id: DripListId },
-      { dataSources }: ContextValue,
+      { dataSources }: Context,
     ): Promise<DripListModel | null> =>
       dataSources.dripListsDb.getDripListById(id),
     dripLists: async (
       _: any,
       { where }: { where: DripListWhereInput },
-      { dataSources }: ContextValue,
+      { dataSources }: Context,
     ): Promise<DripListModel[]> =>
       dataSources.dripListsDb.getDripListsByFilter(where),
   },
@@ -47,7 +47,7 @@ const dripListResolvers = {
     splits: async (
       dripList: DripListModel,
       _: any,
-      context: ContextValue,
+      context: Context,
     ): Promise<SplitsReceiver[]> => {
       const {
         dataSources: {
@@ -131,7 +131,7 @@ const dripListResolvers = {
 
       return [...addressSplits, ...projectReceivers, ...dripListReceivers];
     },
-    support: async (dripList: DripListModel, _: any, context: ContextValue) => {
+    support: async (dripList: DripListModel, _: any, context: Context) => {
       const {
         dataSources: { projectAndDripListSupportDb },
       } = context;

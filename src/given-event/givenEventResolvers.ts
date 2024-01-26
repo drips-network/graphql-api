@@ -1,5 +1,5 @@
 import type { GiveWhereInput } from '../generated/graphql';
-import type { ContextValue } from '../server';
+import type { Context } from '../server';
 import type GivenEventModel from './GivenEventModel';
 
 const givenEventResolvers = {
@@ -7,7 +7,7 @@ const givenEventResolvers = {
     gives: async (
       _: any,
       { where }: { where: GiveWhereInput },
-      { dataSources }: ContextValue,
+      { dataSources }: Context,
     ): Promise<GivenEventModel[]> =>
       dataSources.givenEventsDb.getGivenEventsByFilter(where),
   },

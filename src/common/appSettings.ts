@@ -7,7 +7,8 @@ export default {
   network: process.env.NETWORK,
   environment: process.env.ENV ?? 'local',
   infuraApiKey: process.env.INFURA_API_KEY,
-  apiKeys: process.env.API_KEYS?.split(',') || [],
+  publicApiKeys: process.env.PUBLIC_API_KEYS?.split(',') || [],
+  dripsApiKey: process.env.DRIPS_API_KEY,
   postgresConnectionString: process.env.POSTGRES_CONNECTION_STRING,
   rpcUrl:
     process.env.RPC_URL ??
@@ -17,4 +18,13 @@ export default {
     '0x770023d55D09A9C110694827F1a6B32D5c2b373E',
   pretendAllReposExist:
     (process.env.PRETEND_ALL_REPOS_EXIST as unknown as string) === 'true',
+  rateLimitWindowInMinutes: parseInt(
+    process.env.RATE_LIMIT_WINDOW_IN_MINUTES ?? '10',
+    10,
+  ),
+  rateLimitMaxRequestsPerWindow: parseInt(
+    process.env.RATE_LIMIT_MAX_REQUESTS_PER_WINDOW ?? '50',
+    10,
+  ),
+  maxQueryDepth: parseInt(process.env.MAX_QUERY_DEPTH ?? '4', 10),
 };

@@ -16,7 +16,7 @@ import type {
   DripList,
   ProjectWhereInput,
 } from '../generated/graphql';
-import type { ContextValue } from '../server';
+import type { Context } from '../server';
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
 import groupBy from '../utils/linq';
 import type DripListModel from '../drip-list/DripListModel';
@@ -26,19 +26,19 @@ const projectResolvers = {
     projectById: async (
       _: any,
       { id }: { id: ProjectId },
-      { dataSources }: ContextValue,
+      { dataSources }: Context,
     ): Promise<ProjectModel | FakeUnclaimedProject | null> =>
       dataSources.projectsDb.getProjectById(id),
     projectByUrl: async (
       _: any,
       { url }: { url: string },
-      { dataSources }: ContextValue,
+      { dataSources }: Context,
     ): Promise<ProjectModel | FakeUnclaimedProject | null> =>
       dataSources.projectsDb.getProjectByUrl(url),
     projects: async (
       _: any,
       { where }: { where: ProjectWhereInput },
-      { dataSources }: ContextValue,
+      { dataSources }: Context,
     ): Promise<(ProjectModel | FakeUnclaimedProject)[]> =>
       dataSources.projectsDb.getProjectsByFilter(where),
   },
@@ -99,7 +99,7 @@ const projectResolvers = {
     splits: async (
       project: ProjectModel,
       _: any,
-      context: ContextValue,
+      context: Context,
     ): Promise<Splits> => {
       const {
         dataSources: {
@@ -206,7 +206,7 @@ const projectResolvers = {
         ],
       };
     },
-    support: async (project: ProjectModel, _: any, context: ContextValue) => {
+    support: async (project: ProjectModel, _: any, context: Context) => {
       const {
         dataSources: { projectAndDripListSupportDb },
       } = context;
@@ -261,7 +261,7 @@ const projectResolvers = {
     verificationStatus(project: ProjectModel): ProjectVerificationStatus {
       return project.verificationStatus;
     },
-    support: async (project: ProjectModel, _: any, context: ContextValue) => {
+    support: async (project: ProjectModel, _: any, context: Context) => {
       const {
         dataSources: { projectAndDripListSupportDb },
       } = context;
