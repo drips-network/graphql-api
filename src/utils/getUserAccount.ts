@@ -3,7 +3,7 @@ import type { UserAccount } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import getUserAddress from './getUserAddress';
 import groupBy from './linq';
-import buildAssetConfigs from './buildStreams';
+import buildAssetConfigs from './buildAssetConfigs';
 import getLatestAccountMetadata from './getLatestAccountMetadata';
 import getStreamsSetEventsWithReceivers from './getStreamsSetEventsWithReceivers';
 

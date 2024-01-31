@@ -20,12 +20,14 @@ import type {
 import { AMT_PER_SEC_MULTIPLIER } from '../common/constants';
 import toBigIntString from './toBigIntString';
 
+type Erc20 = string;
+
 export default function buildAssetConfigs(
   accountId: AddressDriverId,
   accountMetadata: AccountMetadata | undefined,
-  streamsSetEvents: Map<string, StreamsSetEventWithReceivers[]>,
+  accountStreamsSetEvents: Map<Erc20, StreamsSetEventWithReceivers[]>,
 ) {
-  return Array.from(streamsSetEvents.entries()).reduce<AssetConfig[]>(
+  return Array.from(accountStreamsSetEvents.entries()).reduce<AssetConfig[]>(
     (acc, [tokenAddress, assetConfigStreamsSetEvents]) => {
       const assetConfigMetadata = accountMetadata?.assetConfigs.find(
         (ac) => ac.tokenAddress.toLowerCase() === tokenAddress.toLowerCase(),
@@ -33,7 +35,7 @@ export default function buildAssetConfigs(
 
       assert(
         assetConfigStreamsSetEvents && assetConfigStreamsSetEvents.length > 0,
-        `Unable to find streamsSet events for asset config with token address ${tokenAddress}`,
+        `Unable to find 'StreamsSet' events for asset config with token address '${tokenAddress}' for account '${accountId}'.`,
       );
 
       const assetConfigHistoryItems: AssetConfigHistoryItem[] = [];
