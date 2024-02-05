@@ -14,10 +14,26 @@ const commonTypeDef = gql`
     accountId: ID!
   }
 
+  type MovingAmount {
+    # From this timestamp on…
+    timestamp: Date!
+    # ... take this amount ...
+    amount: Amount!
+    # ... and add this amount per second
+    amountPerSecond: Amount!
+  }
+
+  type Balance {
+    tokenAddress: string;
+    incoming: [MovingAmount!]!
+    outgoing: [MovingAmount!]!
+  }
+
   type AddressDriverAccount implements Account {
     driver: Driver!
     accountId: ID!
     address: String!
+    balances: [Balance!]!
   }
 
   type RepoDriverAccount implements Account {
@@ -75,6 +91,7 @@ const commonTypeDef = gql`
     date: Date!
     weight: Int!
     dripList: DripList!
+    total: [MovingBalance!]!
   }
 
   type ProjectSupport {
@@ -82,12 +99,19 @@ const commonTypeDef = gql`
     date: Date!
     weight: Int!
     project: Project!
+    total: [MovingBalance!]!
   }
 
   type OneTimeDonationSupport {
     account: AddressDriverAccount!
-    amount: Amount!
     date: Date!
+    total: [MovingBalance!]!
+  }
+
+  type StreamSupport {
+    account: AddressDriverAccount!
+    date: Date!
+    total: [MovingBalance!]!
   }
 
   type Amount {
@@ -104,8 +128,9 @@ const commonTypeDef = gql`
     | ProjectSupport
     | OneTimeDonationSupport
     | SupportGroup
+    | StreamSupport
 
-  union Support = DripListSupport | ProjectSupport | OneTimeDonationSupport
+  union Support = DripListSupport | ProjectSupport | OneTimeDonationSupport | StreamSupport
 `;
 
 export default commonTypeDef;

@@ -21,6 +21,7 @@ const streamTypeDef = gql`
     description: String
     isArchived: Boolean
     isManaged: Boolean!
+    totalStreamed: [MovingAmount!]!
   }
 
   input StreamWhereInput {
