@@ -7,7 +7,7 @@ import type {
 import { Driver } from '../generated/graphql';
 import GivenEventModel from '../given-event/GivenEventModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
-import type { ContextValue } from '../server';
+import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { DripListId, ProjectId } from './types';
 import { DependencyType } from './types';
@@ -43,7 +43,7 @@ const commonResolvers = {
     account: async (
       parent: { funderProjectId: ProjectId; weight: number },
       _: any,
-      context: ContextValue,
+      context: Context,
     ): Promise<RepoDriverAccount> => {
       const {
         dataSources: { projectsDb },
@@ -61,7 +61,7 @@ const commonResolvers = {
     project: (
       parent: { funderProjectId: ProjectId },
       _: any,
-      context: ContextValue,
+      context: Context,
     ) => {
       const {
         dataSources: { projectsDb },
@@ -74,7 +74,7 @@ const commonResolvers = {
     account: async (
       parent: { funderDripListId: DripListId; weight: number },
       _: any,
-      context: ContextValue,
+      context: Context,
     ): Promise<NftDriverAccount> => {
       const {
         dataSources: { dripListsDb },
@@ -94,7 +94,7 @@ const commonResolvers = {
     dripList: (
       parent: { funderDripListId: DripListId },
       _: any,
-      context: ContextValue,
+      context: Context,
     ) => {
       const {
         dataSources: { dripListsDb },
@@ -107,7 +107,7 @@ const commonResolvers = {
     account: async (
       parent: { transactionHash: string; logIndex: number },
       _: any,
-      context: ContextValue,
+      context: Context,
     ): Promise<AddressDriverAccount> => {
       const {
         dataSources: { givesDb },
