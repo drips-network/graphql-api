@@ -26,6 +26,6 @@ export default {
     process.env.RATE_LIMIT_MAX_REQUESTS_PER_WINDOW ?? '1000',
     10,
   ),
-  maxQueryDepth: parseInt(process.env.MAX_QUERY_DEPTH ?? '4', 10),
+  maxQueryDepth: parseInt(process.env.MAX_QUERY_DEPTH ?? '10', 10),
   timeoutInSeconds: parseInt(process.env.TIMEOUT_IN_SECONDS ?? '20', 10),
 };

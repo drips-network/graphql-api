@@ -1,9 +1,6 @@
 /* eslint-disable no-console */
 import { ApolloServer } from '@apollo/server';
-import {
-  ApolloServerPluginLandingPageLocalDefault,
-  ApolloServerPluginLandingPageProductionDefault,
-} from '@apollo/server/plugin/landingPage/default';
+import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { ApolloServerPluginDrainHttpServer } from '@apollo/server/plugin/drainHttpServer';
 import { expressMiddleware } from '@apollo/server/express4';
 import express from 'express';
@@ -63,9 +60,7 @@ const server = new ApolloServer<Context>({
   typeDefs,
   resolvers,
   plugins: [
-    appSettings.environment === 'mainnet'
-      ? ApolloServerPluginLandingPageProductionDefault()
-      : ApolloServerPluginLandingPageLocalDefault(),
+    ApolloServerPluginLandingPageLocalDefault(),
     ApolloServerPluginDrainHttpServer({ httpServer }),
   ],
 });
