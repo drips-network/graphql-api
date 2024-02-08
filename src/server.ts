@@ -112,6 +112,8 @@ const startServer = async () => {
     next();
   });
 
+  app.set('trust proxy', 1);
+
   app.use(
     '/',
     cors<cors.CorsRequest>(),
