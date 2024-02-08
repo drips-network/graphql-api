@@ -5,6 +5,7 @@ import ProjectModel from '../project/ProjectModel';
 import type { FakeUnclaimedProject, ProjectId } from '../common/types';
 import {
   doesRepoExists,
+  isValidateProjectName,
   toApiProject,
   toFakeUnclaimedProjectFromUrl,
 } from '../project/projectUtils';
@@ -20,7 +21,11 @@ export default class ProjectsDataSource {
           },
           isValid: true,
         },
-      });
+      }).then((projectModels) =>
+        projectModels.filter((p) =>
+          p.name ? isValidateProjectName(p.name) : true,
+        ),
+      );
 
       const projectIdToProjectMap = projects.reduce<
         Record<ProjectId, ProjectModel>
@@ -64,6 +69,7 @@ export default class ProjectsDataSource {
 
     return projects
       .filter((p) => p.isValid)
+      .filter((p) => (p.name ? isValidateProjectName(p.name) : true))
       .map(toApiProject)
       .filter(Boolean) as (ProjectModel | FakeUnclaimedProject)[];
   }

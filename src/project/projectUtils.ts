@@ -1,22 +1,12 @@
-import { Op } from 'sequelize';
 import { ethers } from 'ethers';
 import type { FakeUnclaimedProject, Forge, ProjectId } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import ProjectModel, { ProjectVerificationStatus } from './ProjectModel';
+import type ProjectModel from './ProjectModel';
+import { ProjectVerificationStatus } from './ProjectModel';
 import { RepoDriver__factory } from '../generated/contracts';
 import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
 import provider from '../common/provider';
-
-export async function getProjects(ids: ProjectId[]): Promise<ProjectModel[]> {
-  return ProjectModel.findAll({
-    where: {
-      id: {
-        [Op.in]: ids,
-      },
-    },
-  });
-}
 
 export function splitProjectName(projectName: string): {
   ownerName: string;
@@ -29,6 +19,28 @@ export function splitProjectName(projectName: string): {
   }
 
   return { ownerName: components[0], repoName: components[1] };
+}
+
+export function isValidateProjectName(name: string): boolean {
+  const components = name.split('/');
+
+  if (components.length !== 2) {
+    return false;
+  }
+
+  const ownerName = components[0];
+  const repoName = components[1];
+
+  const validProjectNameRegex: RegExp = /^[\w.-]+$/;
+
+  if (
+    !validProjectNameRegex.test(ownerName) ||
+    !validProjectNameRegex.test(repoName)
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function toContractForge(forge: Forge): 0 | 1 {
