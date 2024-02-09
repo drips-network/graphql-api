@@ -70,7 +70,7 @@ const projectResolvers = {
         assert(isProjectVerificationStatus(where.verificationStatus));
       }
 
-      if (sort.field === 'claimedAt') {
+      if (sort?.field === 'claimedAt') {
         assert(isSortableProjectField(sort.field));
       }
 
