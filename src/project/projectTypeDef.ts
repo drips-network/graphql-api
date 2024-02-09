@@ -36,6 +36,7 @@ const projectTypeDef = gql`
     account: RepoDriverAccount!
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
+    claimedAt: Date!
   }
 
   type UnclaimedProject {
@@ -50,6 +51,15 @@ const projectTypeDef = gql`
     url: String
     ownerAddress: String
     verificationStatus: ProjectVerificationStatus
+  }
+
+  input ProjectSortInput {
+    field: ProjectSortField!
+    direction: SortDirection
+  }
+
+  enum ProjectSortField {
+    claimedAt
   }
 
   union Project = ClaimedProject | UnclaimedProject

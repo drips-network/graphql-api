@@ -16,6 +16,7 @@ import type {
   Forge,
   DripList,
   ProjectWhereInput,
+  ProjectSortInput,
 } from '../generated/graphql';
 import type { Context } from '../server';
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
@@ -25,6 +26,7 @@ import assert, {
   isGitHubUrl,
   isProjectVerificationStatus,
   isRepoDiverAccountId,
+  isSortableProjectField,
 } from '../utils/assert';
 
 const projectResolvers = {
@@ -49,7 +51,7 @@ const projectResolvers = {
     },
     projects: async (
       _: any,
-      { where }: { where: ProjectWhereInput },
+      { where, sort }: { where: ProjectWhereInput; sort: ProjectSortInput },
       { dataSources }: Context,
     ): Promise<(ProjectModel | FakeUnclaimedProject)[]> => {
       if (where?.id) {
@@ -68,7 +70,11 @@ const projectResolvers = {
         assert(isProjectVerificationStatus(where.verificationStatus));
       }
 
-      return dataSources.projectsDb.getProjectsByFilter(where);
+      if (sort.field === 'claimedAt') {
+        assert(isSortableProjectField(sort.field));
+      }
+
+      return dataSources.projectsDb.getProjectsByFilter(where, sort);
     },
   },
   Project: {

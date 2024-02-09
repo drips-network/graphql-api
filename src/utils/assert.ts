@@ -76,3 +76,7 @@ export function isAccountId(id: string): boolean {
     isRepoDiverAccountId(id)
   );
 }
+
+export function isSortableProjectField(field: string): boolean {
+  return ['claimedAt'].includes(field);
+}

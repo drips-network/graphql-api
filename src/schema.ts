@@ -8,7 +8,7 @@ const rootTypeDef = gql`
   type Query {
     projectById(id: ID!): Project
     projectByUrl(url: String!): Project
-    projects(where: ProjectWhereInput): [Project!]!
+    projects(where: ProjectWhereInput, sort: ProjectSortInput): [Project!]!
 
     dripList(id: ID!): DripList
     dripLists(where: DripListWhereInput): [DripList!]!

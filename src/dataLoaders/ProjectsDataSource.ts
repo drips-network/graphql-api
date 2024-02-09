@@ -1,4 +1,4 @@
-import type { WhereOptions } from 'sequelize';
+import type { Order, WhereOptions } from 'sequelize';
 import { Op } from 'sequelize';
 import DataLoader from 'dataloader';
 import ProjectModel from '../project/ProjectModel';
@@ -9,7 +9,7 @@ import {
   toApiProject,
   toFakeUnclaimedProjectFromUrl,
 } from '../project/projectUtils';
-import type { ProjectWhereInput } from '../generated/graphql';
+import type { ProjectSortInput, ProjectWhereInput } from '../generated/graphql';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
@@ -61,10 +61,14 @@ export default class ProjectsDataSource {
 
   public async getProjectsByFilter(
     where: ProjectWhereInput,
+    sort?: ProjectSortInput,
   ): Promise<(ProjectModel | FakeUnclaimedProject)[]> {
+    const order: Order = sort ? [[sort.field, sort.direction || 'DESC']] : [];
+
     const projects =
       (await ProjectModel.findAll({
         where: (where as WhereOptions) || {},
+        order,
       })) || [];
 
     return projects

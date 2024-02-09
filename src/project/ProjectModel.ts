@@ -36,6 +36,8 @@ export default class ProjectModel extends Model<
   public declare description: string | null;
   public declare verificationStatus: ProjectVerificationStatus;
 
+  public declare claimedAt: Date | null;
+
   public static initialize(sequelize: Sequelize): void {
     this.init(
       {
@@ -54,6 +56,10 @@ export default class ProjectModel extends Model<
         verificationStatus: {
           type: DataTypes.ENUM(...Object.values(ProjectVerificationStatus)),
           allowNull: false,
+        },
+        claimedAt: {
+          type: DataTypes.DATE,
+          allowNull: true,
         },
         forge: {
           type: DataTypes.ENUM(...Object.values(FORGES_MAP)),

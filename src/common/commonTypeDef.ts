@@ -106,6 +106,11 @@ const commonTypeDef = gql`
     | SupportGroup
 
   union Support = DripListSupport | ProjectSupport | OneTimeDonationSupport
+
+  enum SortDirection {
+    ASC
+    DESC
+  }
 `;
 
 export default commonTypeDef;
