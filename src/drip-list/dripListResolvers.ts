@@ -1,5 +1,5 @@
 import { isAddress } from 'ethers';
-import { type DripListId } from '../common/types';
+import type { Address, DripListId } from '../common/types';
 import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
@@ -40,6 +40,17 @@ const dripListResolvers = {
       }
 
       return dataSources.dripListsDb.getDripListsByFilter(where);
+    },
+    mintedTokensCountByOwnerAddress: async (
+      _: any,
+      { ownerAddress }: { ownerAddress: Address },
+      { dataSources }: Context,
+    ): Promise<number> => {
+      assert(isAddress(ownerAddress));
+
+      return dataSources.dripListsDb.getMintedTokensCountByAccountId(
+        ownerAddress,
+      );
     },
   },
   DripList: {

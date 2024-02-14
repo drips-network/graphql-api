@@ -1,9 +1,10 @@
 import type { WhereOptions } from 'sequelize';
 import { Op } from 'sequelize';
 import DataLoader from 'dataloader';
-import type { DripListId } from '../common/types';
+import type { Address, DripListId } from '../common/types';
 import type { DripListWhereInput } from '../generated/graphql';
 import DripListModel from '../drip-list/DripListModel';
+import TransferEventModel from '../drip-list/TransferEventModel';
 
 export default class DripListsDataSource {
   private readonly _batchDripListsByIds = new DataLoader(
@@ -47,5 +48,18 @@ export default class DripListsDataSource {
 
   public async getDripListsByIds(ids: DripListId[]): Promise<DripListModel[]> {
     return this._batchDripListsByIds.loadMany(ids) as Promise<DripListModel[]>;
+  }
+
+  public async getMintedTokensCountByAccountId(
+    ownerAddress: Address,
+  ): Promise<number> {
+    // TODO: Fix edge case. This will not count tokens minted by the owner but immediately transferred to another address.
+    const total = await TransferEventModel.count({
+      where: {
+        to: ownerAddress,
+      },
+    });
+
+    return total;
   }
 }

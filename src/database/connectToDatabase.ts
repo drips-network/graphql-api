@@ -6,6 +6,7 @@ import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import appSettings from '../common/appSettings';
+import TransferEventModel from '../drip-list/TransferEventModel';
 
 export default async function connectToDatabase() {
   const dbConnection = new Sequelize(
@@ -18,6 +19,7 @@ export default async function connectToDatabase() {
   ProjectModel.initialize(dbConnection);
   DripListModel.initialize(dbConnection);
   GivenEventModel.initialize(dbConnection);
+  TransferEventModel.initialize(dbConnection);
   DripListSplitReceiverModel.initialize(dbConnection);
   RepoDriverSplitReceiverModel.initialize(dbConnection);
   AddressDriverSplitReceiverModel.initialize(dbConnection);

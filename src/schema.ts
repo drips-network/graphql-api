@@ -12,7 +12,10 @@ const rootTypeDef = gql`
 
     dripList(id: ID!): DripList
     dripLists(where: DripListWhereInput): [DripList!]!
+
     gives(where: GiveWhereInput): [Give!]!
+
+    mintedTokensCountByOwnerAddress(ownerAddress: String!): Int
   }
 `;
 
