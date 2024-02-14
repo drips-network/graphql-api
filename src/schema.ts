@@ -15,7 +15,7 @@ const rootTypeDef = gql`
 
     gives(where: GiveWhereInput): [Give!]!
 
-    mintedTokensCountByOwnerAddress(ownerAddress: String!): Int
+    mintedTokensCountByOwnerAddress(ownerAddress: String!): Int!
   }
 `;
 
