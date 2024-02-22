@@ -16,6 +16,8 @@ const rootTypeDef = gql`
     gives(where: GiveWhereInput): [Give!]!
 
     mintedTokensCountByOwnerAddress(ownerAddress: String!): Int!
+
+    earnedFunds(projectId: String!): [Amount!]!
   }
 `;
 

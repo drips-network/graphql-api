@@ -76,6 +76,15 @@ const projectResolvers = {
 
       return dataSources.projectsDb.getProjectsByFilter(where, sort);
     },
+    earnedFunds: async (
+      _: any,
+      { projectId }: { projectId: ProjectId },
+      { dataSources }: Context,
+    ) => {
+      assert(isRepoDiverAccountId(projectId));
+
+      return dataSources.projectsDb.getEarnedFunds(projectId);
+    },
   },
   Project: {
     __resolveType(parent: ProjectModel) {
