@@ -15,6 +15,7 @@
     "build": "npm run build:contracts && npm run build:graphql && tsc",
     "start:local": "ENV=local npx nodemon",
     "start:goerli": "ENV=goerli npx nodemon",
+    "start:sepolia": "ENV=sepolia npx nodemon",
     "start:mainnet": "export ENV=mainnet && npm run build && node dist/index.js",
     "start": "npm run build && node dist/index.js",
     "check": "tsc --noEmit"

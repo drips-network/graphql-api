@@ -172,6 +172,8 @@ const dripListResolvers = {
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
+    latestVotingRoundId: (dripList: DripListModel) =>
+      dripList.latestVotingRoundId,
   },
 };
 

@@ -10,6 +10,7 @@ const dripListTypeDef = gql`
     owner: AddressDriverAccount!
     previousOwnerAddress: String!
     support: [SupportItem!]!
+    latestVotingRoundId: String
   }
 
   input DripListWhereInput {
