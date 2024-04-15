@@ -54,7 +54,7 @@ const dripListResolvers = {
     },
   },
   DripList: {
-    name: (dripList: DripListModel) => dripList.name,
+    name: (dripList: DripListModel) => dripList.name ?? 'Unnamed Drip List',
     creator: (dripList: DripListModel) => dripList.creator,
     description: (dripList: DripListModel) => dripList.description,
     previousOwnerAddress: (dripList: DripListModel) =>

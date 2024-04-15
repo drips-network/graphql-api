@@ -15,7 +15,6 @@ export default class DripListsDataSource {
             [Op.in]: dripListIds,
           },
           isValid: true,
-          name: { [Op.not]: null },
         },
       });
 
