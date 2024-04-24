@@ -1,8 +1,9 @@
 /* eslint-disable no-bitwise */
 import { ethers } from 'ethers';
 import getContractNameByAccountId from './getContractNameByAccountId';
+import type { Address } from '../common/types';
 
-export default function getUserAddress(accountId: string): string {
+export default function getUserAddress(accountId: string): Address {
   const accountIdAsBn = BigInt(accountId);
 
   const maxUint256 = BigInt(2) ** BigInt(256) - BigInt(1);
@@ -28,5 +29,5 @@ export default function getUserAddress(accountId: string): string {
 
   address = address.padStart(40, '0');
 
-  return ethers.getAddress(address);
+  return ethers.getAddress(address) as Address;
 }

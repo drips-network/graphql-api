@@ -17,6 +17,8 @@ declare global {
       RATE_LIMIT_MAX_REQUESTS_PER_WINDOW: string;
       MAX_QUERY_DEPTH: string;
       TIMEOUT_IN_SECONDS: string;
+      ADDRESS_DRIVER_ADDRESS: string;
+      IPFS_GATEWAY_URL: string;
     }
   }
 }

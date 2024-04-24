@@ -8,6 +8,9 @@ import GivenEventModel from '../given-event/GivenEventModel';
 import appSettings from '../common/appSettings';
 import TransferEventModel from '../drip-list/TransferEventModel';
 import SplitEventModel from '../models/SplitEventModel';
+import StreamsSetEventModel from '../models/StreamsSetEventModel';
+import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
+import AccountMetadataEmittedEventModel from '../models/AccountMetadataEmittedEventModel';
 
 export default async function connectToDatabase() {
   const dbConnection = new Sequelize(
@@ -22,7 +25,10 @@ export default async function connectToDatabase() {
   SplitEventModel.initialize(dbConnection);
   GivenEventModel.initialize(dbConnection);
   TransferEventModel.initialize(dbConnection);
+  StreamsSetEventModel.initialize(dbConnection);
   DripListSplitReceiverModel.initialize(dbConnection);
+  StreamReceiverSeenEventModel.initialize(dbConnection);
   RepoDriverSplitReceiverModel.initialize(dbConnection);
   AddressDriverSplitReceiverModel.initialize(dbConnection);
+  AccountMetadataEmittedEventModel.initialize(dbConnection);
 }

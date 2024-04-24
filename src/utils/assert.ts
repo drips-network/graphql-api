@@ -11,7 +11,7 @@ export default function assert(
   }
 }
 
-export function isAddressDriverAccountId(id: string): id is AddressDriverId {
+export function isAddressDriverId(id: string): id is AddressDriverId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfAddressDriver =
     getContractNameByAccountId(id) === 'addressDriver';
@@ -23,7 +23,7 @@ export function isAddressDriverAccountId(id: string): id is AddressDriverId {
   return true;
 }
 
-export function isNftDriverAccountId(id: string): id is DripListId {
+export function isDripListId(id: string): id is DripListId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfNftDriver = getContractNameByAccountId(id) === 'nftDriver';
 
@@ -34,7 +34,7 @@ export function isNftDriverAccountId(id: string): id is DripListId {
   return true;
 }
 
-export function isRepoDiverAccountId(id: string): id is ProjectId {
+export function isProjectId(id: string): id is ProjectId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfRepoDriver =
     getContractNameByAccountId(id) === 'repoDriver';
@@ -70,11 +70,7 @@ export function isProjectVerificationStatus(
 }
 
 export function isAccountId(id: string): boolean {
-  return (
-    isAddressDriverAccountId(id) ||
-    isNftDriverAccountId(id) ||
-    isRepoDiverAccountId(id)
-  );
+  return isAddressDriverId(id) || isDripListId(id) || isProjectId(id);
 }
 
 export function isSortableProjectField(field: string): boolean {

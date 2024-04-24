@@ -27,3 +27,5 @@ export const FORGES_MAP = {
   0: 'GitHub',
   1: 'GitLab',
 } as const;
+
+export const AMT_PER_SEC_MULTIPLIER = 1_000_000_000;

@@ -28,6 +28,8 @@ import DripListsDataSource from './dataLoaders/DripListsDataSource';
 import ReceiversOfTypeDripListDataSource from './dataLoaders/ReceiversOfTypeDripListDataSource';
 import GivenEventsDataSource from './dataLoaders/GivenEventsDataSource';
 import ProjectAndDripListSupportDataSource from './dataLoaders/ProjectAndDripListSupportDataSource';
+import UsersDataSource from './user/UserDataSource';
+import StreamsDataSource from './stream/StreamsDataSource';
 
 export interface Context {
   dataSources: {
@@ -39,6 +41,8 @@ export interface Context {
     receiversOfTypeDripListDb: ReceiversOfTypeDripListDataSource;
     projectAndDripListSupportDb: ProjectAndDripListSupportDataSource;
     givesDb: GivenEventsDataSource;
+    usersDb: UsersDataSource;
+    streamsDb: StreamsDataSource;
   };
 }
 
@@ -142,6 +146,8 @@ const startServer = async () => {
             projectAndDripListSupportDb:
               new ProjectAndDripListSupportDataSource(),
             givesDb: new GivenEventsDataSource(),
+            usersDb: new UsersDataSource(),
+            streamsDb: new StreamsDataSource(),
           },
         };
       },

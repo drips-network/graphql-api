@@ -25,7 +25,7 @@ import type DripListModel from '../drip-list/DripListModel';
 import assert, {
   isGitHubUrl,
   isProjectVerificationStatus,
-  isRepoDiverAccountId,
+  isProjectId,
   isSortableProjectField,
 } from '../utils/assert';
 
@@ -36,7 +36,7 @@ const projectResolvers = {
       { id }: { id: ProjectId },
       { dataSources }: Context,
     ): Promise<ProjectModel | FakeUnclaimedProject | null> => {
-      assert(isRepoDiverAccountId(id));
+      assert(isProjectId(id));
 
       return dataSources.projectsDb.getProjectById(id);
     },
@@ -55,7 +55,7 @@ const projectResolvers = {
       { dataSources }: Context,
     ): Promise<(ProjectModel | FakeUnclaimedProject)[]> => {
       if (where?.id) {
-        assert(isRepoDiverAccountId(where.id));
+        assert(isProjectId(where.id));
       }
 
       if (where?.ownerAddress) {
@@ -81,7 +81,7 @@ const projectResolvers = {
       { projectId }: { projectId: ProjectId },
       { dataSources }: Context,
     ) => {
-      assert(isRepoDiverAccountId(projectId));
+      assert(isProjectId(projectId));
 
       return dataSources.projectsDb.getEarnedFunds(projectId);
     },

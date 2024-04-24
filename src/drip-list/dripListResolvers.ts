@@ -14,7 +14,7 @@ import { Driver } from '../generated/graphql';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Context } from '../server';
 import type GitProjectModel from '../project/ProjectModel';
-import assert, { isNftDriverAccountId } from '../utils/assert';
+import assert, { isDripListId } from '../utils/assert';
 
 const dripListResolvers = {
   Query: {
@@ -23,7 +23,7 @@ const dripListResolvers = {
       { id }: { id: DripListId },
       { dataSources }: Context,
     ): Promise<DripListModel | null> => {
-      assert(isNftDriverAccountId(id));
+      assert(isDripListId(id));
 
       return dataSources.dripListsDb.getDripListById(id);
     },
@@ -33,7 +33,7 @@ const dripListResolvers = {
       { dataSources }: Context,
     ): Promise<DripListModel[]> => {
       if (where?.id) {
-        assert(isNftDriverAccountId(where.id));
+        assert(isDripListId(where.id));
       }
       if (where?.ownerAddress) {
         assert(isAddress(where.ownerAddress));

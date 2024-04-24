@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import shouldNeverHappen from '../utils/shouldNeverHappen';
 
 dotenv.config({ path: `.env.${process.env.ENV}` });
 
@@ -28,4 +29,9 @@ export default {
   ),
   maxQueryDepth: parseInt(process.env.MAX_QUERY_DEPTH ?? '10', 10),
   timeoutInSeconds: parseInt(process.env.TIMEOUT_IN_SECONDS ?? '20', 10),
+  // TODO: Refactor when we switch to multi-chain API.
+  addressDriverAddress:
+    process.env.ADDRESS_DRIVER_ADDRESS ||
+    shouldNeverHappen('Missing address driver address in .env file.'),
+  ipfsGatewayUrl: process.env.IPFS_GATEWAY_URL,
 };
