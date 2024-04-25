@@ -1,3 +1,4 @@
+import estimatesResolvers from './balances/estimatesResolvers';
 import commonResolvers from './common/commonResolvers';
 import dateScalar from './common/date';
 import dripListResolvers from './drip-list/dripListResolvers';
@@ -11,6 +12,7 @@ const resolvers = {
     ...dripListResolvers.Query,
     ...userResolvers.Query,
     ...streamResolvers.Query,
+    ...estimatesResolvers.Query,
   },
   Project: projectResolvers.Project,
   DripList: dripListResolvers.DripList,

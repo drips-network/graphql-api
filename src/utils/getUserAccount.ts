@@ -10,7 +10,8 @@ import getStreamsSetEventsWithReceivers from './getStreamsSetEventsWithReceivers
 export default async function getUserAccount(
   accountId: AddressDriverId,
 ): Promise<UserAccount> {
-  const { metadata, ipfsHash } = await getLatestAccountMetadata(accountId);
+  const { metadata, ipfsHash } =
+    (await getLatestAccountMetadata(accountId)) ?? {};
 
   const accountStreamsSetEventsWithReceivers =
     await getStreamsSetEventsWithReceivers(accountId);

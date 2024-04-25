@@ -23,10 +23,13 @@ async function getIpfsFile(hash: IpfsHash): Promise<Response> {
 
 export default async function getLatestAccountMetadata(
   accountId: AddressDriverId,
-): Promise<{
-  metadata: AnyVersion<typeof addressDriverAccountMetadataParser>;
-  ipfsHash: IpfsHash;
-}> {
+): Promise<
+  | {
+      metadata: AnyVersion<typeof addressDriverAccountMetadataParser>;
+      ipfsHash: IpfsHash;
+    }
+  | undefined
+> {
   const latestAccountMetadataEmittedEvent =
     await AccountMetadataEmittedEventModel.findAll({
       where: { accountId },
@@ -38,9 +41,7 @@ export default async function getLatestAccountMetadata(
     });
 
   if (!latestAccountMetadataEmittedEvent.length) {
-    throw new Error(
-      `No 'AccountMetadataEmitted' events found for account '${accountId}'.`,
-    );
+    return undefined;
   }
 
   const ipfsHash = toIpfsHash(latestAccountMetadataEmittedEvent[0].value);

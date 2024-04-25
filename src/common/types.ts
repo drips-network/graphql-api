@@ -65,3 +65,7 @@ export type AccountMetadata = AnyVersion<
   typeof addressDriverAccountMetadataParser
 >;
 export type AssetConfigMetadata = AccountMetadata['assetConfigs'][number];
+
+export type StreamHistoryHashes = string & {
+  __type: 'StreamHistoryHashes';
+};
