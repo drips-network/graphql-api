@@ -56,6 +56,12 @@ export default class StreamsDataSource {
   public async getStreamsByFilter(where: StreamWhereInput): Promise<Stream[]> {
     const streams: Stream[] = [];
 
+    if (!where.senderId && !where.receiverId) {
+      throw new Error(
+        'At least one of senderId or receiverId must be provided.',
+      );
+    }
+
     if (where.senderId) {
       assert(isAddressDriverId(where.senderId));
 

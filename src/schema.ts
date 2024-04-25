@@ -18,6 +18,7 @@ const rootTypeDef = gql`
     earnedFunds(projectId: String!): [Amount!]!
     userById(accountId: ID!): User!
     userByAddress(address: String!): User!
+    streams(where: StreamWhereInput): [Stream!]!
   }
 `;
 
