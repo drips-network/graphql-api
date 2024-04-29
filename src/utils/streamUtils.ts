@@ -15,11 +15,13 @@ import type {
   Stream,
   StreamConfig,
   HistoricalStream,
+  AssetConfigHistoryItem,
 } from '../generated/graphql';
 import getContractNameByAccountId from './getContractNameByAccountId';
 import getUserAddress from './getUserAddress';
 import toBigIntString from './toBigIntString';
 import assert from './assert';
+import streamTotalStreamedTimeline from '../balances/estimate-reloaded';
 
 const numericTest = /^\d+$/;
 
@@ -117,6 +119,7 @@ export function mapReceiverToStream(
   receiver: HistoricalStream,
   senderAccountId: string,
   tokenAddress: string,
+  historyItems: AssetConfigHistoryItem[],
   assetConfigMetadata?: AssetConfigMetadata,
 ): Stream {
   const streamMetadata = assetConfigMetadata?.streams.find(
@@ -163,5 +166,6 @@ export function mapReceiverToStream(
     name: streamMetadata?.name,
     description: streamMetadata?.description,
     isArchived: streamMetadata?.archived ?? false,
+    timeline: streamTotalStreamedTimeline(receiver.streamId, historyItems),
   };
 }

@@ -1,16 +1,9 @@
-import type { AssetConfigHistoryItem, Scalars } from '../generated/graphql';
-
-interface Amount {
-  tokenAddress: string;
-  amount: bigint;
-}
-
-interface TimelineItem {
-  type: 'start' | 'end' | 'pause' | 'out-of-funds';
-  timestamp: Date;
-  currentAmount: Amount;
-  deltaPerSecond: Amount;
-}
+import {
+  TimelineItemType,
+  type AssetConfigHistoryItem,
+  type Scalars,
+  type TimelineItem,
+} from '../generated/graphql';
 
 type BalanceTimeline = TimelineItem[];
 
@@ -47,7 +40,7 @@ export default function streamTotalStreamedTimeline(
     if (!config) {
       // stream was paused
       timelineSketch.push({
-        type: 'pause',
+        type: TimelineItemType.PAUSE,
         timestamp: item.timestamp,
         associatedHistoryItem: item,
       });
@@ -55,14 +48,14 @@ export default function streamTotalStreamedTimeline(
       if (config.startDate && new Date(config.startDate) > item.timestamp) {
         // stream scheduled for the future
         timelineSketch.push({
-          type: 'start',
+          type: TimelineItemType.START,
           timestamp: new Date(config.startDate),
           associatedHistoryItem: item,
         });
       } else {
         // stream started
         timelineSketch.push({
-          type: 'start',
+          type: TimelineItemType.START,
           timestamp: item.timestamp,
           associatedHistoryItem: item,
         });
@@ -78,15 +71,16 @@ export default function streamTotalStreamedTimeline(
         );
 
         timelineSketch.push({
-          type: 'end',
+          type: TimelineItemType.END,
           timestamp: streamEnd,
           associatedHistoryItem: item,
         });
       }
 
       if (item.runsOutOfFunds) {
-        const endTimestamp = timelineSketch.find((ts) => ts.type === 'end')
-          ?.timestamp;
+        const endTimestamp = timelineSketch.find(
+          (ts) => ts.type === TimelineItemType.END,
+        )?.timestamp;
         const endTimestampDate = endTimestamp
           ? new Date(endTimestamp)
           : undefined;
@@ -97,7 +91,7 @@ export default function streamTotalStreamedTimeline(
           endTimestampDate.getTime() > new Date(item.runsOutOfFunds).getTime()
         ) {
           timelineSketch.push({
-            type: 'out-of-funds',
+            type: TimelineItemType.OUT_OF_FUNDS,
             timestamp: item.runsOutOfFunds,
             associatedHistoryItem: item,
           });
@@ -156,11 +150,11 @@ export default function streamTotalStreamedTimeline(
       type: item.type,
       currentAmount: {
         tokenAddress,
-        amount: totalStreamed,
+        amount: totalStreamed.toString(),
       },
       deltaPerSecond: {
         tokenAddress,
-        amount: currentAmountPerSec,
+        amount: currentAmountPerSec.toString(),
       },
       timestamp: item.timestamp,
     });

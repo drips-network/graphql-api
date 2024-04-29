@@ -165,6 +165,7 @@ export default function buildAssetConfigs(
             receiver,
             accountId,
             tokenAddress,
+            assetConfigHistoryItems,
             assetConfigMetadata,
           ),
         ),

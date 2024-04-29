@@ -11,6 +11,20 @@ const streamTypeDef = gql`
 
   union StreamReceiver = AddressDriverAccount | NftDriverAccount
 
+  enum TimelineItemType {
+    START
+    END
+    PAUSE
+    OUT_OF_FUNDS
+  }
+
+  type TimelineItem {
+    type: TimelineItemType!
+    timestamp: Date!
+    currentAmount: Amount!
+    deltaPerSecond: Amount!
+  }
+
   type Stream {
     id: ID!
     sender: AddressDriverAccount!
@@ -21,6 +35,7 @@ const streamTypeDef = gql`
     description: String
     isArchived: Boolean
     isManaged: Boolean!
+    timeline: [TimelineItem!]!
   }
 
   input StreamWhereInput {
