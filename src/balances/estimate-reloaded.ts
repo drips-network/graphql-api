@@ -4,6 +4,7 @@ import {
   type Scalars,
   type TimelineItem,
 } from '../generated/graphql';
+import minMax from '../utils/minMax';
 
 type BalanceTimeline = TimelineItem[];
 
@@ -45,7 +46,11 @@ export default function streamTotalStreamedTimeline(
         associatedHistoryItem: item,
       });
     } else {
-      if (config.startDate && new Date(config.startDate) > item.timestamp) {
+      if (
+        config.startDate &&
+        new Date(config.startDate).getTime() >
+          new Date(item.timestamp).getTime()
+      ) {
         // stream scheduled for the future
         timelineSketch.push({
           type: TimelineItemType.START,
@@ -70,9 +75,15 @@ export default function streamTotalStreamedTimeline(
           startDate.getTime() + config.durationSeconds * 1000,
         );
 
+        // End event timestamp should be the stream end date, OR the timestamp of
+        // when the new stream end date was set, depending on which is later
+        const endEventTimestamp = new Date(
+          minMax('max', streamEnd.getTime(), item.timestamp.getTime()),
+        );
+
         timelineSketch.push({
           type: TimelineItemType.END,
-          timestamp: streamEnd,
+          timestamp: endEventTimestamp,
           associatedHistoryItem: item,
         });
       }
@@ -130,19 +141,17 @@ export default function streamTotalStreamedTimeline(
       ? (item.timestamp.getTime() - previousItem.timestamp.getTime()) / 1000
       : 0;
 
-    const lastAmountPerSecond = previousItem
-      ? BigInt(
-          previousItem.associatedHistoryItem.streams.find(
-            (s) => s.streamId === streamId,
-          )?.config?.amountPerSecond.amount || 0,
-        )
-      : 0n;
+    const lastTimelineItem = timeline[timeline.length - 1];
+
+    const lastAmountPerSecond = lastTimelineItem?.deltaPerSecond.amount ?? 0n;
 
     const totalStreamedSinceLastEvent =
-      lastAmountPerSecond * BigInt(secondsPassedSinceLastEvent);
-    const currentAmountPerSec = BigInt(
-      currentStreamConfig?.amountPerSecond.amount || 0,
-    );
+      BigInt(lastAmountPerSecond) * BigInt(secondsPassedSinceLastEvent);
+    const currentAmountPerSec =
+      item.type === TimelineItemType.END ||
+      item.type === TimelineItemType.OUT_OF_FUNDS
+        ? 0n
+        : BigInt(currentStreamConfig?.amountPerSecond.amount || 0);
 
     totalStreamed += totalStreamedSinceLastEvent;
 

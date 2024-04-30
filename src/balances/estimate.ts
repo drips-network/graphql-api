@@ -10,6 +10,7 @@ import type {
   UserAccount,
 } from '../generated/graphql';
 import type SqueezedStreamsEventModel from '../models/SqueezedStreamsEventModel';
+import minMax from '../utils/minMax';
 import { unwrapIdItems } from '../utils/wrap-unwrap-id-item';
 
 type Millis = number;
@@ -300,10 +301,4 @@ function calcScheduledEnd(
   duration?: Millis,
 ): Millis | undefined {
   return duration ? (start ?? timestamp) + duration : undefined;
-}
-
-function minMax(mode: 'min' | 'max', ...args: (number | undefined)[]) {
-  const filtered: number[] = args.filter((a): a is number => a !== undefined);
-
-  return Math[mode](...filtered);
 }
