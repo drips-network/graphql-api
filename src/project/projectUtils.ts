@@ -3,10 +3,9 @@ import type { FakeUnclaimedProject, Forge, ProjectId } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type ProjectModel from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
-import { RepoDriver__factory } from '../generated/contracts';
 import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
-import provider from '../common/provider';
+import dripsContracts from '../common/dripsContracts';
 
 export function splitProjectName(projectName: string): {
   ownerName: string;
@@ -107,10 +106,7 @@ export async function toFakeUnclaimedProjectFromUrl(url: string) {
   const ownerName = match[2];
   const repoName = match[3];
 
-  const repoDriver = RepoDriver__factory.connect(
-    appSettings.repoDriverAddress,
-    provider,
-  );
+  const { repoDriver } = dripsContracts;
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
 
@@ -143,10 +139,7 @@ export async function toFakeUnclaimedProject(
 
   const { ownerName, repoName } = splitProjectName(name);
 
-  const repoDriver = RepoDriver__factory.connect(
-    appSettings.repoDriverAddress,
-    provider,
-  );
+  const { repoDriver } = dripsContracts;
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
 
