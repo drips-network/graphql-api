@@ -130,14 +130,22 @@ export function assetOutgoingBalanceTimeline(
 
               if (!config) return acc;
 
-              const { startDate, durationSeconds, amountPerSecond } = config;
+              const {
+                startDate: startDateRaw,
+                durationSeconds,
+                amountPerSecond,
+              } = config;
+              const startDate = startDateRaw
+                ? new Date(startDateRaw)
+                : undefined;
 
               if (startDate && startDate.getTime() > ts.getTime()) return acc;
 
-              if (durationSeconds && startDate) {
-                const endDate = new Date(
-                  startDate.getTime() + durationSeconds * 1000,
-                );
+              if (durationSeconds) {
+                const endDate = startDate
+                  ? new Date(startDate.getTime() + durationSeconds * 1000)
+                  : new Date(timestamp.getTime() + durationSeconds * 1000);
+
                 if (endDate.getTime() < ts.getTime()) return acc;
               }
 
