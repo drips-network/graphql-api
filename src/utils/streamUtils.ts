@@ -21,7 +21,7 @@ import getContractNameByAccountId from './getContractNameByAccountId';
 import getUserAddress from './getUserAddress';
 import toBigIntString from './toBigIntString';
 import assert from './assert';
-import streamTotalStreamedTimeline from '../balances/estimate-reloaded';
+import { streamTotalStreamedTimeline } from '../balances/estimate-reloaded';
 
 const numericTest = /^\d+$/;
 

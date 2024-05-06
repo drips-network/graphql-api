@@ -1,3 +1,5 @@
+/* eslint-disable no-continue */
+
 import {
   TimelineItemType,
   type AssetConfigHistoryItem,
@@ -8,7 +10,153 @@ import minMax from '../utils/minMax';
 
 type BalanceTimeline = TimelineItem[];
 
-export default function streamTotalStreamedTimeline(
+interface AssetBalanceTimelineItem {
+  timestamp: Date;
+  balance: bigint;
+  deltaPerSecond: bigint;
+}
+
+export function assetOutgoingBalanceTimeline(
+  historyItems: AssetConfigHistoryItem[],
+): AssetBalanceTimelineItem[] {
+  historyItems.sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+  );
+
+  const timeline: AssetBalanceTimelineItem[] = [];
+
+  for (const item of historyItems) {
+    const { streams } = item;
+
+    const timestamp = new Date(item.timestamp);
+
+    const nextHistoryItem: AssetConfigHistoryItem | undefined =
+      historyItems[historyItems.indexOf(item) + 1];
+    const nextTimestamp = nextHistoryItem
+      ? new Date(nextHistoryItem.timestamp)
+      : undefined;
+
+    // Between historyItems, we need to add additional timeline entries for streams that have start or end dates scheduled. We first
+    // construct this array of just timestamps which will later be merged with historyItems into the final timeline.
+    const additionalTimelineEntries: Date[] = [];
+
+    for (const stream of streams) {
+      const { config } = stream;
+
+      if (!config) continue;
+
+      const { startDate: startDateRaw, durationSeconds } = config;
+      const startDate = startDateRaw ? new Date(startDateRaw) : undefined;
+
+      // If there's a startDate configured for the stream, we need to check whether the stream has already started before the current historyItem or not, and:
+      //
+      // - If it has started before, we don't need to add an additional timeline entry.
+      // - If it starts after the next historyItem, we don't need to add an additional timeline entry either.
+      // - If it starts between the current and next historyItem, we need to add an additional timeline entry timestamp.
+      // - If there is no next historyItem, but the stream starts after the current historyItem, we need to add an additional timeline entry timestamp as well.
+      if (startDate) {
+        if (
+          startDate.getTime() > timestamp.getTime() &&
+          (!nextTimestamp || startDate.getTime() < nextTimestamp.getTime())
+        ) {
+          additionalTimelineEntries.push(startDate);
+        }
+      }
+
+      // If there is a duration, we need to compute the end date (either startDate OR the timestamp of the current historyItem + duration seconds).
+      // Then, we check if the end date is between the current and next historyItem, and if so, we add an additional timeline entry timestamp.
+      // If there is no next historyItem, but the end date is after the current historyItem, we need to add an additional timeline entry timestamp as well.
+      if (durationSeconds) {
+        const endDate = startDate
+          ? new Date(startDate.getTime() + durationSeconds * 1000)
+          : new Date(timestamp.getTime() + durationSeconds * 1000);
+
+        if (
+          endDate.getTime() > timestamp.getTime() &&
+          (!nextTimestamp || endDate.getTime() < nextTimestamp.getTime())
+        ) {
+          additionalTimelineEntries.push(endDate);
+        }
+      }
+    }
+
+    // If the assetConfig runs out of funds before the next historyItem, we need to add an additional timeline entry timestamp.
+    // If there is no next historyItem, but the assetConfig runs out of funds after the current historyItem, we need to add an additional timeline entry timestamp as well.
+    if (
+      BigInt(item.balance.amount) > 0n &&
+      item.runsOutOfFunds &&
+      (!nextTimestamp ||
+        new Date(item.runsOutOfFunds).getTime() < nextTimestamp.getTime())
+    ) {
+      additionalTimelineEntries.push(new Date(item.runsOutOfFunds));
+    }
+
+    additionalTimelineEntries.sort((a, b) => a.getTime() - b.getTime());
+
+    // Add the current historyItem to the timeline, then compute the balance and deltaPerSecond for each additional timeline entry.
+    // For each item we add to the timeline, we need to compute the balance and deltaPerSecond at that point in time.
+    for (const [index, ts] of [
+      timestamp,
+      ...additionalTimelineEntries,
+    ].entries()) {
+      const previousTimelineItem: AssetBalanceTimelineItem | undefined =
+        timeline[timeline.length - 1];
+
+      const previousBalance = previousTimelineItem
+        ? previousTimelineItem.balance
+        : 0n;
+
+      const previousDeltaPerSecond = previousTimelineItem
+        ? previousTimelineItem.deltaPerSecond
+        : 0n;
+
+      const secondsPassedSinceLastEvent = previousTimelineItem
+        ? (ts.getTime() - previousTimelineItem.timestamp.getTime()) / 1000
+        : 0;
+
+      const totalStreamedSinceLastEvent =
+        previousDeltaPerSecond * BigInt(secondsPassedSinceLastEvent);
+
+      let currentBalance =
+        index === 0
+          ? BigInt(item.balance.amount)
+          : previousBalance - totalStreamedSinceLastEvent;
+      if (currentBalance < 0) currentBalance = 0n;
+
+      const currentDeltaPerSecond =
+        currentBalance > 0n
+          ? streams.reduce((acc, stream) => {
+              const { config } = stream;
+
+              if (!config) return acc;
+
+              const { startDate, durationSeconds, amountPerSecond } = config;
+
+              if (startDate && startDate.getTime() > ts.getTime()) return acc;
+
+              if (durationSeconds && startDate) {
+                const endDate = new Date(
+                  startDate.getTime() + durationSeconds * 1000,
+                );
+                if (endDate.getTime() < ts.getTime()) return acc;
+              }
+
+              return acc + BigInt(amountPerSecond.amount);
+            }, 0n)
+          : 0n;
+
+      timeline.push({
+        timestamp: ts,
+        balance: currentBalance,
+        deltaPerSecond: currentDeltaPerSecond,
+      });
+    }
+  }
+
+  return timeline;
+}
+
+export function streamTotalStreamedTimeline(
   streamId: Scalars['ID']['output'],
   historyItems: AssetConfigHistoryItem[],
 ): BalanceTimeline {
