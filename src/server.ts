@@ -21,7 +21,7 @@ import resolvers from './resolvers';
 import typeDefs from './schema';
 import appSettings from './common/appSettings';
 import ProjectsDataSource from './dataLoaders/ProjectsDataSource';
-import connectToDatabase from './database/connectToDatabase';
+import { connectToDatabase } from './database/connectToDatabase';
 import ReceiversOfTypeProjectDataSource from './dataLoaders/ReceiversOfTypeProjectDataSource';
 import ReceiversOfTypeAddressDataSource from './dataLoaders/ReceiversOfTypeAddressDataSource';
 import DripListsDataSource from './dataLoaders/DripListsDataSource';

@@ -7,7 +7,7 @@ import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
 import type { UUID } from 'crypto';
 import getSchema from '../utils/getSchema';
-import type { AccountId, DripListId } from '../common/types';
+import type { AccountId, DripListId, SupportedChain } from '../common/types';
 
 export default class DripListModel extends Model<
   InferAttributes<DripListModel>,
@@ -22,6 +22,8 @@ export default class DripListModel extends Model<
   public declare ownerAccountId: AccountId;
   public declare previousOwnerAddress: AddressLike;
   public declare latestVotingRoundId: UUID | null;
+
+  public declare chain: SupportedChain;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -61,6 +63,15 @@ export default class DripListModel extends Model<
         previousOwnerAddress: {
           type: DataTypes.STRING,
           allowNull: false,
+        },
+        chain: {
+          type: DataTypes.VIRTUAL,
+          get() {
+            return this.getDataValue('chain');
+          },
+          set(value: SupportedChain) {
+            this.setDataValue('chain', value);
+          },
         },
       },
       {

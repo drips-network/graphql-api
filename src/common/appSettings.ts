@@ -10,8 +10,8 @@ export default {
   rpcUrls: {
     mainnet: process.env.RPC_URL_MAINNET,
     sepolia: process.env.RPC_URL_SEPOLIA,
-    optimismSepolia: process.env.RPC_URL_OPTIMISM_SEPOLIA,
-    polygonAmoy: process.env.RPC_URL_POLYGON_AMOY,
+    'optimism-sepolia': process.env.RPC_URL_OPTIMISM_SEPOLIA,
+    'polygon-amoy': process.env.RPC_URL_POLYGON_AMOY,
   },
   publicApiKeys: process.env.PUBLIC_API_KEYS?.split(',') || [],
   dripsApiKey: process.env.DRIPS_API_KEY,

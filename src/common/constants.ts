@@ -1,10 +1,10 @@
 import { DataTypes } from 'sequelize';
 
-export const SUPPORTED_NETWORKS = [
+export const SUPPORTED_CHAINS = [
   'mainnet',
   'sepolia',
-  'optimismSepolia',
-  'polygonAmoy',
+  'optimism-sepolia',
+  'polygon-amoy',
 ] as const;
 
 export const COMMON_EVENT_INIT_ATTRIBUTES = {

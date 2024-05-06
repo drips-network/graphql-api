@@ -9,7 +9,7 @@ import GivenEventModel from '../given-event/GivenEventModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { DripListId, ProjectId } from './types';
+import type { DripListId, ProjectId, SupportedChain } from './types';
 import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
@@ -41,7 +41,11 @@ const commonResolvers = {
   },
   ProjectSupport: {
     account: async (
-      parent: { funderProjectId: ProjectId; weight: number },
+      parent: {
+        funderProjectId: ProjectId;
+        weight: number;
+        chain: SupportedChain;
+      },
       _: any,
       context: Context,
     ): Promise<RepoDriverAccount> => {
@@ -49,7 +53,10 @@ const commonResolvers = {
         dataSources: { projectsDb },
       } = context;
 
-      const project = await projectsDb.getProjectById(parent.funderProjectId);
+      const project = await projectsDb.getProjectById(
+        parent.funderProjectId,
+        parent.chain,
+      );
 
       return {
         driver: Driver.REPO,
@@ -59,7 +66,7 @@ const commonResolvers = {
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
     project: (
-      parent: { funderProjectId: ProjectId },
+      parent: { funderProjectId: ProjectId; chain: SupportedChain },
       _: any,
       context: Context,
     ) => {
@@ -67,12 +74,16 @@ const commonResolvers = {
         dataSources: { projectsDb },
       } = context;
 
-      return projectsDb.getProjectById(parent.funderProjectId);
+      return projectsDb.getProjectById(parent.funderProjectId, parent.chain);
     },
   },
   DripListSupport: {
     account: async (
-      parent: { funderDripListId: DripListId; weight: number },
+      parent: {
+        funderDripListId: DripListId;
+        weight: number;
+        chain: SupportedChain;
+      },
       _: any,
       context: Context,
     ): Promise<NftDriverAccount> => {
@@ -82,6 +93,7 @@ const commonResolvers = {
 
       const dripList = await dripListsDb.getDripListById(
         parent.funderDripListId,
+        parent.chain,
       );
 
       return {
@@ -92,7 +104,7 @@ const commonResolvers = {
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
     dripList: (
-      parent: { funderDripListId: DripListId },
+      parent: { funderDripListId: DripListId; chain: SupportedChain },
       _: any,
       context: Context,
     ) => {
@@ -100,7 +112,7 @@ const commonResolvers = {
         dataSources: { dripListsDb },
       } = context;
 
-      return dripListsDb.getDripListById(parent.funderDripListId);
+      return dripListsDb.getDripListById(parent.funderDripListId, parent.chain);
     },
   },
   OneTimeDonationSupport: {

@@ -111,6 +111,13 @@ const commonTypeDef = gql`
     ASC
     DESC
   }
+
+  enum Chain {
+    MAINNET
+    SEPOLIA
+    OPTIMISM_SEPOLIA
+    POLYGON_AMOY
+  }
 `;
 
 export default commonTypeDef;

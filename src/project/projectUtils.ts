@@ -1,5 +1,10 @@
 import { ethers } from 'ethers';
-import type { FakeUnclaimedProject, Forge, ProjectId } from '../common/types';
+import type {
+  FakeUnclaimedProject,
+  Forge,
+  ProjectId,
+  SupportedChain,
+} from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type ProjectModel from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
@@ -61,7 +66,7 @@ export async function doesRepoExists(url: string) {
   return res.status === 200;
 }
 
-export function toApiProject(project: ProjectModel) {
+export async function toApiProject(project: ProjectModel) {
   if (!project) {
     return null;
   }
@@ -93,7 +98,10 @@ function toForge(forge: string): Forge {
   }
 }
 
-export async function toFakeUnclaimedProjectFromUrl(url: string) {
+export async function toFakeUnclaimedProjectFromUrl(
+  url: string,
+  chain: SupportedChain,
+) {
   const pattern =
     /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
   const match = url.match(pattern);
@@ -106,7 +114,9 @@ export async function toFakeUnclaimedProjectFromUrl(url: string) {
   const ownerName = match[2];
   const repoName = match[3];
 
-  const { repoDriver } = dripsContracts;
+  const {
+    contracts: { repoDriver },
+  } = dripsContracts;
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
 
@@ -118,6 +128,7 @@ export async function toFakeUnclaimedProjectFromUrl(url: string) {
     forge,
     url,
     verificationStatus: ProjectVerificationStatus.Unclaimed,
+    chain,
   };
 }
 
@@ -139,7 +150,9 @@ export async function toFakeUnclaimedProject(
 
   const { ownerName, repoName } = splitProjectName(name);
 
-  const { repoDriver } = dripsContracts;
+  const {
+    contracts: { repoDriver },
+  } = dripsContracts;
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
 
@@ -152,5 +165,6 @@ export async function toFakeUnclaimedProject(
     url: toUrl(forge, name),
     verificationStatus:
       project.verificationStatus ?? ProjectVerificationStatus.Unclaimed,
+    chain: project.chain,
   };
 }

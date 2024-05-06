@@ -1,16 +1,16 @@
 import { JsonRpcProvider, WebSocketProvider } from 'ethers';
 import appSettings from './appSettings';
-import { SUPPORTED_NETWORKS } from './constants';
+import { SUPPORTED_CHAINS } from './constants';
 import type { AddressDriver, RepoDriver } from '../generated/contracts';
 import {
   AddressDriver__factory,
   RepoDriver__factory,
 } from '../generated/contracts';
-import type { SupportedNetwork } from './types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
+import type { SupportedChain } from './types';
 
 const chainConfigs: Record<
-  SupportedNetwork,
+  SupportedChain,
   {
     addressDriverAddress: string;
     repoDriverAddress: string;
@@ -24,11 +24,11 @@ const chainConfigs: Record<
     addressDriverAddress: '0x70E1E1437AeFe8024B6780C94490662b45C3B567',
     repoDriverAddress: '0xa71bdf410D48d4AA9aE1517A69D7E1Ef0c179b2B',
   },
-  optimismSepolia: {
+  'optimism-sepolia': {
     addressDriverAddress: '0x70E1E1437AeFe8024B6780C94490662b45C3B567',
     repoDriverAddress: '0xa71bdf410D48d4AA9aE1517A69D7E1Ef0c179b2B',
   },
-  polygonAmoy: {
+  'polygon-amoy': {
     addressDriverAddress: '0x004310a6d47893Dd6e443cbE471c24aDA1e6c619',
     repoDriverAddress: '0x54372850Db72915Fd9C5EC745683EB607b4a8642',
   },
@@ -36,10 +36,11 @@ const chainConfigs: Record<
 
 const { rpcUrls } = appSettings;
 
-const providers: { [network: string]: JsonRpcProvider | WebSocketProvider } =
-  {};
+const providers: {
+  [network in SupportedChain]?: JsonRpcProvider | WebSocketProvider;
+} = {};
 
-SUPPORTED_NETWORKS.forEach((network) => {
+SUPPORTED_CHAINS.forEach((network) => {
   if (rpcUrls[network]) {
     const rpcUrl = rpcUrls[network] as string;
 
@@ -60,12 +61,12 @@ let dripsContracts: {
 } = {} as any;
 
 Object.entries(providers).forEach(([network, provider]) => {
-  if (!chainConfigs[network as SupportedNetwork]) {
+  if (!chainConfigs[network as SupportedChain]) {
     throw new Error(`Missing chain config for network '${network}'.`);
   }
 
   const { addressDriverAddress, repoDriverAddress } =
-    chainConfigs[network as SupportedNetwork];
+    chainConfigs[network as SupportedChain];
 
   const addressDriver = AddressDriver__factory.connect(
     addressDriverAddress,
@@ -80,4 +81,6 @@ Object.entries(providers).forEach(([network, provider]) => {
   };
 });
 
-export default { ...dripsContracts };
+export default {
+  contracts: dripsContracts,
+};

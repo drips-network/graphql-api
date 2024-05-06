@@ -9,11 +9,15 @@ import estimatesTypeDef from './balances/estimatesTypeDef';
 
 const rootTypeDef = gql`
   type Query {
-    projectById(id: ID!): Project
-    projectByUrl(url: String!): Project
-    projects(where: ProjectWhereInput, sort: ProjectSortInput): [Project!]!
-    dripList(id: ID!): DripList
-    dripLists(where: DripListWhereInput): [DripList!]!
+    projectById(id: ID!, chain: Chain): Project
+    projectByUrl(url: String!, chain: Chain): Project
+    projects(
+      where: ProjectWhereInput
+      sort: ProjectSortInput
+      chains: [Chain!]
+    ): [Project!]!
+    dripList(id: ID!, chain: Chain): DripList
+    dripLists(where: DripListWhereInput, chain: Chain): [DripList!]!
     gives(where: GiveWhereInput): [Give!]!
     mintedTokensCountByOwnerAddress(ownerAddress: String!): Int!
     earnedFunds(projectId: String!): [Amount!]!

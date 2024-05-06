@@ -1,5 +1,10 @@
 import { isAddress } from 'ethers';
-import type { FakeUnclaimedProject, ProjectId } from '../common/types';
+import {
+  chainToDbSchemaMap,
+  dbSchemaToChainMap,
+  type FakeUnclaimedProject,
+  type ProjectId,
+} from '../common/types';
 import type ProjectModel from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
 import { splitProjectName } from './projectUtils';
@@ -17,6 +22,7 @@ import type {
   DripList,
   ProjectWhereInput,
   ProjectSortInput,
+  Chain,
 } from '../generated/graphql';
 import type { Context } from '../server';
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
@@ -28,30 +34,47 @@ import assert, {
   isProjectId,
   isSortableProjectField,
 } from '../utils/assert';
+import { SUPPORTED_CHAINS } from '../common/constants';
 
 const projectResolvers = {
   Query: {
     projectById: async (
       _: any,
-      { id }: { id: ProjectId },
+      { id, chain }: { id: ProjectId; chain: Chain },
       { dataSources }: Context,
     ): Promise<ProjectModel | FakeUnclaimedProject | null> => {
       assert(isProjectId(id));
+      assert(SUPPORTED_CHAINS.includes(chainToDbSchemaMap[chain]));
 
-      return dataSources.projectsDb.getProjectById(id);
+      return dataSources.projectsDb.getProjectById(
+        id,
+        chainToDbSchemaMap[chain],
+      );
     },
     projectByUrl: async (
       _: any,
-      { url }: { url: string },
+      { url, chain }: { url: string; chain: Chain },
       { dataSources }: Context,
     ): Promise<ProjectModel | FakeUnclaimedProject | null> => {
       assert(isGitHubUrl(url));
+      assert(SUPPORTED_CHAINS.includes(chainToDbSchemaMap[chain]));
 
-      return dataSources.projectsDb.getProjectByUrl(url);
+      return dataSources.projectsDb.getProjectByUrl(
+        url,
+        chainToDbSchemaMap[chain],
+      );
     },
     projects: async (
       _: any,
-      { where, sort }: { where: ProjectWhereInput; sort: ProjectSortInput },
+      {
+        where,
+        sort,
+        chains,
+      }: {
+        where: ProjectWhereInput;
+        sort: ProjectSortInput;
+        chains: Chain[];
+      },
       { dataSources }: Context,
     ): Promise<(ProjectModel | FakeUnclaimedProject)[]> => {
       if (where?.id) {
@@ -70,11 +93,25 @@ const projectResolvers = {
         assert(isProjectVerificationStatus(where.verificationStatus));
       }
 
-      if (sort?.field === 'claimedAt') {
+      if (sort?.field) {
         assert(isSortableProjectField(sort.field));
       }
 
-      return dataSources.projectsDb.getProjectsByFilter(where, sort);
+      if (sort?.direction) {
+        assert(sort.direction === 'ASC' || sort.direction === 'DESC');
+      }
+
+      if (chains) {
+        chains.forEach((chain) => {
+          assert(SUPPORTED_CHAINS.includes(chainToDbSchemaMap[chain]));
+        });
+      }
+
+      return dataSources.projectsDb.getProjectsByFilter(
+        where,
+        sort,
+        chains?.map((c) => chainToDbSchemaMap[c]),
+      );
     },
     earnedFunds: async (
       _: any,
@@ -105,6 +142,7 @@ const projectResolvers = {
     },
   },
   ClaimedProject: {
+    chain: (project: ProjectModel) => dbSchemaToChainMap[project.chain],
     color: (project: ProjectModel): string =>
       project.color || shouldNeverHappen(),
     description: (project: ProjectModel): string | null => project.description,
@@ -191,6 +229,7 @@ const projectResolvers = {
 
       const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
         receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
+        project.chain,
       );
 
       const dependenciesOfTypeProject = receiversOfTypeProjectModels.map(
@@ -220,6 +259,7 @@ const projectResolvers = {
 
       const splitsOfTypeDripListModels = await dripListsDb.getDripListsByIds(
         receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
+        project.chain,
       );
 
       const dripListReceivers = receiversOfTypeDripListModels.map(
@@ -286,6 +326,7 @@ const projectResolvers = {
     },
   },
   UnclaimedProject: {
+    chain: (project: ProjectModel) => dbSchemaToChainMap[project.chain],
     account(project: ProjectModel): RepoDriverAccount {
       return {
         driver: Driver.REPO,

@@ -29,7 +29,9 @@ export default class UsersDataSource {
   }
 
   public async getUserByAddress(address: Address): Promise<User> {
-    const { addressDriver } = dripsContracts;
+    const {
+      contracts: { addressDriver },
+    } = dripsContracts;
 
     const accountId = (await addressDriver.calcAccountId(address)).toString();
 

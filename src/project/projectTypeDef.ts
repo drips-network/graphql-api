@@ -37,6 +37,7 @@ const projectTypeDef = gql`
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
     claimedAt: Date!
+    chain: Chain!
   }
 
   type UnclaimedProject {
@@ -44,6 +45,7 @@ const projectTypeDef = gql`
     account: RepoDriverAccount!
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
+    chain: Chain!
   }
 
   input ProjectWhereInput {

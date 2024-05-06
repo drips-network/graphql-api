@@ -5,8 +5,12 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
-import getSchema from '../utils/getSchema';
-import type { AccountId, Forge, ProjectId } from '../common/types';
+import type {
+  AccountId,
+  Forge,
+  ProjectId,
+  SupportedChain,
+} from '../common/types';
 import { FORGES_MAP } from '../common/constants';
 
 export enum ProjectVerificationStatus {
@@ -37,6 +41,8 @@ export default class ProjectModel extends Model<
   public declare verificationStatus: ProjectVerificationStatus;
 
   public declare claimedAt: Date | null;
+
+  public declare chain: SupportedChain;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -93,10 +99,18 @@ export default class ProjectModel extends Model<
           type: DataTypes.TEXT,
           allowNull: true,
         },
+        chain: {
+          type: DataTypes.VIRTUAL,
+          get() {
+            return this.getDataValue('chain');
+          },
+          set(value: SupportedChain) {
+            this.setDataValue('chain', value);
+          },
+        },
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'GitProjects',
       },
     );

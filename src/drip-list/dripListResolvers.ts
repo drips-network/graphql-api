@@ -1,9 +1,15 @@
 import { isAddress } from 'ethers';
-import type { Address, DripListId } from '../common/types';
+import {
+  chainToDbSchemaMap,
+  dbSchemaToChainMap,
+  type Address,
+  type DripListId,
+} from '../common/types';
 import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
   AddressReceiver,
+  Chain,
   DripList,
   DripListWhereInput,
   NftDriverAccount,
@@ -15,17 +21,22 @@ import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Context } from '../server';
 import type GitProjectModel from '../project/ProjectModel';
 import assert, { isDripListId } from '../utils/assert';
+import { SUPPORTED_CHAINS } from '../common/constants';
 
 const dripListResolvers = {
   Query: {
     dripList: async (
       _: any,
-      { id }: { id: DripListId },
+      { id, chain }: { id: DripListId; chain: Chain },
       { dataSources }: Context,
     ): Promise<DripListModel | null> => {
       assert(isDripListId(id));
+      assert(SUPPORTED_CHAINS.includes(chainToDbSchemaMap[chain]));
 
-      return dataSources.dripListsDb.getDripListById(id);
+      return dataSources.dripListsDb.getDripListById(
+        id,
+        chainToDbSchemaMap[chain],
+      );
     },
     dripLists: async (
       _: any,
@@ -54,6 +65,7 @@ const dripListResolvers = {
     },
   },
   DripList: {
+    chain: (dripList: DripListModel) => dbSchemaToChainMap[dripList.chain],
     name: (dripList: DripListModel) => dripList.name ?? 'Unnamed Drip List',
     creator: (dripList: DripListModel) => dripList.creator,
     description: (dripList: DripListModel) => dripList.description,
@@ -105,6 +117,7 @@ const dripListResolvers = {
 
       const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
         receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
+        dripList.chain,
       );
 
       const projectReceivers = receiversOfTypeProjectModels.map((receiver) => ({
@@ -132,6 +145,7 @@ const dripListResolvers = {
 
       const splitsOfTypeDripListModels = await dripListsDb.getDripListsByIds(
         receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
+        dripList.chain,
       );
 
       const dripListReceivers = receiversOfTypeDripListModels.map(

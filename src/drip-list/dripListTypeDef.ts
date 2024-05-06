@@ -11,6 +11,7 @@ const dripListTypeDef = gql`
     previousOwnerAddress: String!
     support: [SupportItem!]!
     latestVotingRoundId: String
+    chain: Chain!
   }
 
   input DripListWhereInput {

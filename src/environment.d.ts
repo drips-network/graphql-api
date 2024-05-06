@@ -1,10 +1,10 @@
-import type { SupportedNetwork } from './common/types';
+import type { SupportedChain } from './common/types';
 
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
       PORT: string;
-      NETWORK: SupportedNetwork;
+      NETWORK: SupportedChain;
       RPC_URL_MAINNET: string;
       RPC_URL_SEPOLIA: string;
       RPC_URL_OPTIMISM_SEPOLIA: string;
@@ -12,7 +12,7 @@ declare global {
       PUBLIC_API_KEYS: string;
       DRIPS_API_KEY: string;
       NODE_ENV: 'development' | 'production';
-      ENV: 'local' | SupportedNetwork;
+      ENV: 'local' | SupportedChain;
       POSTGRES_CONNECTION_STRING: string;
       PRETEND_ALL_REPOS_EXIST: boolean;
       RATE_LIMIT_WINDOW_IN_MINUTES: string;
