@@ -7,6 +7,7 @@ const userTypeDef = gql`
     isManaged: Boolean!
     receiver: StreamReceiver!
     createdAt: Date!
+    endsAt: Date
   }
 
   type AssetConfigHistoryItem {

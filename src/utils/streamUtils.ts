@@ -168,5 +168,6 @@ export function mapReceiverToStream(
     isArchived: streamMetadata?.archived ?? false,
     timeline: streamTotalStreamedTimeline(receiver.streamId, historyItems),
     createdAt: receiver.createdAt,
+    endsAt: receiver.endsAt,
   };
 }

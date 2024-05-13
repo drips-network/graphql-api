@@ -78,6 +78,27 @@ export default function buildAssetConfigs(
             firstAppearanceMap.set(streamId, eventDate);
           }
 
+          let endsAt: Date | undefined;
+          const durationInMilliseconds = eventConfig.duration * BigInt(1000);
+          const startTimeInMilliseconds = BigInt(
+            streamsSetEvent.blockTimestamp.getTime(),
+          ).toString();
+
+          if (eventConfig.start) {
+            if (eventConfig.duration) {
+              endsAt = new Date(
+                startTimeInMilliseconds + durationInMilliseconds,
+              );
+            }
+          } else if (eventConfig.duration) {
+            endsAt = new Date(
+              (
+                BigInt(streamsSetEvent.blockTimestamp.getTime()) +
+                durationInMilliseconds
+              ).toString(),
+            );
+          }
+
           assetConfigHistoryItemStreams.push({
             streamId,
             config: {
@@ -99,6 +120,7 @@ export default function buildAssetConfigs(
             createdAt: firstAppearanceMap.get(streamId),
             isManaged: Boolean(matchingStream),
             receiver,
+            endsAt,
           });
 
           if (remainingStreamIds.includes(streamId)) {
@@ -135,6 +157,7 @@ export default function buildAssetConfigs(
                 ),
               },
               createdAt: firstAppearanceMap.get(remainingStreamId),
+              endsAt: undefined,
             });
           }
         }

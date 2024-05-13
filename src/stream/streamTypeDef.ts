@@ -37,6 +37,7 @@ const streamTypeDef = gql`
     isManaged: Boolean!
     timeline: [TimelineItem!]!
     createdAt: Date!
+    endsAt: Date
   }
 
   input StreamWhereInput {
