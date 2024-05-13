@@ -27,6 +27,8 @@ export default function buildAssetConfigs(
   accountMetadata: AccountMetadata | undefined,
   accountStreamsSetEvents: Map<Erc20, StreamsSetEventWithReceivers[]>,
 ) {
+  const firstAppearanceMap = new Map<string, Date>();
+
   return Array.from(accountStreamsSetEvents.entries()).reduce<AssetConfig[]>(
     (acc, [tokenAddress, assetConfigStreamsSetEvents]) => {
       const assetConfigMetadata = accountMetadata?.assetConfigs.find(
@@ -70,6 +72,12 @@ export default function buildAssetConfigs(
             streamReceiverSeenEvent.accountId,
           );
 
+          const eventDate = streamsSetEvent.blockTimestamp;
+          const existingDate = firstAppearanceMap.get(streamId);
+          if (!existingDate || eventDate < existingDate) {
+            firstAppearanceMap.set(streamId, eventDate);
+          }
+
           assetConfigHistoryItemStreams.push({
             streamId,
             config: {
@@ -88,6 +96,7 @@ export default function buildAssetConfigs(
                   ? Number(eventConfig.duration)
                   : undefined,
             },
+            createdAt: firstAppearanceMap.get(streamId),
             isManaged: Boolean(matchingStream),
             receiver,
           });
@@ -125,6 +134,7 @@ export default function buildAssetConfigs(
                   stream.receiver.accountId as AddressDriverId,
                 ),
               },
+              createdAt: firstAppearanceMap.get(remainingStreamId),
             });
           }
         }

@@ -6,6 +6,7 @@ const userTypeDef = gql`
     config: StreamConfig
     isManaged: Boolean!
     receiver: StreamReceiver!
+    createdAt: Date!
   }
 
   type AssetConfigHistoryItem {
