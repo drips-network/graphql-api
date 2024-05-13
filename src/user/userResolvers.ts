@@ -1,7 +1,10 @@
+import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
 import type { Address, AddressDriverId } from '../common/types';
 import { Driver, type User } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, { isAddressDriverId } from '../utils/assert';
+import getAssetConfigs from '../utils/getAssetConfigs';
+import getLatestAccountMetadata from '../utils/getLatestAccountMetadata';
 import getUserAddress from '../utils/getUserAddress';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 
@@ -22,6 +25,22 @@ const userResolvers = {
     streams: async (parent: User) => ({
       accountId: parent.account.accountId,
     }),
+    balances: async (parent: User) => {
+      const { metadata } =
+        (await getLatestAccountMetadata(
+          parent.account.accountId as AddressDriverId,
+        )) ?? {};
+      const assetConfigs = await getAssetConfigs(
+        parent.account.accountId as AddressDriverId,
+        metadata,
+      );
+
+      return assetConfigs.map((ac) => ({
+        tokenAddress: ac.tokenAddress,
+        incoming: [],
+        outgoing: assetOutgoingBalanceTimeline(ac.history),
+      }));
+    },
     projects: (parent: User, _: any, { dataSources }: Context) => {
       const { accountId } = parent.account;
       assert(isAddressDriverId(accountId));

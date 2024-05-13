@@ -2,10 +2,8 @@ import type { AddressDriverId } from '../common/types';
 import type { UserAccount } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import getUserAddress from './getUserAddress';
-import groupBy from './linq';
-import buildAssetConfigs from './buildAssetConfigs';
 import getLatestAccountMetadata from './getLatestAccountMetadata';
-import getStreamsSetEventsWithReceivers from './getStreamsSetEventsWithReceivers';
+import getAssetConfigs from './getAssetConfigs';
 
 export default async function getUserAccount(
   accountId: AddressDriverId,
@@ -13,19 +11,7 @@ export default async function getUserAccount(
   const { metadata, ipfsHash } =
     (await getLatestAccountMetadata(accountId)) ?? {};
 
-  const accountStreamsSetEventsWithReceivers =
-    await getStreamsSetEventsWithReceivers(accountId);
-
-  const accountStreamsSetEventsWithReceiversByErc20 = groupBy(
-    accountStreamsSetEventsWithReceivers,
-    (event) => event.erc20,
-  );
-
-  const assetConfigs = buildAssetConfigs(
-    accountId,
-    metadata,
-    accountStreamsSetEventsWithReceiversByErc20,
-  );
+  const assetConfigs = await getAssetConfigs(accountId, metadata);
 
   return {
     user: {

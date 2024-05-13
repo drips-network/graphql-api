@@ -27,6 +27,10 @@ export default class UsersDataSource {
         outgoing: [],
         incoming: [],
       },
+      balances: {
+        incoming: [],
+        outgoing: [],
+      },
     };
   }
 

@@ -2,28 +2,21 @@
 
 import {
   TimelineItemType,
+  type UserBalanceTimelineItem,
   type AssetConfigHistoryItem,
   type Scalars,
   type TimelineItem,
 } from '../generated/graphql';
 import minMax from '../utils/minMax';
 
-type BalanceTimeline = TimelineItem[];
-
-interface AssetBalanceTimelineItem {
-  timestamp: Date;
-  balance: bigint;
-  deltaPerSecond: bigint;
-}
-
 export function assetOutgoingBalanceTimeline(
   historyItems: AssetConfigHistoryItem[],
-): AssetBalanceTimelineItem[] {
+): UserBalanceTimelineItem[] {
   historyItems.sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
   );
 
-  const timeline: AssetBalanceTimelineItem[] = [];
+  const timeline: UserBalanceTimelineItem[] = [];
 
   for (const item of historyItems) {
     const { streams } = item;
@@ -99,15 +92,15 @@ export function assetOutgoingBalanceTimeline(
       timestamp,
       ...additionalTimelineEntries,
     ].entries()) {
-      const previousTimelineItem: AssetBalanceTimelineItem | undefined =
+      const previousTimelineItem: UserBalanceTimelineItem | undefined =
         timeline[timeline.length - 1];
 
       const previousBalance = previousTimelineItem
-        ? previousTimelineItem.balance
+        ? BigInt(previousTimelineItem.currentAmount.amount)
         : 0n;
 
       const previousDeltaPerSecond = previousTimelineItem
-        ? previousTimelineItem.deltaPerSecond
+        ? BigInt(previousTimelineItem.deltaPerSecond.amount)
         : 0n;
 
       const secondsPassedSinceLastEvent = previousTimelineItem
@@ -155,8 +148,14 @@ export function assetOutgoingBalanceTimeline(
 
       timeline.push({
         timestamp: ts,
-        balance: currentBalance,
-        deltaPerSecond: currentDeltaPerSecond,
+        currentAmount: {
+          tokenAddress: item.balance.tokenAddress,
+          amount: currentBalance.toString(),
+        },
+        deltaPerSecond: {
+          tokenAddress: item.balance.tokenAddress,
+          amount: currentDeltaPerSecond.toString(),
+        },
       });
     }
   }
@@ -167,7 +166,7 @@ export function assetOutgoingBalanceTimeline(
 export function streamTotalStreamedTimeline(
   streamId: Scalars['ID']['output'],
   historyItems: AssetConfigHistoryItem[],
-): BalanceTimeline {
+): TimelineItem[] {
   const relevantHistoryItems = historyItems.filter((item) =>
     item.streams.some((stream) => stream.streamId === streamId),
   );
@@ -281,7 +280,7 @@ export function streamTotalStreamedTimeline(
     );
   }
 
-  const timeline: BalanceTimeline = [];
+  const timeline: TimelineItem[] = [];
   const { tokenAddress } = historyItems[0].balance;
 
   let totalStreamed = 0n;

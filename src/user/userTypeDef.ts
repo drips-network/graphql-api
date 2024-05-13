@@ -35,8 +35,20 @@ const userTypeDef = gql`
   }
 
   type UserStreams {
-    incoming: [Stream]!
-    outgoing: [Stream]!
+    incoming: [Stream!]!
+    outgoing: [Stream!]!
+  }
+
+  type UserBalanceTimelineItem {
+    timestamp: Date!
+    currentAmount: Amount!
+    deltaPerSecond: Amount!
+  }
+
+  type UserBalances {
+    tokenAddress: String!
+    incoming: [UserBalanceTimelineItem!]!
+    outgoing: [UserBalanceTimelineItem!]!
   }
 
   type User {
@@ -44,6 +56,7 @@ const userTypeDef = gql`
     streams: UserStreams!
     projects: [Project]!
     dripLists: [DripList]!
+    balances: [UserBalances!]!
   }
 `;
 
