@@ -9,7 +9,7 @@ const streamTypeDef = gql`
     durationSeconds: Int
   }
 
-  union StreamReceiver = AddressDriverAccount | NftDriverAccount
+  union StreamReceiver = User | DripList
 
   enum TimelineItemType {
     START

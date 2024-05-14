@@ -1,6 +1,7 @@
 import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
 import type { Address, AddressDriverId } from '../common/types';
-import { Driver, type User } from '../generated/graphql';
+import { Driver } from '../generated/graphql';
+import type { AddressDriverAccount, User } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, { isAddressDriverId } from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
@@ -22,6 +23,17 @@ const userResolvers = {
     ): Promise<User> => dataSources.usersDb.getUserByAddress(address),
   },
   User: {
+    account: (parent: User | AddressDriverAccount) => {
+      if ('accountId' in parent) {
+        return parent;
+      }
+
+      return {
+        accountId: parent.account.accountId,
+        driver: Driver.ADDRESS,
+        address: getUserAddress(parent.account.accountId as AddressDriverId),
+      };
+    },
     streams: async (parent: User) => ({
       accountId: parent.account.accountId,
     }),
@@ -83,11 +95,11 @@ const userResolvers = {
   StreamReceiver: {
     __resolveType(parent: { driver: Driver }) {
       if (parent.driver === Driver.ADDRESS) {
-        return 'AddressDriverAccount';
+        return 'User';
       }
 
       if (parent.driver === Driver.NFT) {
-        return 'NftDriverAccount';
+        return 'DripList';
       }
 
       return shouldNeverHappen(

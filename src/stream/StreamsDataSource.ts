@@ -43,7 +43,7 @@ export default class StreamsDataSource {
       (acc, account) => {
         const streams = account.assetConfigs
           .flatMap((assetConfig) => assetConfig.streams)
-          .filter((stream) => stream.receiver.accountId === accountId);
+          .filter((stream) => stream.receiver.account.accountId === accountId);
 
         return [...acc, ...streams];
       },

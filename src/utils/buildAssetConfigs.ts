@@ -9,7 +9,6 @@ import type {
   AddressDriverAccount,
   AssetConfig,
   AssetConfigHistoryItem,
-  HistoricalStream,
 } from '../generated/graphql';
 import getUserAddress from './getUserAddress';
 import type {
@@ -43,7 +42,7 @@ export default function buildAssetConfigs(
       const assetConfigHistoryItems: AssetConfigHistoryItem[] = [];
 
       for (const streamsSetEvent of assetConfigStreamsSetEvents) {
-        const assetConfigHistoryItemStreams: HistoricalStream[] = [];
+        const assetConfigHistoryItemStreams: any[] = [];
 
         const remainingStreamIds =
           assetConfigMetadata?.streams.map((stream) =>
