@@ -1,6 +1,13 @@
+import { Op } from 'sequelize';
 import type { AddressDriverId } from '../common/types';
-import type { Stream, StreamWhereInput } from '../generated/graphql';
+import type {
+  AddressDriverAccount,
+  NftDriverAccount,
+  Stream,
+  StreamWhereInput,
+} from '../generated/graphql';
 import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
+import StreamsSetEventModel from '../models/StreamsSetEventModel';
 import assert, { isAddressDriverId } from '../utils/assert';
 import getUserAccount from '../utils/getUserAccount';
 
@@ -25,12 +32,20 @@ export default class StreamsDataSource {
         },
       });
 
-    const accountIdsStreamingToUser = streamReceiverSeenEventsForUser.reduce<
-      string[]
-    >((acc, event) => {
-      const receiverId = event.accountId.toString();
-      return !acc.includes(receiverId) ? [...acc, receiverId] : acc;
-    }, []);
+    const streamsSetEventsWithMatchingHistoryHash =
+      await StreamsSetEventModel.findAll({
+        where: {
+          receiversHash: {
+            [Op.in]: streamReceiverSeenEventsForUser.map(
+              (event) => event.receiversHash,
+            ),
+          },
+        },
+      });
+
+    const accountIdsStreamingToUser = streamsSetEventsWithMatchingHistoryHash
+      .map((event) => event.accountId)
+      .filter((id, index, self) => self.indexOf(id) === index);
 
     const accountsStreamingToUser = await Promise.all(
       accountIdsStreamingToUser.map((id) => {
@@ -43,7 +58,14 @@ export default class StreamsDataSource {
       (acc, account) => {
         const streams = account.assetConfigs
           .flatMap((assetConfig) => assetConfig.streams)
-          .filter((stream) => stream.receiver.account.accountId === accountId);
+          .filter(
+            (stream) =>
+              (
+                stream.receiver as any as
+                  | AddressDriverAccount
+                  | NftDriverAccount
+              ).accountId === accountId,
+          );
 
         return [...acc, ...streams];
       },

@@ -12,7 +12,6 @@ import { Driver } from '../generated/graphql';
 import type {
   NftDriverAccount,
   AddressDriverAccount,
-  Stream,
   StreamConfig,
   HistoricalStream,
   AssetConfigHistoryItem,
@@ -121,7 +120,7 @@ export function mapReceiverToStream(
   tokenAddress: string,
   historyItems: AssetConfigHistoryItem[],
   assetConfigMetadata?: AssetConfigMetadata,
-): Stream {
+): any {
   const streamMetadata = assetConfigMetadata?.streams.find(
     (s) => s.id === receiver.streamId,
   );

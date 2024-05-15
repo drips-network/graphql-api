@@ -27,7 +27,7 @@ const streamTypeDef = gql`
 
   type Stream {
     id: ID!
-    sender: AddressDriverAccount!
+    sender: User!
     receiver: StreamReceiver!
     config: StreamConfig!
     isPaused: Boolean!
