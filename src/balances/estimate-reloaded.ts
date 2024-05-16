@@ -154,7 +154,7 @@ export function assetOutgoingBalanceTimeline(
         },
         deltaPerSecond: {
           tokenAddress: item.balance.tokenAddress,
-          amount: currentDeltaPerSecond.toString(),
+          amount: (-currentDeltaPerSecond).toString(),
         },
       });
     }

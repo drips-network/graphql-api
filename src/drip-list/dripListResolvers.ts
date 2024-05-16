@@ -170,7 +170,16 @@ const dripListResolvers = {
           dripList.id,
         );
 
-      return [...projectAndDripListSupport, ...oneTimeDonationSupport];
+      const streamSupport =
+        await projectAndDripListSupportDb.getStreamSupportByAccountId(
+          dripList.id,
+        );
+
+      return [
+        ...projectAndDripListSupport,
+        ...streamSupport,
+        ...oneTimeDonationSupport,
+      ];
     },
     latestVotingRoundId: (dripList: DripListModel) =>
       dripList.latestVotingRoundId,

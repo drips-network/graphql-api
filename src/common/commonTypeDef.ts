@@ -90,6 +90,12 @@ const commonTypeDef = gql`
     date: Date!
   }
 
+  type StreamSupport {
+    account: AddressDriverAccount!
+    stream: Stream!
+    date: Date!
+  }
+
   type Amount {
     tokenAddress: String!
     amount: String!
@@ -104,8 +110,13 @@ const commonTypeDef = gql`
     | ProjectSupport
     | OneTimeDonationSupport
     | SupportGroup
+    | StreamSupport
 
-  union Support = DripListSupport | ProjectSupport | OneTimeDonationSupport
+  union Support =
+      DripListSupport
+    | ProjectSupport
+    | OneTimeDonationSupport
+    | StreamSupport
 
   enum SortDirection {
     ASC

@@ -4,6 +4,8 @@ import type { AccountId, DripListId, ProjectId } from '../common/types';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
+import streams from '../utils/streams';
+import type { Stream } from '../generated/graphql';
 
 export default class ProjectAndDripListSupportDataSource {
   private readonly _batchProjectAndDripListSupportByDripListIds =
@@ -65,6 +67,32 @@ export default class ProjectAndDripListSupportDataSource {
     },
   );
 
+  private readonly _batchStreamSupportByAccountIds = new DataLoader(
+    async (accountIds: readonly AccountId[]) => {
+      const streamsToList = (
+        await Promise.all(
+          accountIds.map((accountId) =>
+            streams.getUserIncomingStreams(accountId),
+          ),
+        )
+      ).flat();
+
+      const streamSupportToAccountMapping = streamsToList.reduce<
+        Record<AccountId, Stream[]>
+      >((mapping, stream) => {
+        if (!mapping[stream.sender.account.accountId as AccountId]) {
+          mapping[stream.receiver.account.accountId as AccountId] = []; // eslint-disable-line no-param-reassign
+        }
+
+        mapping[stream.receiver.account.accountId as AccountId].push(stream);
+
+        return mapping;
+      }, {});
+
+      return accountIds.map((id) => streamSupportToAccountMapping[id] || []);
+    },
+  );
+
   private readonly _batchOneTimeDonationSupportByAccountIds = new DataLoader(
     async (dripListIds: readonly (DripListId | ProjectId)[]) => {
       const oneTimeDonationSupport = await GivenEventModel.findAll({
@@ -111,5 +139,9 @@ export default class ProjectAndDripListSupportDataSource {
     id: DripListId | ProjectId,
   ): Promise<GivenEventModel[]> {
     return this._batchOneTimeDonationSupportByAccountIds.load(id);
+  }
+
+  public async getStreamSupportByAccountId(id: AccountId): Promise<Stream[]> {
+    return this._batchStreamSupportByAccountIds.load(id);
   }
 }
