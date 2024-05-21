@@ -1,21 +1,25 @@
-import type { Order, WhereOptions } from 'sequelize';
-import { Op } from 'sequelize';
+import { Op, QueryTypes } from 'sequelize';
 import DataLoader from 'dataloader';
 import ProjectModel from '../project/ProjectModel';
-import type { FakeUnclaimedProject, ProjectId } from '../common/types';
+import type { ProjectDataValues, ProjectId } from '../common/types';
 import {
   doesRepoExists,
-  isValidateProjectName,
+  isValidProjectName,
   toApiProject,
   toFakeUnclaimedProjectFromUrl,
 } from '../project/projectUtils';
-import type { ProjectSortInput, ProjectWhereInput } from '../generated/graphql';
+import type {
+  ProjectSortInput,
+  ProjectWhereInput,
+  SupportedChain,
+} from '../generated/graphql';
 import SplitEventModel from '../models/SplitEventModel';
 import GivenEventModel from '../given-event/GivenEventModel';
+import { dbConnection } from '../database/connectToDatabase';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
-    async (projectIds: readonly ProjectId[]): Promise<ProjectModel[]> => {
+    async (projectIds: readonly ProjectId[]): Promise<ProjectDataValues[]> => {
       const projects = await ProjectModel.findAll({
         where: {
           id: {
@@ -25,14 +29,14 @@ export default class ProjectsDataSource {
         },
       }).then((projectModels) =>
         projectModels.filter((p) =>
-          p.name ? isValidateProjectName(p.name) : true,
+          p.name ? isValidProjectName(p.name) : true,
         ),
       );
 
       const projectIdToProjectMap = projects.reduce<
-        Record<ProjectId, ProjectModel>
+        Record<ProjectId, ProjectDataValues>
       >((mapping, project) => {
-        mapping[project.id] = project; // eslint-disable-line no-param-reassign
+        mapping[project.id] = project.dataValues as ProjectDataValues; // eslint-disable-line no-param-reassign
 
         return mapping;
       }, {});
@@ -43,14 +47,13 @@ export default class ProjectsDataSource {
 
   public async getProjectById(
     id: ProjectId,
-  ): Promise<ProjectModel | FakeUnclaimedProject | null> {
+  ): Promise<ProjectDataValues | null> {
     return toApiProject(await this._batchProjectsByIds.load(id));
   }
 
-  public async getProjectByUrl(
-    url: string,
-  ): Promise<ProjectModel | FakeUnclaimedProject | null> {
-    const project = await ProjectModel.findOne({ where: { url } });
+  public async getProjectByUrl(url: string): Promise<ProjectDataValues | null> {
+    const project = (await ProjectModel.findOne({ where: { url } }))
+      ?.dataValues as ProjectDataValues;
 
     if (project) {
       return toApiProject(project);
@@ -62,26 +65,79 @@ export default class ProjectsDataSource {
   }
 
   public async getProjectsByFilter(
+    chains: SupportedChain[],
     where: ProjectWhereInput,
     sort?: ProjectSortInput,
-  ): Promise<(ProjectModel | FakeUnclaimedProject)[]> {
-    const order: Order = sort ? [[sort.field, sort.direction || 'DESC']] : [];
+  ): Promise<ProjectDataValues[]> {
+    // Define base SQL to query from multiple chains (schemas).
+    const baseSQL = (schema: SupportedChain) => `
+        SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
+        FROM "${schema}"."GitProjects"
+    `;
 
-    const projects =
-      (await ProjectModel.findAll({
-        where: (where as WhereOptions) || {},
-        order,
-      })) || [];
+    // Initialize the WHERE clause parts.
+    const conditions: string[] = [];
+    const parameters: { [key: string]: any } = {};
 
-    return projects
-      .filter((p) => p.isValid)
-      .filter((p) => (p.name ? isValidateProjectName(p.name) : true))
-      .map(toApiProject)
-      .filter(Boolean) as (ProjectModel | FakeUnclaimedProject)[];
+    // Build the WHERE clause based on input filters.
+    if (where?.id) {
+      conditions.push(`"id" = :id`);
+      parameters.id = where.id;
+    }
+    if (where?.ownerAddress) {
+      conditions.push(`"ownerAddress" = :ownerAddress`);
+      parameters.ownerAddress = where.ownerAddress;
+    }
+    if (where?.url) {
+      conditions.push(`"url" = :url`);
+      parameters.url = where.url;
+    }
+    if (where?.verificationStatus) {
+      conditions.push(`"verificationStatus" = :verificationStatus`);
+      parameters.verificationStatus = where.verificationStatus;
+    }
+
+    // Join conditions into a single WHERE clause.
+    const whereClause =
+      conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+
+    // Define the order.
+    const orderClause = sort
+      ? ` ORDER BY "${sort.field}" ${sort.direction || 'DESC'}`
+      : '';
+
+    // Build the SQL for each specified schema.
+    const queries = chains.map(
+      (chain) => baseSQL(chain) + whereClause + orderClause,
+    );
+
+    // Combine all schema queries with UNION.
+    const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+    const projectsDataValues = (
+      await dbConnection.query(fullQuery, {
+        type: QueryTypes.SELECT,
+        replacements: parameters,
+        mapToModel: true,
+        model: ProjectModel,
+      })
+    ).map((p) => p.dataValues as ProjectDataValues);
+
+    return Promise.all(
+      projectsDataValues
+        .filter((p) => p.isValid)
+        .filter((p) => (p.name ? isValidProjectName(p.name) : true))
+        .map(toApiProject)
+        .filter(Boolean) as ProjectDataValues[],
+    );
   }
 
-  public async getProjectsByIds(ids: ProjectId[]): Promise<ProjectModel[]> {
-    return this._batchProjectsByIds.loadMany(ids) as Promise<ProjectModel[]>;
+  public async getProjectsByIds(
+    ids: ProjectId[],
+  ): Promise<ProjectDataValues[]> {
+    return this._batchProjectsByIds.loadMany(ids) as Promise<
+      ProjectDataValues[]
+    >;
   }
 
   public async getEarnedFunds(projectId: ProjectId): Promise<

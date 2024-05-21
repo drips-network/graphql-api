@@ -1,12 +1,21 @@
 import { ethers } from 'ethers';
-import type { FakeUnclaimedProject, Forge, ProjectId } from '../common/types';
+import type {
+  Forge,
+  ProjectDataValues,
+  ProjectId,
+  ResolverProject,
+} from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type ProjectModel from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
-import { RepoDriver__factory } from '../generated/contracts';
 import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
-import provider from '../common/provider';
+import dripsContracts from '../common/dripsContracts';
+import { Driver } from '../generated/graphql';
+import type {
+  Forge as GraphQlForge,
+  SupportedChain,
+  Splits,
+} from '../generated/graphql';
 
 export function splitProjectName(projectName: string): {
   ownerName: string;
@@ -21,7 +30,7 @@ export function splitProjectName(projectName: string): {
   return { ownerName: components[0], repoName: components[1] };
 }
 
-export function isValidateProjectName(name: string): boolean {
+export function isValidProjectName(name: string): boolean {
   const components = name.split('/');
 
   if (components.length !== 2) {
@@ -62,7 +71,7 @@ export async function doesRepoExists(url: string) {
   return res.status === 200;
 }
 
-export function toApiProject(project: ProjectModel) {
+export function toApiProject(project: ProjectDataValues) {
   if (!project) {
     return null;
   }
@@ -107,10 +116,9 @@ export async function toFakeUnclaimedProjectFromUrl(url: string) {
   const ownerName = match[2];
   const repoName = match[3];
 
-  const repoDriver = RepoDriver__factory.connect(
-    appSettings.repoDriverAddress,
-    provider,
-  );
+  const {
+    contracts: { repoDriver },
+  } = dripsContracts;
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
 
@@ -122,7 +130,7 @@ export async function toFakeUnclaimedProjectFromUrl(url: string) {
     forge,
     url,
     verificationStatus: ProjectVerificationStatus.Unclaimed,
-  };
+  } as ProjectDataValues;
 }
 
 function toUrl(forge: Forge, projectName: string): string {
@@ -135,18 +143,17 @@ function toUrl(forge: Forge, projectName: string): string {
 }
 
 export async function toFakeUnclaimedProject(
-  project: ProjectModel,
-): Promise<FakeUnclaimedProject> {
+  project: ProjectDataValues,
+): Promise<ProjectDataValues> {
   const { name, forge } = project;
 
   assert(name && forge, 'Project name and forge must be defined.');
 
   const { ownerName, repoName } = splitProjectName(name);
 
-  const repoDriver = RepoDriver__factory.connect(
-    appSettings.repoDriverAddress,
-    provider,
-  );
+  const {
+    contracts: { repoDriver },
+  } = dripsContracts;
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
 
@@ -157,7 +164,73 @@ export async function toFakeUnclaimedProject(
     name: `${ownerName}/${repoName}`,
     forge,
     url: toUrl(forge, name),
-    verificationStatus:
-      project.verificationStatus ?? ProjectVerificationStatus.Unclaimed,
-  };
+    verificationStatus: ProjectVerificationStatus.Unclaimed,
+  } as ProjectDataValues;
+}
+
+export async function toResolverProjects(
+  chains: SupportedChain[],
+  projects: ProjectDataValues[],
+): Promise<ResolverProject[]> {
+  return Promise.all(
+    projects.map(async (project) => {
+      const chainData = await Promise.all(
+        chains.map(async (chain) => {
+          if (project.chain === chain) {
+            return {
+              chain,
+              data: {
+                projectId: project.id,
+                color: project.color,
+                emoji: project.emoji,
+                avatar: project.avatarCid
+                  ? {
+                      cid: project.avatarCid,
+                    }
+                  : {
+                      emoji: project.emoji || '💧',
+                    },
+                splits: {} as Splits, // Will be populated by the resolver.
+                description: project.description,
+                owner: {
+                  driver: Driver.ADDRESS,
+                  accountId: project.ownerAccountId,
+                  address: project.ownerAddress as string,
+                },
+                verificationStatus: project.verificationStatus,
+                support: [], // Will be populated by the resolver.
+                claimedAt: project.claimedAt,
+              },
+            };
+          }
+          const fakeUnclaimedProject = await toFakeUnclaimedProject(project);
+
+          return {
+            chain,
+            data: {
+              projectId: fakeUnclaimedProject.id,
+              verificationStatus: fakeUnclaimedProject.verificationStatus,
+              support: [], // Will be populated by the resolver.
+            },
+          };
+        }),
+      );
+
+      return {
+        account: {
+          accountId: project.id,
+          driver: Driver.REPO,
+        },
+        source: {
+          url: project.url || shouldNeverHappen(),
+          repoName: splitProjectName(project.name || shouldNeverHappen())
+            .repoName,
+          ownerName: splitProjectName(project.name || shouldNeverHappen())
+            .ownerName,
+          forge: (project.forge as GraphQlForge) || shouldNeverHappen(),
+        },
+        chainData,
+      } as ResolverProject;
+    }),
+  );
 }

@@ -122,6 +122,13 @@ const commonTypeDef = gql`
     ASC
     DESC
   }
+
+  enum SupportedChain {
+    mainnet
+    sepolia
+    optimism_sepolia
+    polygon_amoy
+  }
 `;
 
 export default commonTypeDef;

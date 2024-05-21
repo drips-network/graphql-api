@@ -13,12 +13,12 @@ import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel
 import AccountMetadataEmittedEventModel from '../models/AccountMetadataEmittedEventModel';
 import SqueezedStreamsEventModel from '../models/SqueezedStreamsEventModel';
 
-export default async function connectToDatabase() {
-  const dbConnection = new Sequelize(
-    `${appSettings.postgresConnectionString}`,
-    {},
-  );
+export const dbConnection = new Sequelize(
+  `${appSettings.postgresConnectionString}`,
+  {},
+);
 
+export async function connectToDatabase() {
   await dbConnection.authenticate();
 
   ProjectModel.initialize(dbConnection);

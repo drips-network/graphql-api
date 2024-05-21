@@ -9,9 +9,13 @@ import estimatesTypeDef from './balances/estimatesTypeDef';
 
 const rootTypeDef = gql`
   type Query {
-    projectById(id: ID!): Project
+    projects(
+      chains: [SupportedChain!]!
+      where: ProjectWhereInput
+      sort: ProjectSortInput
+    ): [Project!]!
+    projectById(id: ID!, chain: SupportedChain!): Project
     projectByUrl(url: String!): Project
-    projects(where: ProjectWhereInput, sort: ProjectSortInput): [Project!]!
     dripList(id: ID!): DripList
     dripLists(where: DripListWhereInput): [DripList!]!
     gives(where: GiveWhereInput): [Give!]!

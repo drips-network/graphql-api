@@ -25,23 +25,37 @@ const projectTypeDef = gql`
 
   union Avatar = EmojiAvatar | ImageAvatar
 
-  type ClaimedProject {
+  type Project {
     source: Source!
+    account: RepoDriverAccount!
+    chainData: [ProjectChainData!]!
+  }
+
+  union ProjectChainData = ClaimedChainProjectData | UnClaimedChainProjectData
+
+  type ClaimedChainProjectData {
+    chain: SupportedChain!
+    data: ClaimedProjectData!
+  }
+
+  type ClaimedProjectData {
     color: String!
     emoji: String! @deprecated(reason: "Use avatar instead")
     avatar: Avatar!
     splits: Splits!
     description: String
     owner: AddressDriverAccount!
-    account: RepoDriverAccount!
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
     claimedAt: Date!
   }
 
-  type UnclaimedProject {
-    source: Source!
-    account: RepoDriverAccount!
+  type UnClaimedChainProjectData {
+    chain: SupportedChain!
+    data: UnClaimedProjectData!
+  }
+
+  type UnClaimedProjectData {
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
   }
@@ -61,8 +75,6 @@ const projectTypeDef = gql`
   enum ProjectSortField {
     claimedAt
   }
-
-  union Project = ClaimedProject | UnclaimedProject
 `;
 
 export default projectTypeDef;

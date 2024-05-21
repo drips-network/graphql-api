@@ -1,5 +1,5 @@
 import { isAddress } from 'ethers';
-import type { Address, DripListId } from '../common/types';
+import type { Address, DripListId, ProjectDataValues } from '../common/types';
 import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
@@ -13,7 +13,6 @@ import type {
 import { Driver } from '../generated/graphql';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Context } from '../server';
-import type GitProjectModel from '../project/ProjectModel';
 import assert, { isDripListId } from '../utils/assert';
 
 const dripListResolvers = {
@@ -118,7 +117,7 @@ const dripListResolvers = {
         project:
           (splitsOfTypeProjectModels
             .filter(
-              (p): p is GitProjectModel => p && (p as any).id !== undefined,
+              (p): p is ProjectDataValues => p && (p as any).id !== undefined,
             )
             .find(
               (p) => (p as any).id === receiver.fundeeProjectId,

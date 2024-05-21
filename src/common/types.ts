@@ -1,9 +1,15 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
-import type { ProjectVerificationStatus } from '../generated/graphql';
+import type {
+  ClaimedProjectData,
+  Project,
+  SupportedChain,
+  UnClaimedProjectData,
+} from '../generated/graphql';
 import type StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import type { FORGES_MAP, SUPPORTED_NETWORKS } from './constants';
+import type { FORGES_MAP } from './constants';
 import type { addressDriverAccountMetadataParser } from '../schemas';
 import type StreamsSetEventModel from '../models/StreamsSetEventModel';
+import type ProjectModel from '../project/ProjectModel';
 
 export type KnownAny = any;
 export type ValuesOf<T> = T[keyof T];
@@ -22,21 +28,12 @@ export type Address = string & { __brand: 'Address' };
 export type BigIntString = string & { __brand: 'BigIntString' };
 
 export type Forge = ValuesOf<typeof FORGES_MAP>;
-export type DbSchema = SupportedNetwork & { __brand: 'dbSchema' };
-export type SupportedNetwork = (typeof SUPPORTED_NETWORKS)[number];
+export type DbSchema = SupportedChain;
 
 export enum DependencyType {
   ProjectDependency = 'ProjectDependency',
   DripListDependency = 'DripListDependency',
 }
-
-export type FakeUnclaimedProject = {
-  id: ProjectId;
-  name: string;
-  forge: Forge;
-  url: string;
-  verificationStatus: ProjectVerificationStatus;
-};
 
 export interface IEventModel {
   logIndex: number;
@@ -68,4 +65,35 @@ export type AssetConfigMetadata = AccountMetadata['assetConfigs'][number];
 
 export type StreamHistoryHashes = string & {
   __type: 'StreamHistoryHashes';
+};
+
+export type ProjectDataValues = ProjectModel['dataValues'] & {
+  createdAt: Date;
+  updatedAt: Date;
+  chain: SupportedChain;
+};
+
+export type ResolverProject = Project & {
+  chainData: (
+    | ResolverClaimedChainProjectData
+    | ResolverUnClaimedChainProjectData
+  )[];
+};
+
+export type ResolverClaimedProjectData = ClaimedProjectData & {
+  projectId: ProjectId;
+};
+
+export type ResolverClaimedChainProjectData = {
+  chain: SupportedChain;
+  data: ResolverClaimedProjectData;
+};
+
+export type ResolverUnClaimedProjectData = UnClaimedProjectData & {
+  projectId: ProjectId;
+};
+
+export type ResolverUnClaimedChainProjectData = {
+  chain: SupportedChain;
+  data: ResolverUnClaimedProjectData;
 };

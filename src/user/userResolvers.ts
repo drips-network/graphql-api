@@ -1,6 +1,6 @@
 import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
 import type { Address, AddressDriverId } from '../common/types';
-import { Driver } from '../generated/graphql';
+import { Driver, SupportedChain } from '../generated/graphql';
 import type { AddressDriverAccount, User } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, { isAddressDriverId } from '../utils/assert';
@@ -57,9 +57,12 @@ const userResolvers = {
       const { accountId } = parent.account;
       assert(isAddressDriverId(accountId));
 
-      return dataSources.projectsDb.getProjectsByFilter({
-        ownerAddress: getUserAddress(accountId),
-      });
+      return dataSources.projectsDb.getProjectsByFilter(
+        [SupportedChain.sepolia], // TODO: Temporary for compiling.
+        {
+          ownerAddress: getUserAddress(accountId),
+        },
+      );
     },
     dripLists: (parent: User, _: any, { dataSources }: Context) => {
       const { accountId } = parent.account;

@@ -1,10 +1,16 @@
 import { isAddress } from 'ethers';
-import type { FakeUnclaimedProject, ProjectId } from '../common/types';
-import type ProjectModel from './ProjectModel';
-import { ProjectVerificationStatus } from './ProjectModel';
-import { splitProjectName } from './projectUtils';
+import type {
+  ProjectDataValues,
+  ProjectId,
+  ResolverClaimedChainProjectData,
+  ResolverClaimedProjectData,
+  ResolverProject,
+  ResolverUnClaimedChainProjectData,
+  ResolverUnClaimedProjectData,
+} from '../common/types';
+import { toResolverProjects } from './projectUtils';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import { Driver } from '../generated/graphql';
+import { Driver, SupportedChain } from '../generated/graphql';
 import type {
   SplitsReceiver,
   Source,
@@ -13,10 +19,11 @@ import type {
   Splits,
   Project,
   AddressReceiver,
-  Forge,
   DripList,
   ProjectWhereInput,
   ProjectSortInput,
+  ProjectChainData,
+  Avatar,
 } from '../generated/graphql';
 import type { Context } from '../server';
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
@@ -28,6 +35,7 @@ import assert, {
   isProjectId,
   isSortableProjectField,
 } from '../utils/assert';
+import queryableChains from '../common/queryableChains';
 
 const projectResolvers = {
   Query: {
@@ -35,7 +43,7 @@ const projectResolvers = {
       _: any,
       { id }: { id: ProjectId },
       { dataSources }: Context,
-    ): Promise<ProjectModel | FakeUnclaimedProject | null> => {
+    ): Promise<ProjectDataValues | null> => {
       assert(isProjectId(id));
 
       return dataSources.projectsDb.getProjectById(id);
@@ -44,16 +52,24 @@ const projectResolvers = {
       _: any,
       { url }: { url: string },
       { dataSources }: Context,
-    ): Promise<ProjectModel | FakeUnclaimedProject | null> => {
+    ): Promise<ProjectDataValues | null> => {
       assert(isGitHubUrl(url));
 
       return dataSources.projectsDb.getProjectByUrl(url);
     },
     projects: async (
       _: any,
-      { where, sort }: { where: ProjectWhereInput; sort: ProjectSortInput },
+      {
+        chains,
+        where,
+        sort,
+      }: {
+        chains: SupportedChain[];
+        where: ProjectWhereInput;
+        sort: ProjectSortInput;
+      },
       { dataSources }: Context,
-    ): Promise<(ProjectModel | FakeUnclaimedProject)[]> => {
+    ): Promise<ResolverProject[]> => {
       if (where?.id) {
         assert(isProjectId(where.id));
       }
@@ -74,7 +90,22 @@ const projectResolvers = {
         assert(isSortableProjectField(sort.field));
       }
 
-      return dataSources.projectsDb.getProjectsByFilter(where, sort);
+      if (chains) {
+        chains.forEach((chain) => {
+          assert(chain in SupportedChain);
+        });
+      }
+
+      const chainsToQuery = chains?.length ? chains : queryableChains;
+
+      const projectsDataValues =
+        await dataSources.projectsDb.getProjectsByFilter(
+          chainsToQuery,
+          where,
+          sort,
+        );
+
+      return toResolverProjects(chainsToQuery, projectsDataValues);
     },
     earnedFunds: async (
       _: any,
@@ -87,61 +118,47 @@ const projectResolvers = {
     },
   },
   Project: {
-    __resolveType(parent: ProjectModel) {
-      if (parent.verificationStatus === ProjectVerificationStatus.Claimed) {
-        return 'ClaimedProject';
+    account: (project: ResolverProject): RepoDriverAccount => project.account,
+    source: (project: ResolverProject): Source => project.source,
+  },
+  ProjectChainData: {
+    __resolveType(parent: ProjectChainData) {
+      if ('claimedAt' in parent.data) {
+        return 'ClaimedChainProjectData';
       }
 
-      return 'UnclaimedProject';
+      return 'UnClaimedChainProjectData';
     },
   },
-  Avatar: {
-    __resolveType(parent: { cid: string } | { emoji: string }) {
-      if ('cid' in parent) {
-        return 'ImageAvatar';
-      }
-
-      return 'EmojiAvatar';
-    },
+  ClaimedChainProjectData: {
+    chain: (
+      chainProjectData: ResolverClaimedChainProjectData,
+    ): SupportedChain => chainProjectData.chain,
+    data: (chainProjectData: ResolverClaimedChainProjectData) =>
+      chainProjectData.data,
   },
-  ClaimedProject: {
-    color: (project: ProjectModel): string =>
-      project.color || shouldNeverHappen(),
-    description: (project: ProjectModel): string | null => project.description,
-    emoji: (project: ProjectModel): string => project.emoji || '💧',
-    avatar: (project: ProjectModel): any => {
-      if (project.avatarCid) {
-        return {
-          cid: project.avatarCid,
-        };
-      }
-
-      return {
-        emoji: project.emoji || '💧',
-      };
-    },
-    owner: (project: ProjectModel): AddressDriverAccount => ({
-      driver: Driver.ADDRESS,
-      accountId: project.ownerAccountId || shouldNeverHappen(),
-      address: (project.ownerAddress as string) || shouldNeverHappen(),
-    }),
-    account: (project: ProjectModel): RepoDriverAccount => ({
-      driver: Driver.REPO,
-      accountId: project.id,
-    }),
-    source: (project: ProjectModel): Source => ({
-      url: project.url || shouldNeverHappen(),
-      repoName: splitProjectName(project.name || shouldNeverHappen()).repoName,
-      ownerName: splitProjectName(project.name || shouldNeverHappen())
-        .ownerName,
-      forge: (project.forge as Forge) || shouldNeverHappen(),
-    }),
-    verificationStatus: (project: ProjectModel): ProjectVerificationStatus =>
-      project.verificationStatus === ProjectVerificationStatus.Claimed
-        ? project.verificationStatus
-        : shouldNeverHappen(),
+  UnClaimedChainProjectData: {
+    chain: (
+      chainProjectData: ResolverUnClaimedChainProjectData,
+    ): SupportedChain => chainProjectData.chain,
+    data: (chainProjectData: ResolverUnClaimedChainProjectData) =>
+      chainProjectData.data,
+  },
+  ClaimedProjectData: {
+    verificationStatus: (projectData: ResolverClaimedProjectData) =>
+      projectData.verificationStatus,
+    color: (projectData: ResolverClaimedProjectData): string =>
+      projectData.color,
+    description: (projectData: ResolverClaimedProjectData) =>
+      projectData.description,
+    emoji: (projectData: ResolverClaimedProjectData): string =>
+      projectData.emoji || '💧',
+    avatar: (projectData: ResolverClaimedProjectData): Avatar =>
+      projectData.avatar,
+    owner: (projectData: ResolverClaimedProjectData): AddressDriverAccount =>
+      projectData.owner,
     splits: async (
-      project: ProjectModel,
+      project: ResolverClaimedProjectData,
       _: any,
       context: Context,
     ): Promise<Splits> => {
@@ -157,7 +174,7 @@ const projectResolvers = {
 
       const receiversOfTypeAddressModels =
         await receiversOfTypeAddressDb.getReceiversOfTypeAddressByProjectId(
-          project.id,
+          project.projectId,
         );
 
       const maintainersAndAddressDependencies = groupBy(
@@ -186,7 +203,7 @@ const projectResolvers = {
 
       const receiversOfTypeProjectModels =
         await receiversOfTypeProjectDb.getReceiversOfTypeProjectByProjectId(
-          project.id,
+          project.projectId,
         );
 
       const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
@@ -205,7 +222,7 @@ const projectResolvers = {
           project:
             (splitsOfTypeProjectModels
               .filter(
-                (p): p is ProjectModel => p && (p as any).id !== undefined,
+                (p): p is ProjectDataValues => p && (p as any).id !== undefined,
               )
               .find(
                 (p) => (p as any).id === receiver.fundeeProjectId,
@@ -215,7 +232,7 @@ const projectResolvers = {
 
       const receiversOfTypeDripListModels =
         await receiversOfTypeDripListDb.getReceiversOfTypeDripListByProjectId(
-          project.id,
+          project.projectId,
         );
 
       const splitsOfTypeDripListModels = await dripListsDb.getDripListsByIds(
@@ -250,19 +267,48 @@ const projectResolvers = {
         ],
       };
     },
-    support: async (project: ProjectModel, _: any, context: Context) => {
+    support: async (
+      project: ResolverClaimedProjectData,
+      _: any,
+      context: Context,
+    ) => {
       const {
         dataSources: { projectAndDripListSupportDb },
       } = context;
 
       const projectAndDripListSupport =
         await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
-          project.id,
+          project.projectId,
         );
 
       const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
-          project.id,
+          project.projectId,
+        );
+
+      return [...projectAndDripListSupport, ...oneTimeDonationSupport];
+    },
+  },
+  UnClaimedProjectData: {
+    verificationStatus: (projectData: ResolverUnClaimedProjectData) =>
+      projectData.verificationStatus,
+    support: async (
+      projectData: ResolverUnClaimedProjectData,
+      _: any,
+      context: Context,
+    ) => {
+      const {
+        dataSources: { projectAndDripListSupportDb },
+      } = context;
+
+      const projectAndDripListSupport =
+        await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
+          projectData.projectId,
+        );
+
+      const oneTimeDonationSupport =
+        await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
+          projectData.projectId,
         );
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
@@ -285,42 +331,13 @@ const projectResolvers = {
       return shouldNeverHappen();
     },
   },
-  UnclaimedProject: {
-    account(project: ProjectModel): RepoDriverAccount {
-      return {
-        driver: Driver.REPO,
-        accountId: project.id,
-      };
-    },
-    source(project: ProjectModel): Source {
-      return {
-        url: project.url || shouldNeverHappen(),
-        repoName: splitProjectName(project.name || shouldNeverHappen())
-          .repoName,
-        ownerName: splitProjectName(project.name || shouldNeverHappen())
-          .ownerName,
-        forge: (project.forge as Forge) || shouldNeverHappen(),
-      };
-    },
-    verificationStatus(project: ProjectModel): ProjectVerificationStatus {
-      return project.verificationStatus;
-    },
-    support: async (project: ProjectModel, _: any, context: Context) => {
-      const {
-        dataSources: { projectAndDripListSupportDb },
-      } = context;
+  Avatar: {
+    __resolveType(parent: { cid: string } | { emoji: string }) {
+      if ('cid' in parent) {
+        return 'ImageAvatar';
+      }
 
-      const projectAndDripListSupport =
-        await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
-          project.id,
-        );
-
-      const oneTimeDonationSupport =
-        await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
-          project.id,
-        );
-
-      return [...projectAndDripListSupport, ...oneTimeDonationSupport];
+      return 'EmojiAvatar';
     },
   },
 };
