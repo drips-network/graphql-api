@@ -1,13 +1,13 @@
 import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
 import type { Address, AddressDriverId } from '../common/types';
 import { Driver, SupportedChain } from '../generated/graphql';
-import type { AddressDriverAccount, User } from '../generated/graphql';
+import DripListModel from '../drip-list/DripListModel';
+import type { User } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, { isAddressDriverId } from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
 import getLatestAccountMetadata from '../utils/getLatestAccountMetadata';
 import getUserAddress from '../utils/getUserAddress';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
 
 const userResolvers = {
   Query: {
@@ -23,17 +23,11 @@ const userResolvers = {
     ): Promise<User> => dataSources.usersDb.getUserByAddress(address),
   },
   User: {
-    account: (parent: User | AddressDriverAccount) => {
-      if ('accountId' in parent) {
-        return parent;
-      }
-
-      return {
-        accountId: parent.account.accountId,
-        driver: Driver.ADDRESS,
-        address: getUserAddress(parent.account.accountId as AddressDriverId),
-      };
-    },
+    account: (parent: User) => ({
+      accountId: parent.account.accountId,
+      driver: Driver.ADDRESS,
+      address: getUserAddress(parent.account.accountId as AddressDriverId),
+    }),
     streams: async (parent: User) => ({
       accountId: parent.account.accountId,
     }),
@@ -96,18 +90,12 @@ const userResolvers = {
     },
   },
   StreamReceiver: {
-    __resolveType(parent: { driver: Driver }) {
-      if (parent.driver === Driver.ADDRESS) {
-        return 'User';
-      }
-
-      if (parent.driver === Driver.NFT) {
+    __resolveType(parent: DripListModel | User) {
+      if (parent instanceof DripListModel) {
         return 'DripList';
       }
 
-      return shouldNeverHappen(
-        `Cannot resolve 'StreamReceiver' type for driver '${parent.driver}'.`,
-      );
+      return 'User';
     },
   },
 };

@@ -7,8 +7,7 @@ import buildStreamReceiver, {
 } from './streamUtils';
 import type {
   AddressDriverAccount,
-  AssetConfig,
-  AssetConfigHistoryItem,
+  NftDriverAccount,
 } from '../generated/graphql';
 import getUserAddress from './getUserAddress';
 import type {
@@ -20,6 +19,45 @@ import { AMT_PER_SEC_MULTIPLIER } from '../common/constants';
 import toBigIntString from './toBigIntString';
 
 type Erc20 = string;
+
+export interface AssetConfig {
+  tokenAddress: Erc20;
+  streams: ProtoStream[];
+  history: AssetConfigHistoryItem[];
+}
+
+export interface AssetConfigHistoryItem {
+  timestamp: Date;
+  balance: {
+    tokenAddress: string;
+    amount: string;
+  };
+  runsOutOfFunds: Date | undefined;
+  streams: ProtoStream[];
+  historyHash: string;
+  receiversHash: string;
+}
+
+export interface ProtoStream {
+  streamId: string;
+  config:
+    | {
+        raw: string;
+        startDate: Date | undefined;
+        amountPerSecond: {
+          amount: string;
+          tokenAddress: string;
+        };
+        dripId: string;
+        durationSeconds: number | undefined;
+      }
+    | undefined;
+  createdAt: Date | undefined;
+  isManaged: boolean;
+  receiver: AddressDriverAccount | NftDriverAccount;
+  sender: AddressDriverAccount;
+  endsAt: Date | undefined;
+}
 
 export default function buildAssetConfigs(
   accountId: AddressDriverId,
@@ -42,7 +80,7 @@ export default function buildAssetConfigs(
       const assetConfigHistoryItems: AssetConfigHistoryItem[] = [];
 
       for (const streamsSetEvent of assetConfigStreamsSetEvents) {
-        const assetConfigHistoryItemStreams: any[] = [];
+        const assetConfigHistoryItemStreams: ProtoStream[] = [];
 
         const remainingStreamIds =
           assetConfigMetadata?.streams.map((stream) =>
@@ -119,6 +157,12 @@ export default function buildAssetConfigs(
             createdAt: firstAppearanceMap.get(streamId),
             isManaged: Boolean(matchingStream),
             receiver,
+            sender: {
+              ...(buildStreamReceiver(
+                accountId as AddressDriverId,
+              ) as AddressDriverAccount),
+              address: getUserAddress(accountId as AddressDriverId),
+            },
             endsAt,
           });
 
@@ -154,6 +198,12 @@ export default function buildAssetConfigs(
                 address: getUserAddress(
                   stream.receiver.accountId as AddressDriverId,
                 ),
+              },
+              sender: {
+                ...(buildStreamReceiver(
+                  accountId as AddressDriverId,
+                ) as AddressDriverAccount),
+                address: getUserAddress(accountId as AddressDriverId),
               },
               createdAt: firstAppearanceMap.get(remainingStreamId),
               endsAt: undefined,

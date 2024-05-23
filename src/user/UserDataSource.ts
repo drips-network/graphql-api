@@ -1,14 +1,12 @@
 import type { Address, AddressDriverId } from '../common/types';
 import { Driver } from '../generated/graphql';
-import type { User, UserAccount } from '../generated/graphql';
+import type { User } from '../generated/graphql';
 import getUserAddress from '../utils/getUserAddress';
 import getUserAccount from '../utils/getUserAccount';
 import dripsContracts from '../common/dripsContracts';
 
 export default class UsersDataSource {
-  public async getUserAccount(
-    accountId: AddressDriverId,
-  ): Promise<UserAccount> {
+  public async getUserAccount(accountId: AddressDriverId) {
     return getUserAccount(accountId);
   }
 
