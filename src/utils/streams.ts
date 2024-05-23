@@ -7,12 +7,14 @@ import getUserAccount from './getUserAccount';
 import type {
   AddressDriverAccount,
   NftDriverAccount,
-  Stream,
 } from '../generated/graphql';
 
 import type { AccountId } from '../common/types';
+import type { ProtoStream } from './buildAssetConfigs';
 
-async function getUserIncomingStreams(accountId: AccountId): Promise<Stream[]> {
+async function getUserIncomingStreams(
+  accountId: AccountId,
+): Promise<ProtoStream[]> {
   const streamReceiverSeenEventsForUser =
     await StreamReceiverSeenEventModel.findAll({
       where: {
@@ -42,7 +44,7 @@ async function getUserIncomingStreams(accountId: AccountId): Promise<Stream[]> {
     }),
   );
 
-  const incomingStreams = accountsStreamingToUser.reduce<Stream[]>(
+  const incomingStreams = accountsStreamingToUser.reduce<ProtoStream[]>(
     (acc, account) => {
       const streams = account.assetConfigs
         .flatMap((assetConfig) => assetConfig.streams)

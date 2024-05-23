@@ -1,13 +1,10 @@
 import type { AddressDriverId } from '../common/types';
-import type { UserAccount } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import getUserAddress from './getUserAddress';
 import getLatestAccountMetadata from './getLatestAccountMetadata';
 import getAssetConfigs from './getAssetConfigs';
 
-export default async function getUserAccount(
-  accountId: AddressDriverId,
-): Promise<UserAccount> {
+export default async function getUserAccount(accountId: AddressDriverId) {
   const { metadata, ipfsHash } =
     (await getLatestAccountMetadata(accountId)) ?? {};
 

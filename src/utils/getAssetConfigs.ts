@@ -1,5 +1,4 @@
 import type { AddressDriverId } from '../common/types';
-import type { AssetConfig } from '../generated/graphql';
 import buildAssetConfigs from './buildAssetConfigs';
 import type getLatestAccountMetadata from './getLatestAccountMetadata';
 import getStreamsSetEventsWithReceivers from './getStreamsSetEventsWithReceivers';
@@ -12,7 +11,7 @@ export default async function getAssetConfigs(
         Awaited<ReturnType<typeof getLatestAccountMetadata>>
       >['metadata']
     | undefined,
-): Promise<AssetConfig[]> {
+): Promise<ReturnType<typeof buildAssetConfigs>> {
   const accountStreamsSetEventsWithReceivers =
     await getStreamsSetEventsWithReceivers(accountId);
 

@@ -3,10 +3,10 @@
 import {
   TimelineItemType,
   type UserBalanceTimelineItem,
-  type AssetConfigHistoryItem,
   type Scalars,
   type TimelineItem,
 } from '../generated/graphql';
+import type { AssetConfigHistoryItem } from '../utils/buildAssetConfigs';
 import minMax from '../utils/minMax';
 
 export function assetOutgoingBalanceTimeline(

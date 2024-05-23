@@ -5,7 +5,6 @@ import commonTypeDef from './common/commonTypeDef';
 import givenEventTypeDef from './given-event/givenEventTypeDef';
 import userTypeDef from './user/userTypeDef';
 import streamTypeDef from './stream/streamTypeDef';
-import estimatesTypeDef from './balances/estimatesTypeDef';
 
 const rootTypeDef = gql`
   type Query {
@@ -20,7 +19,6 @@ const rootTypeDef = gql`
     userById(accountId: ID!): User!
     userByAddress(address: String!): User!
     streams(where: StreamWhereInput): [Stream!]!
-    accountEstimate(accountId: ID!): AccountEstimate
   }
 `;
 
@@ -32,7 +30,6 @@ const typeDefs = [
   givenEventTypeDef,
   userTypeDef,
   streamTypeDef,
-  estimatesTypeDef,
 ];
 
 export default typeDefs;

@@ -13,10 +13,17 @@ import type { DripListId, ProjectId } from './types';
 import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
+import type { ProtoStream } from '../utils/buildAssetConfigs';
 
 const commonResolvers = {
   SupportItem: {
-    __resolveType(parent: any) {
+    __resolveType(
+      parent:
+        | DripListSplitReceiverModel
+        | RepoDriverSplitReceiverModel
+        | GivenEventModel
+        | ProtoStream,
+    ) {
       if (
         parent instanceof DripListSplitReceiverModel ||
         parent instanceof RepoDriverSplitReceiverModel
@@ -36,7 +43,7 @@ const commonResolvers = {
         return 'OneTimeDonationSupport';
       }
 
-      return shouldNeverHappen('Invalid SupportItem type');
+      return 'StreamSupport';
     },
   },
   ProjectSupport: {
@@ -131,6 +138,12 @@ const commonResolvers = {
       amount: parent.amt,
     }),
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
+  },
+  StreamSupport: {
+    account: async (parent: ProtoStream): Promise<AddressDriverAccount> =>
+      parent.sender,
+    stream: (parent: ProtoStream) => parent,
+    date: (parent: ProtoStream) => parent.createdAt,
   },
   SupportGroup: {
     // TODO: implement.

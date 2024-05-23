@@ -5,7 +5,7 @@ import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import streams from '../utils/streams';
-import type { Stream } from '../generated/graphql';
+import type { ProtoStream } from '../utils/buildAssetConfigs';
 
 export default class ProjectAndDripListSupportDataSource {
   private readonly _batchProjectAndDripListSupportByDripListIds =
@@ -78,13 +78,13 @@ export default class ProjectAndDripListSupportDataSource {
       ).flat();
 
       const streamSupportToAccountMapping = streamsToList.reduce<
-        Record<AccountId, Stream[]>
+        Record<AccountId, ProtoStream[]>
       >((mapping, stream) => {
-        if (!mapping[stream.sender.account.accountId as AccountId]) {
-          mapping[stream.receiver.account.accountId as AccountId] = []; // eslint-disable-line no-param-reassign
+        if (!mapping[stream.sender.accountId as AccountId]) {
+          mapping[stream.receiver.accountId as AccountId] = []; // eslint-disable-line no-param-reassign
         }
 
-        mapping[stream.receiver.account.accountId as AccountId].push(stream);
+        mapping[stream.receiver.accountId as AccountId].push(stream);
 
         return mapping;
       }, {});
@@ -141,7 +141,9 @@ export default class ProjectAndDripListSupportDataSource {
     return this._batchOneTimeDonationSupportByAccountIds.load(id);
   }
 
-  public async getStreamSupportByAccountId(id: AccountId): Promise<Stream[]> {
+  public async getStreamSupportByAccountId(
+    id: AccountId,
+  ): Promise<ProtoStream[]> {
     return this._batchStreamSupportByAccountIds.load(id);
   }
 }

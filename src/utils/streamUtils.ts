@@ -13,14 +13,13 @@ import type {
   NftDriverAccount,
   AddressDriverAccount,
   StreamConfig,
-  HistoricalStream,
-  AssetConfigHistoryItem,
 } from '../generated/graphql';
 import getContractNameByAccountId from './getContractNameByAccountId';
 import getUserAddress from './getUserAddress';
 import toBigIntString from './toBigIntString';
 import assert from './assert';
 import { streamTotalStreamedTimeline } from '../balances/estimate-reloaded';
+import type { AssetConfigHistoryItem, ProtoStream } from './buildAssetConfigs';
 
 const numericTest = /^\d+$/;
 
@@ -115,7 +114,7 @@ export default function buildStreamReceiver(
 }
 
 export function mapReceiverToStream(
-  receiver: HistoricalStream,
+  receiver: ProtoStream,
   senderAccountId: string,
   tokenAddress: string,
   historyItems: AssetConfigHistoryItem[],
