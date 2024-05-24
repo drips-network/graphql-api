@@ -1,6 +1,5 @@
 import { isAddress } from 'ethers';
 import type {
-  ProjectDataValues,
   ProjectId,
   ResolverClaimedChainProjectData,
   ResolverClaimedProjectData,
@@ -36,17 +35,19 @@ import assert, {
   isSortableProjectField,
 } from '../utils/assert';
 import queryableChains from '../common/queryableChains';
+import type { ProjectDataValues } from './ProjectModel';
 
 const projectResolvers = {
   Query: {
     projectById: async (
       _: any,
-      { id }: { id: ProjectId },
+      { id, chain }: { id: ProjectId; chain: SupportedChain },
       { dataSources }: Context,
     ): Promise<ProjectDataValues | null> => {
       assert(isProjectId(id));
+      assert(chain in SupportedChain);
 
-      return dataSources.projectsDb.getProjectById(id);
+      return dataSources.projectsDb.getProjectById(id, chain);
     },
     projectByUrl: async (
       _: any,
@@ -158,7 +159,7 @@ const projectResolvers = {
     owner: (projectData: ResolverClaimedProjectData): AddressDriverAccount =>
       projectData.owner,
     splits: async (
-      project: ResolverClaimedProjectData,
+      projectData: ResolverClaimedProjectData,
       _: any,
       context: Context,
     ): Promise<Splits> => {
@@ -172,9 +173,11 @@ const projectResolvers = {
         },
       } = context;
 
+      const { parentProject } = projectData;
+
       const receiversOfTypeAddressModels =
         await receiversOfTypeAddressDb.getReceiversOfTypeAddressByProjectId(
-          project.projectId,
+          parentProject.projectId,
         );
 
       const maintainersAndAddressDependencies = groupBy(
@@ -203,11 +206,12 @@ const projectResolvers = {
 
       const receiversOfTypeProjectModels =
         await receiversOfTypeProjectDb.getReceiversOfTypeProjectByProjectId(
-          project.projectId,
+          parentProject.projectId,
         );
 
       const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
         receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
+        [SupportedChain.sepolia], // TODO: Hardcoded until multiple chains are supported. Fix.
       );
 
       const dependenciesOfTypeProject = receiversOfTypeProjectModels.map(
@@ -232,7 +236,7 @@ const projectResolvers = {
 
       const receiversOfTypeDripListModels =
         await receiversOfTypeDripListDb.getReceiversOfTypeDripListByProjectId(
-          project.projectId,
+          parentProject.projectId,
         );
 
       const splitsOfTypeDripListModels = await dripListsDb.getDripListsByIds(
@@ -268,22 +272,27 @@ const projectResolvers = {
       };
     },
     support: async (
-      project: ResolverClaimedProjectData,
+      projectData: ResolverClaimedProjectData,
       _: any,
       context: Context,
     ) => {
+      const {
+        parentProject: { projectId, queriedChains },
+      } = projectData;
       const {
         dataSources: { projectAndDripListSupportDb },
       } = context;
 
       const projectAndDripListSupport =
         await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
-          project.projectId,
+          projectId,
+          queriedChains,
         );
 
       const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
-          project.projectId,
+          projectId,
+          queriedChains,
         );
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
@@ -301,14 +310,20 @@ const projectResolvers = {
         dataSources: { projectAndDripListSupportDb },
       } = context;
 
+      const {
+        parentProject: { projectId, queriedChains },
+      } = projectData;
+
       const projectAndDripListSupport =
         await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
-          projectData.projectId,
+          projectId,
+          queriedChains,
         );
 
       const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
-          projectData.projectId,
+          projectId,
+          queriedChains,
         );
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];

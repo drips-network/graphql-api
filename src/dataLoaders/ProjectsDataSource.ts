@@ -1,7 +1,8 @@
-import { Op, QueryTypes } from 'sequelize';
+import { QueryTypes } from 'sequelize';
 import DataLoader from 'dataloader';
+import type { ProjectDataValues } from '../project/ProjectModel';
 import ProjectModel from '../project/ProjectModel';
-import type { ProjectDataValues, ProjectId } from '../common/types';
+import type { ProjectId, ProjectMultiChainKey } from '../common/types';
 import {
   doesRepoExists,
   isValidProjectName,
@@ -16,27 +17,59 @@ import type {
 import SplitEventModel from '../models/SplitEventModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import { dbConnection } from '../database/connectToDatabase';
+import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
-    async (projectIds: readonly ProjectId[]): Promise<ProjectDataValues[]> => {
-      const projects = await ProjectModel.findAll({
-        where: {
-          id: {
-            [Op.in]: projectIds,
-          },
-          isValid: true,
-        },
-      }).then((projectModels) =>
-        projectModels.filter((p) =>
-          p.name ? isValidProjectName(p.name) : true,
-        ),
+    async (
+      projectKeys: readonly ProjectMultiChainKey[],
+    ): Promise<ProjectDataValues[]> => {
+      const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
+
+      // Define base SQL to query from multiple chains (schemas).
+      const baseSQL = (schema: SupportedChain) => `
+        SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
+        FROM "${schema}"."GitProjects"
+      `;
+
+      // Initialize the WHERE clause parts.
+      const conditions: string[] = ['"id" IN (:projectIds)'];
+      const parameters: { [key: string]: any } = { projectIds };
+
+      // Join conditions into a single WHERE clause.
+      const whereClause =
+        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+
+      // Build the SQL for each specified schema.
+      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+      // Combine all schema queries with UNION.
+      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+      const projectsDataValues = (
+        await dbConnection.query(fullQuery, {
+          type: QueryTypes.SELECT,
+          replacements: parameters,
+          mapToModel: true,
+          model: ProjectModel,
+        })
+      )
+        .map((p) => p.dataValues as ProjectDataValues)
+        .filter((p) => p.isValid)
+        .filter((p) => (p.name ? isValidProjectName(p.name) : true));
+
+      const projectsDataValuesWithApi = await Promise.all(
+        projectsDataValues.map(toApiProject),
       );
 
-      const projectIdToProjectMap = projects.reduce<
+      const filteredProjectsDataValues = projectsDataValuesWithApi.filter(
+        Boolean,
+      ) as ProjectDataValues[];
+
+      const projectIdToProjectMap = filteredProjectsDataValues.reduce<
         Record<ProjectId, ProjectDataValues>
       >((mapping, project) => {
-        mapping[project.id] = project.dataValues as ProjectDataValues; // eslint-disable-line no-param-reassign
+        mapping[project.id] = project; // eslint-disable-line no-param-reassign
 
         return mapping;
       }, {});
@@ -47,8 +80,14 @@ export default class ProjectsDataSource {
 
   public async getProjectById(
     id: ProjectId,
+    chain: SupportedChain,
   ): Promise<ProjectDataValues | null> {
-    return toApiProject(await this._batchProjectsByIds.load(id));
+    return toApiProject(
+      await this._batchProjectsByIds.load({
+        projectId: id,
+        chains: [chain],
+      }),
+    );
   }
 
   public async getProjectByUrl(url: string): Promise<ProjectDataValues | null> {
@@ -134,10 +173,14 @@ export default class ProjectsDataSource {
 
   public async getProjectsByIds(
     ids: ProjectId[],
+    chains: SupportedChain[],
   ): Promise<ProjectDataValues[]> {
-    return this._batchProjectsByIds.loadMany(ids) as Promise<
-      ProjectDataValues[]
-    >;
+    return this._batchProjectsByIds.loadMany(
+      ids.map((id) => ({
+        projectId: id,
+        chains,
+      })),
+    ) as Promise<ProjectDataValues[]>;
   }
 
   public async getEarnedFunds(projectId: ProjectId): Promise<

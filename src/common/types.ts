@@ -9,7 +9,6 @@ import type StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEvent
 import type { FORGES_MAP } from './constants';
 import type { addressDriverAccountMetadataParser } from '../schemas';
 import type StreamsSetEventModel from '../models/StreamsSetEventModel';
-import type ProjectModel from '../project/ProjectModel';
 
 export type KnownAny = any;
 export type ValuesOf<T> = T[keyof T];
@@ -67,12 +66,6 @@ export type StreamHistoryHashes = string & {
   __type: 'StreamHistoryHashes';
 };
 
-export type ProjectDataValues = ProjectModel['dataValues'] & {
-  createdAt: Date;
-  updatedAt: Date;
-  chain: SupportedChain;
-};
-
 export type ResolverProject = Project & {
   chainData: (
     | ResolverClaimedChainProjectData
@@ -80,20 +73,35 @@ export type ResolverProject = Project & {
   )[];
 };
 
-export type ResolverClaimedProjectData = ClaimedProjectData & {
-  projectId: ProjectId;
+type ProjectDataParentProjectInfo = {
+  parentProject: {
+    projectId: ProjectId;
+    queriedChains: SupportedChain[];
+  };
 };
+
+export type ResolverClaimedProjectData = ClaimedProjectData &
+  ProjectDataParentProjectInfo;
 
 export type ResolverClaimedChainProjectData = {
   chain: SupportedChain;
   data: ResolverClaimedProjectData;
 };
 
-export type ResolverUnClaimedProjectData = UnClaimedProjectData & {
-  projectId: ProjectId;
-};
+export type ResolverUnClaimedProjectData = UnClaimedProjectData &
+  ProjectDataParentProjectInfo;
 
 export type ResolverUnClaimedChainProjectData = {
   chain: SupportedChain;
   data: ResolverUnClaimedProjectData;
 };
+
+export interface DripListMultiChainKey {
+  dripListId: DripListId;
+  chains: SupportedChain[];
+}
+
+export interface ProjectMultiChainKey {
+  projectId: ProjectId;
+  chains: SupportedChain[];
+}

@@ -1,5 +1,5 @@
 import { isAddress } from 'ethers';
-import type { Address, DripListId, ProjectDataValues } from '../common/types';
+import type { Address, DripListId } from '../common/types';
 import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
@@ -10,10 +10,11 @@ import type {
   Project,
   SplitsReceiver,
 } from '../generated/graphql';
-import { Driver } from '../generated/graphql';
+import { Driver, SupportedChain } from '../generated/graphql';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Context } from '../server';
 import assert, { isDripListId } from '../utils/assert';
+import type { ProjectDataValues } from '../project/ProjectModel';
 
 const dripListResolvers = {
   Query: {
@@ -104,6 +105,7 @@ const dripListResolvers = {
 
       const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
         receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
+        [SupportedChain.sepolia], // TODO: Hardcoded until multiple chains are supported. Fix.
       );
 
       const projectReceivers = receiversOfTypeProjectModels.map((receiver) => ({
@@ -167,6 +169,7 @@ const dripListResolvers = {
       const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
           dripList.id,
+          [], // TODO: Only for compilation. Fix.
         );
 
       const streamSupport =

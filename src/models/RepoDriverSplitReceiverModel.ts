@@ -10,6 +10,14 @@ import type { DripListId, ProjectId } from '../common/types';
 import { DependencyType } from '../common/types';
 import ProjectModel from '../project/ProjectModel';
 import DripListModel from '../drip-list/DripListModel';
+import type { SupportedChain } from '../generated/graphql';
+
+export type RepoDriverSplitReceiverModelDataValues =
+  RepoDriverSplitReceiverModel['dataValues'] & {
+    createdAt: Date;
+    updatedAt: Date;
+    chain: SupportedChain;
+  };
 
 export default class RepoDriverSplitReceiverModel extends Model<
   InferAttributes<RepoDriverSplitReceiverModel>,

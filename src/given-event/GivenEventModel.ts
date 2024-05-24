@@ -6,13 +6,18 @@ import type {
 import { DataTypes, Model } from 'sequelize';
 import type { AccountId, Address, BigIntString } from '../common/types';
 import getSchema from '../utils/getSchema';
+import type { SupportedChain } from '../generated/graphql';
 
-export default class GivenEventModel
-  extends Model<
-    InferAttributes<GivenEventModel>,
-    InferCreationAttributes<GivenEventModel>
-  >
-{
+export type GivenEventModelDataValues = GivenEventModel['dataValues'] & {
+  createdAt: Date;
+  updatedAt: Date;
+  chain: SupportedChain;
+};
+
+export default class GivenEventModel extends Model<
+  InferAttributes<GivenEventModel>,
+  InferCreationAttributes<GivenEventModel>
+> {
   public declare accountId: AccountId; // Sender of the Give
   public declare receiver: AccountId;
   public declare erc20: Address;
