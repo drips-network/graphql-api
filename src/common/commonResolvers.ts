@@ -14,6 +14,46 @@ import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
+import SplitEventModel from '../models/SplitEventModel';
+import mergeAmounts from '../utils/mergeAmounts';
+
+async function resolveTotalSplit(
+  parent: DripListSplitReceiverModel | RepoDriverSplitReceiverModel,
+) {
+  let incomingAccountId: DripListId | ProjectId;
+  let recipientAccountId: DripListId | ProjectId;
+
+  if (parent instanceof DripListSplitReceiverModel) {
+    const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
+    incomingAccountId = fundeeDripListId;
+    recipientAccountId =
+      funderDripListId || funderProjectId || shouldNeverHappen();
+  } else if (parent instanceof RepoDriverSplitReceiverModel) {
+    const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
+    incomingAccountId = fundeeProjectId;
+    recipientAccountId =
+      funderDripListId || funderProjectId || shouldNeverHappen();
+  } else {
+    shouldNeverHappen('Invalid SupportItem type');
+  }
+
+  const splitEvents = await SplitEventModel.findAll({
+    where: {
+      accountId: incomingAccountId,
+      receiver: recipientAccountId,
+    },
+  });
+
+  return mergeAmounts(
+    splitEvents.map((splitEvent) => ({
+      tokenAddress: splitEvent.erc20,
+      amount: BigInt(splitEvent.amt),
+    })),
+  ).map((amount) => ({
+    ...amount,
+    amount: amount.amount.toString(),
+  }));
+}
 
 const commonResolvers = {
   SupportItem: {
@@ -76,6 +116,7 @@ const commonResolvers = {
 
       return projectsDb.getProjectById(parent.funderProjectId);
     },
+    totalSplit: resolveTotalSplit,
   },
   DripListSupport: {
     account: async (
@@ -109,6 +150,7 @@ const commonResolvers = {
 
       return dripListsDb.getDripListById(parent.funderDripListId);
     },
+    totalSplit: resolveTotalSplit,
   },
   OneTimeDonationSupport: {
     account: async (
