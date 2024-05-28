@@ -79,15 +79,16 @@ export default class ProjectAndDripListSupportDataSource {
 
       const streamSupportToAccountMapping = streamsToList.reduce<
         Record<AccountId, ProtoStream[]>
-      >((mapping, stream) => {
-        if (!mapping[stream.sender.accountId as AccountId]) {
-          mapping[stream.receiver.accountId as AccountId] = []; // eslint-disable-line no-param-reassign
-        }
-
-        mapping[stream.receiver.accountId as AccountId].push(stream);
-
-        return mapping;
-      }, {});
+      >(
+        (mapping, stream) => ({
+          ...mapping,
+          [stream.receiver.accountId as AccountId]: [
+            ...(mapping[stream.receiver.accountId as AccountId] || []),
+            stream,
+          ],
+        }),
+        {},
+      );
 
       return accountIds.map((id) => streamSupportToAccountMapping[id] || []);
     },

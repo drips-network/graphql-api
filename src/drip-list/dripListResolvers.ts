@@ -15,6 +15,9 @@ import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Context } from '../server';
 import type GitProjectModel from '../project/ProjectModel';
 import assert, { isDripListId } from '../utils/assert';
+import SplitEventModel from '../models/SplitEventModel';
+import mergeAmounts from '../utils/mergeAmounts';
+import GivenEventModel from '../given-event/GivenEventModel';
 
 const dripListResolvers = {
   Query: {
@@ -183,6 +186,30 @@ const dripListResolvers = {
     },
     latestVotingRoundId: (dripList: DripListModel) =>
       dripList.latestVotingRoundId,
+    totalEarned: async (dripList: DripListModel) => {
+      const [splitEvents, givenEvents] = await Promise.all([
+        SplitEventModel.findAll({
+          where: {
+            receiver: dripList.id,
+          },
+        }),
+        GivenEventModel.findAll({
+          where: {
+            receiver: dripList.id,
+          },
+        }),
+      ]);
+
+      return mergeAmounts(
+        [...splitEvents, ...givenEvents].map((event) => ({
+          tokenAddress: event.erc20,
+          amount: BigInt(event.amt),
+        })),
+      ).map((amount) => ({
+        ...amount,
+        amount: amount.amount.toString(),
+      }));
+    },
   },
 };
 

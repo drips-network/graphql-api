@@ -25,13 +25,13 @@ async function resolveTotalSplit(
 
   if (parent instanceof DripListSplitReceiverModel) {
     const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
-    incomingAccountId = fundeeDripListId;
-    recipientAccountId =
+    recipientAccountId = fundeeDripListId;
+    incomingAccountId =
       funderDripListId || funderProjectId || shouldNeverHappen();
   } else if (parent instanceof RepoDriverSplitReceiverModel) {
     const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
-    incomingAccountId = fundeeProjectId;
-    recipientAccountId =
+    recipientAccountId = fundeeProjectId;
+    incomingAccountId =
       funderDripListId || funderProjectId || shouldNeverHappen();
   } else {
     shouldNeverHappen('Invalid SupportItem type');
