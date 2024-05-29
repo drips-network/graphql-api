@@ -113,10 +113,21 @@ export function assetOutgoingBalanceTimeline(
       let currentBalance =
         index === 0
           ? BigInt(item.balance.amount)
-          : previousBalance - totalStreamedSinceLastEvent;
+          : previousBalance + totalStreamedSinceLastEvent;
       if (currentBalance < 0) currentBalance = 0n;
 
-      const currentDeltaPerSecond =
+      if (ts.getTime() === new Date('2024-05-23T03:03:15.000Z').getTime()) {
+        console.log('last item', {
+          previousTimelineItem,
+          previousBalance,
+          previousDeltaPerSecond,
+          secondsPassedSinceLastEvent,
+          totalStreamedSinceLastEvent,
+          currentBalance,
+        });
+      }
+
+      let currentDeltaPerSecond =
         currentBalance > 0n
           ? streams.reduce((acc, stream) => {
               const { config } = stream;
@@ -145,6 +156,30 @@ export function assetOutgoingBalanceTimeline(
               return acc + BigInt(amountPerSecond.amount);
             }, 0n)
           : 0n;
+
+      // If balance cannot go any lower, we need to set the deltaPerSecond to 0.
+      if (currentBalance - currentDeltaPerSecond <= 0n) {
+        currentDeltaPerSecond = 0n;
+      }
+
+      if (
+        item.balance.tokenAddress ===
+        '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
+      ) {
+        console.log({
+          result: {
+            timestamp: ts,
+            currentAmount: {
+              tokenAddress: item.balance.tokenAddress,
+              amount: currentBalance.toString(),
+            },
+            deltaPerSecond: {
+              tokenAddress: item.balance.tokenAddress,
+              amount: (-currentDeltaPerSecond).toString(),
+            },
+          },
+        });
+      }
 
       timeline.push({
         timestamp: ts,
