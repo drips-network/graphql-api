@@ -75,6 +75,7 @@ const commonTypeDef = gql`
     date: Date!
     weight: Int!
     dripList: DripList!
+    totalSplit: [Amount!]!
   }
 
   type ProjectSupport {
@@ -82,6 +83,7 @@ const commonTypeDef = gql`
     date: Date!
     weight: Int!
     project: Project!
+    totalSplit: [Amount!]!
   }
 
   type OneTimeDonationSupport {

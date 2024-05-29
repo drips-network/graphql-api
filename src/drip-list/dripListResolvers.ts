@@ -25,6 +25,9 @@ import queryableChains from '../common/queryableChains';
 import toResolverDripLists from './dripListUtils';
 import verifyDripListsInput from './dripListValidators';
 import type { DripListDataValues } from './DripListModel';
+import SplitEventModel from '../models/SplitEventModel';
+import mergeAmounts from '../utils/mergeAmounts';
+import GivenEventModel from '../given-event/GivenEventModel';
 
 const dripListResolvers = {
   Query: {
@@ -224,6 +227,30 @@ const dripListResolvers = {
         ...streamSupport,
         ...oneTimeDonationSupport,
       ];
+    },
+    totalEarned: async (dripList: DripListModel) => {
+      const [splitEvents, givenEvents] = await Promise.all([
+        SplitEventModel.findAll({
+          where: {
+            receiver: dripList.id,
+          },
+        }),
+        GivenEventModel.findAll({
+          where: {
+            receiver: dripList.id,
+          },
+        }),
+      ]);
+
+      return mergeAmounts(
+        [...splitEvents, ...givenEvents].map((event) => ({
+          tokenAddress: event.erc20,
+          amount: BigInt(event.amt),
+        })),
+      ).map((amount) => ({
+        ...amount,
+        amount: amount.amount.toString(),
+      }));
     },
   },
 };

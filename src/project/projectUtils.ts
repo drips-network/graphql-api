@@ -206,6 +206,7 @@ export async function toResolverProjects(
                 verificationStatus: project.verificationStatus,
                 support: [], // Will be populated by the resolver.
                 claimedAt: project.claimedAt,
+                totalEarned: [], // Will be populated by the resolver.
               },
             } as ResolverClaimedProjectChainData;
           }
@@ -221,6 +222,7 @@ export async function toResolverProjects(
               },
               verificationStatus: fakeUnclaimedProject.verificationStatus,
               support: [], // Will be populated by the resolver.
+              totalEarned: [], // Will be populated by the resolver.
             },
           } as ResolverUnClaimedProjectChainData;
         }),

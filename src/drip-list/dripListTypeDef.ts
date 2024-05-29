@@ -20,6 +20,7 @@ const dripListTypeDef = gql`
     previousOwnerAddress: String!
     support: [SupportItem!]!
     latestVotingRoundId: String
+    totalEarned: [Amount!]!
   }
 
   input DripListWhereInput {

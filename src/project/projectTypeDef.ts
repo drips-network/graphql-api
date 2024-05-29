@@ -48,6 +48,7 @@ const projectTypeDef = gql`
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
     claimedAt: Date!
+    totalEarned: [Amount!]!
   }
 
   type UnClaimedProjectChainData {
@@ -58,6 +59,7 @@ const projectTypeDef = gql`
   type UnClaimedProjectData {
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
+    totalEarned: [Amount!]!
   }
 
   input ProjectWhereInput {

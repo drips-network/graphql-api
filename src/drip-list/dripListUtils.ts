@@ -34,6 +34,7 @@ export default async function toResolverDripLists(
                 support: [], // Will be populated by the resolver.
                 splits: [], // Will be populated by the resolver.
                 latestVotingRoundId: dripList.latestVotingRoundId,
+                totalEarned: [], // Will be populated by the resolver.
               },
             } as ResolverDripListChainData;
           }
