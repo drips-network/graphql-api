@@ -1,4 +1,8 @@
-import { Driver, type StreamWhereInput } from '../generated/graphql';
+import {
+  Driver,
+  SupportedChain,
+  type StreamWhereInput,
+} from '../generated/graphql';
 import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 
@@ -21,6 +25,7 @@ const streamResolvers = {
       if (parent.receiver.driver === Driver.NFT) {
         return dataSources.dripListsDb.getDripListById(
           parent.receiver.accountId,
+          SupportedChain.sepolia, // TODO: Temporary for compiling.
         );
       }
 
@@ -32,7 +37,10 @@ const streamResolvers = {
       }
 
       if (parent.sender.driver === Driver.NFT) {
-        return dataSources.dripListsDb.getDripListById(parent.sender.accountId);
+        return dataSources.dripListsDb.getDripListById(
+          parent.sender.accountId,
+          SupportedChain.sepolia, // TODO: Temporary for compiling.
+        );
       }
 
       throw shouldNeverHappen();

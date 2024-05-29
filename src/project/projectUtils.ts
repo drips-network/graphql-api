@@ -2,9 +2,9 @@ import { ethers } from 'ethers';
 import type {
   Forge,
   ProjectId,
-  ResolverClaimedChainProjectData,
+  ResolverClaimedProjectChainData,
   ResolverProject,
-  ResolverUnClaimedChainProjectData,
+  ResolverUnClaimedProjectChainData,
 } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { ProjectDataValues } from './ProjectModel';
@@ -182,9 +182,10 @@ export async function toResolverProjects(
             return {
               chain,
               data: {
-                parentProject: {
+                parentProjectInfo: {
                   projectId: project.id,
                   queriedChains: chains,
+                  projectChain: chain,
                 },
                 color: project.color,
                 emoji: project.emoji,
@@ -206,21 +207,22 @@ export async function toResolverProjects(
                 support: [], // Will be populated by the resolver.
                 claimedAt: project.claimedAt,
               },
-            } as ResolverClaimedChainProjectData;
+            } as ResolverClaimedProjectChainData;
           }
           const fakeUnclaimedProject = await toFakeUnclaimedProject(project);
 
           return {
             chain,
             data: {
-              parentProject: {
+              parentProjectInfo: {
                 queriedChains: chains,
                 projectId: fakeUnclaimedProject.id,
+                projectChain: chain,
               },
               verificationStatus: fakeUnclaimedProject.verificationStatus,
               support: [], // Will be populated by the resolver.
             },
-          } as ResolverUnClaimedChainProjectData;
+          } as ResolverUnClaimedProjectChainData;
         }),
       );
 

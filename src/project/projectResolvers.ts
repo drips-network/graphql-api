@@ -1,10 +1,9 @@
-import { isAddress } from 'ethers';
 import type {
   ProjectId,
-  ResolverClaimedChainProjectData,
+  ResolverClaimedProjectChainData,
   ResolverClaimedProjectData,
   ResolverProject,
-  ResolverUnClaimedChainProjectData,
+  ResolverUnClaimedProjectChainData,
   ResolverUnClaimedProjectData,
 } from '../common/types';
 import { toResolverProjects } from './projectUtils';
@@ -27,18 +26,40 @@ import type {
 import type { Context } from '../server';
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
 import groupBy from '../utils/linq';
-import type DripListModel from '../drip-list/DripListModel';
-import assert, {
-  isGitHubUrl,
-  isProjectVerificationStatus,
-  isProjectId,
-  isSortableProjectField,
-} from '../utils/assert';
+import assert, { isGitHubUrl, isProjectId } from '../utils/assert';
 import queryableChains from '../common/queryableChains';
 import type { ProjectDataValues } from './ProjectModel';
+import verifyProjectsInput from './projectValidators';
+import type { DripListDataValues } from '../drip-list/DripListModel';
 
 const projectResolvers = {
   Query: {
+    projects: async (
+      _: any,
+      {
+        chains,
+        where,
+        sort,
+      }: {
+        chains: SupportedChain[];
+        where: ProjectWhereInput;
+        sort: ProjectSortInput;
+      },
+      { dataSources }: Context,
+    ): Promise<ResolverProject[]> => {
+      verifyProjectsInput({ chains, where, sort });
+
+      const chainsToQuery = chains?.length ? chains : queryableChains;
+
+      const projectsDataValues =
+        await dataSources.projectsDb.getProjectsByFilter(
+          chainsToQuery,
+          where,
+          sort,
+        );
+
+      return toResolverProjects(chainsToQuery, projectsDataValues);
+    },
     projectById: async (
       _: any,
       { id, chain }: { id: ProjectId; chain: SupportedChain },
@@ -58,56 +79,6 @@ const projectResolvers = {
 
       return dataSources.projectsDb.getProjectByUrl(url);
     },
-    projects: async (
-      _: any,
-      {
-        chains,
-        where,
-        sort,
-      }: {
-        chains: SupportedChain[];
-        where: ProjectWhereInput;
-        sort: ProjectSortInput;
-      },
-      { dataSources }: Context,
-    ): Promise<ResolverProject[]> => {
-      if (where?.id) {
-        assert(isProjectId(where.id));
-      }
-
-      if (where?.ownerAddress) {
-        assert(isAddress(where.ownerAddress));
-      }
-
-      if (where?.url) {
-        assert(isGitHubUrl(where.url));
-      }
-
-      if (where?.verificationStatus) {
-        assert(isProjectVerificationStatus(where.verificationStatus));
-      }
-
-      if (sort?.field === 'claimedAt') {
-        assert(isSortableProjectField(sort.field));
-      }
-
-      if (chains) {
-        chains.forEach((chain) => {
-          assert(chain in SupportedChain);
-        });
-      }
-
-      const chainsToQuery = chains?.length ? chains : queryableChains;
-
-      const projectsDataValues =
-        await dataSources.projectsDb.getProjectsByFilter(
-          chainsToQuery,
-          where,
-          sort,
-        );
-
-      return toResolverProjects(chainsToQuery, projectsDataValues);
-    },
     earnedFunds: async (
       _: any,
       { projectId }: { projectId: ProjectId },
@@ -119,30 +90,30 @@ const projectResolvers = {
     },
   },
   Project: {
-    account: (project: ResolverProject): RepoDriverAccount => project.account,
     source: (project: ResolverProject): Source => project.source,
+    account: (project: ResolverProject): RepoDriverAccount => project.account,
   },
   ProjectChainData: {
     __resolveType(parent: ProjectChainData) {
       if ('claimedAt' in parent.data) {
-        return 'ClaimedChainProjectData';
+        return 'ClaimedProjectChainData';
       }
 
-      return 'UnClaimedChainProjectData';
+      return 'UnClaimedProjectChainData';
     },
   },
-  ClaimedChainProjectData: {
+  ClaimedProjectChainData: {
     chain: (
-      chainProjectData: ResolverClaimedChainProjectData,
+      chainProjectData: ResolverClaimedProjectChainData,
     ): SupportedChain => chainProjectData.chain,
-    data: (chainProjectData: ResolverClaimedChainProjectData) =>
+    data: (chainProjectData: ResolverClaimedProjectChainData) =>
       chainProjectData.data,
   },
-  UnClaimedChainProjectData: {
+  UnClaimedProjectChainData: {
     chain: (
-      chainProjectData: ResolverUnClaimedChainProjectData,
+      chainProjectData: ResolverUnClaimedProjectChainData,
     ): SupportedChain => chainProjectData.chain,
-    data: (chainProjectData: ResolverUnClaimedChainProjectData) =>
+    data: (chainProjectData: ResolverUnClaimedProjectChainData) =>
       chainProjectData.data,
   },
   ClaimedProjectData: {
@@ -173,11 +144,14 @@ const projectResolvers = {
         },
       } = context;
 
-      const { parentProject } = projectData;
+      const {
+        parentProjectInfo: { projectId, projectChain },
+      } = projectData;
 
       const receiversOfTypeAddressModels =
         await receiversOfTypeAddressDb.getReceiversOfTypeAddressByProjectId(
-          parentProject.projectId,
+          projectId,
+          [projectChain],
         );
 
       const maintainersAndAddressDependencies = groupBy(
@@ -206,12 +180,13 @@ const projectResolvers = {
 
       const receiversOfTypeProjectModels =
         await receiversOfTypeProjectDb.getReceiversOfTypeProjectByProjectId(
-          parentProject.projectId,
+          projectId,
+          [projectChain],
         );
 
       const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
         receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
-        [SupportedChain.sepolia], // TODO: Hardcoded until multiple chains are supported. Fix.
+        [projectChain],
       );
 
       const dependenciesOfTypeProject = receiversOfTypeProjectModels.map(
@@ -236,11 +211,13 @@ const projectResolvers = {
 
       const receiversOfTypeDripListModels =
         await receiversOfTypeDripListDb.getReceiversOfTypeDripListByProjectId(
-          parentProject.projectId,
+          projectId,
+          [projectChain],
         );
 
       const splitsOfTypeDripListModels = await dripListsDb.getDripListsByIds(
         receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
+        [projectChain],
       );
 
       const dripListReceivers = receiversOfTypeDripListModels.map(
@@ -254,7 +231,8 @@ const projectResolvers = {
           dripList:
             (splitsOfTypeDripListModels
               .filter(
-                (l): l is DripListModel => l && (l as any).id !== undefined,
+                (l): l is DripListDataValues =>
+                  l && (l as any).id !== undefined,
               )
               .find(
                 (p) => (p as any).id === receiver.fundeeDripListId,
@@ -277,23 +255,26 @@ const projectResolvers = {
       context: Context,
     ) => {
       const {
-        parentProject: { projectId, queriedChains },
+        parentProjectInfo: { projectId, projectChain },
       } = projectData;
+
       const {
         dataSources: { projectAndDripListSupportDb },
       } = context;
 
-      const projectAndDripListSupport =
+      const projectAndDripListSupport = (
         await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
           projectId,
-          queriedChains,
-        );
+          [projectChain],
+        )
+      ).filter((s) => s.chain === projectChain);
 
-      const oneTimeDonationSupport =
+      const oneTimeDonationSupport = (
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
           projectId,
-          queriedChains,
-        );
+          [projectChain],
+        )
+      ).filter((s) => s.chain === projectChain);
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
@@ -311,20 +292,22 @@ const projectResolvers = {
       } = context;
 
       const {
-        parentProject: { projectId, queriedChains },
+        parentProjectInfo: { projectId, projectChain },
       } = projectData;
 
-      const projectAndDripListSupport =
+      const projectAndDripListSupport = (
         await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
           projectId,
-          queriedChains,
-        );
+          [projectChain],
+        )
+      ).filter((s) => s.chain === projectChain);
 
-      const oneTimeDonationSupport =
+      const oneTimeDonationSupport = (
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
           projectId,
-          queriedChains,
-        );
+          [projectChain],
+        )
+      ).filter((s) => s.chain === projectChain);
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },

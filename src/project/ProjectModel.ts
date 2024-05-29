@@ -6,15 +6,15 @@ import type {
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
 import getSchema from '../utils/getSchema';
-import type { AccountId, Forge, ProjectId } from '../common/types';
+import type {
+  AccountId,
+  CommonDataValues,
+  Forge,
+  ProjectId,
+} from '../common/types';
 import { FORGES_MAP } from '../common/constants';
-import type { SupportedChain } from '../generated/graphql';
 
-export type ProjectDataValues = ProjectModel['dataValues'] & {
-  createdAt: Date;
-  updatedAt: Date;
-  chain: SupportedChain;
-};
+export type ProjectDataValues = ProjectModel['dataValues'] & CommonDataValues;
 
 export enum ProjectVerificationStatus {
   Claimed = 'Claimed',

@@ -7,9 +7,12 @@ import type {
 import { DataTypes, Model } from 'sequelize';
 import getSchema from '../utils/getSchema';
 import { DependencyType } from '../common/types';
-import type { DripListId, ProjectId } from '../common/types';
+import type { CommonDataValues, DripListId, ProjectId } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import ProjectModel from '../project/ProjectModel';
+
+export type DripListSplitReceiverModelDataValues =
+  DripListSplitReceiverModel['dataValues'] & CommonDataValues;
 
 export default class DripListSplitReceiverModel extends Model<
   InferAttributes<DripListSplitReceiverModel>,

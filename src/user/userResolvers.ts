@@ -62,9 +62,12 @@ const userResolvers = {
       const { accountId } = parent.account;
       assert(isAddressDriverId(accountId));
 
-      return dataSources.dripListsDb.getDripListsByFilter({
-        ownerAddress: getUserAddress(accountId),
-      });
+      return dataSources.dripListsDb.getDripListsByFilter(
+        [SupportedChain.sepolia], // TODO: Temporary for compiling.
+        {
+          ownerAddress: getUserAddress(accountId),
+        },
+      );
     },
   },
   UserStreams: {

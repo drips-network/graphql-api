@@ -31,9 +31,9 @@ const projectTypeDef = gql`
     chainData: [ProjectChainData!]!
   }
 
-  union ProjectChainData = ClaimedChainProjectData | UnClaimedChainProjectData
+  union ProjectChainData = ClaimedProjectChainData | UnClaimedProjectChainData
 
-  type ClaimedChainProjectData {
+  type ClaimedProjectChainData {
     chain: SupportedChain!
     data: ClaimedProjectData!
   }
@@ -50,7 +50,7 @@ const projectTypeDef = gql`
     claimedAt: Date!
   }
 
-  type UnClaimedChainProjectData {
+  type UnClaimedProjectChainData {
     chain: SupportedChain!
     data: UnClaimedProjectData!
   }

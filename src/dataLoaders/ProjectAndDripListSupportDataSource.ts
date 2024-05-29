@@ -1,5 +1,5 @@
 import DataLoader from 'dataloader';
-import { Op, QueryTypes } from 'sequelize';
+import { QueryTypes } from 'sequelize';
 import type {
   AccountId,
   DripListId,
@@ -7,6 +7,7 @@ import type {
   ProjectId,
   ProjectMultiChainKey,
 } from '../common/types';
+import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import GivenEventModel from '../given-event/GivenEventModel';
@@ -22,19 +23,45 @@ import shouldNeverHappen from '../utils/shouldNeverHappen';
 
 export default class ProjectAndDripListSupportDataSource {
   private readonly _batchProjectAndDripListSupportByDripListIds =
-    new DataLoader(async (dripListIds: readonly DripListId[]) => {
-      const projectAndDripListSupport =
-        await DripListSplitReceiverModel.findAll({
-          where: {
-            fundeeDripListId: {
-              [Op.in]: dripListIds,
-            },
-          },
-        });
+    new DataLoader(async (dripListKeys: readonly DripListMultiChainKey[]) => {
+      const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
+
+      // Define base SQL to query from multiple chains (schemas).
+      const baseSQL = (schema: SupportedChain) => `
+       SELECT "id", "fundeeDripListId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt", '${schema}' AS chain
+       FROM "${schema}"."DripListSplitReceivers"
+      `;
+
+      // Build the WHERE clause.
+      const conditions: string[] = [
+        `"fundeeDripListId" IN (:fundeeDripListIds)`,
+      ];
+      const parameters: { [key: string]: any } = {
+        fundeeDripListIds: dripListIds,
+      };
+
+      // Join conditions into a single WHERE clause.
+      const whereClause =
+        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+
+      // Build the SQL for each specified schema.
+      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+      // Combine all schema queries with UNION.
+      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+      const dripListSplitReceiverModelDataValues = (
+        await dbConnection.query(fullQuery, {
+          type: QueryTypes.SELECT,
+          replacements: parameters,
+          mapToModel: true,
+          model: DripListSplitReceiverModel,
+        })
+      ).map((p) => p.dataValues as DripListSplitReceiverModelDataValues);
 
       const projectAndDripListSupportToDripListMapping =
-        projectAndDripListSupport.reduce<
-          Record<DripListId, DripListSplitReceiverModel[]>
+        dripListSplitReceiverModelDataValues.reduce<
+          Record<DripListId, DripListSplitReceiverModelDataValues[]>
         >((mapping, receiver) => {
           if (!mapping[receiver.fundeeDripListId]) {
             mapping[receiver.fundeeDripListId] = []; // eslint-disable-line no-param-reassign
@@ -135,7 +162,7 @@ export default class ProjectAndDripListSupportDataSource {
       const { chains, ids } = parseMultiChainKeys(keys);
 
       const baseSQL = (schema: SupportedChain) => `
-        SELECT "accountId", "receiver", "erc20", "amt", "blockTimestamp", "logIndex", "blockTimestamp", "transactionHash", "createdAt", "updatedAt",'${schema}' AS chain
+        SELECT "accountId", "receiver", "erc20", "amt", "blockTimestamp", "logIndex", "transactionHash", "createdAt", "updatedAt",'${schema}' AS chain
         FROM "${schema}"."GivenEvents"
       `;
 
@@ -181,8 +208,12 @@ export default class ProjectAndDripListSupportDataSource {
 
   public async getProjectAndDripListSupportByDripListId(
     id: DripListId,
-  ): Promise<DripListSplitReceiverModel[]> {
-    return this._batchProjectAndDripListSupportByDripListIds.load(id);
+    chains: SupportedChain[],
+  ): Promise<DripListSplitReceiverModelDataValues[]> {
+    return this._batchProjectAndDripListSupportByDripListIds.load({
+      dripListId: id,
+      chains,
+    });
   }
 
   public async getProjectAndDripListSupportByProjectId(

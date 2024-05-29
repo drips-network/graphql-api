@@ -15,8 +15,11 @@ const rootTypeDef = gql`
     ): [Project!]!
     projectById(id: ID!, chain: SupportedChain!): Project
     projectByUrl(url: String!): Project
-    dripList(id: ID!): DripList
-    dripLists(where: DripListWhereInput): [DripList!]!
+    dripLists(
+      chains: [SupportedChain!]!
+      where: DripListWhereInput
+    ): [DripList!]!
+    dripList(id: ID!, chain: SupportedChain!): DripList
     gives(where: GiveWhereInput): [Give!]!
     mintedTokensCountByOwnerAddress(ownerAddress: String!): Int!
     earnedFunds(projectId: String!): [Amount!]!

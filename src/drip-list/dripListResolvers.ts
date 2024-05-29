@@ -1,5 +1,11 @@
 import { isAddress } from 'ethers';
-import type { Address, DripListId } from '../common/types';
+import type {
+  Address,
+  DripListId,
+  ResolverDripList,
+  ResolverDripListChainData,
+  ResolverDripListData,
+} from '../common/types';
 import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
@@ -10,36 +16,47 @@ import type {
   Project,
   SplitsReceiver,
 } from '../generated/graphql';
-import { Driver, SupportedChain } from '../generated/graphql';
+import { SupportedChain, Driver } from '../generated/graphql';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Context } from '../server';
 import assert, { isDripListId } from '../utils/assert';
 import type { ProjectDataValues } from '../project/ProjectModel';
+import queryableChains from '../common/queryableChains';
+import toResolverDripLists from './dripListUtils';
+import verifyDripListsInput from './dripListValidators';
+import type { DripListDataValues } from './DripListModel';
 
 const dripListResolvers = {
   Query: {
-    dripList: async (
-      _: any,
-      { id }: { id: DripListId },
-      { dataSources }: Context,
-    ): Promise<DripListModel | null> => {
-      assert(isDripListId(id));
-
-      return dataSources.dripListsDb.getDripListById(id);
-    },
     dripLists: async (
       _: any,
-      { where }: { where: DripListWhereInput },
+      {
+        chains,
+        where,
+      }: { chains: SupportedChain[]; where: DripListWhereInput },
       { dataSources }: Context,
-    ): Promise<DripListModel[]> => {
-      if (where?.id) {
-        assert(isDripListId(where.id));
-      }
-      if (where?.ownerAddress) {
-        assert(isAddress(where.ownerAddress));
-      }
+    ): Promise<ResolverDripList[]> => {
+      verifyDripListsInput({ chains, where });
 
-      return dataSources.dripListsDb.getDripListsByFilter(where);
+      const chainsToQuery = chains?.length ? chains : queryableChains;
+
+      const dripListDataValues =
+        await dataSources.dripListsDb.getDripListsByFilter(
+          chainsToQuery,
+          where,
+        );
+
+      return toResolverDripLists(chainsToQuery, dripListDataValues);
+    },
+    dripList: async (
+      _: any,
+      { id, chain }: { id: DripListId; chain: SupportedChain },
+      { dataSources }: Context,
+    ): Promise<DripListDataValues | null> => {
+      assert(isDripListId(id));
+      assert(chain in SupportedChain);
+
+      return dataSources.dripListsDb.getDripListById(id, chain);
     },
     mintedTokensCountByOwnerAddress: async (
       _: any,
@@ -54,22 +71,28 @@ const dripListResolvers = {
     },
   },
   DripList: {
-    name: (dripList: DripListModel) => dripList.name ?? 'Unnamed Drip List',
-    creator: (dripList: DripListModel) => dripList.creator,
-    description: (dripList: DripListModel) => dripList.description,
-    previousOwnerAddress: (dripList: DripListModel) =>
-      dripList.previousOwnerAddress,
-    owner: (dripList: DripListModel): AddressDriverAccount => ({
-      driver: Driver.ADDRESS,
-      accountId: dripList.ownerAccountId || shouldNeverHappen(),
-      address: (dripList.ownerAddress as string) || shouldNeverHappen(),
-    }),
-    account: (dripList: DripListModel): NftDriverAccount => ({
-      driver: Driver.NFT,
-      accountId: dripList.id,
-    }),
+    account: (dripList: ResolverDripList): NftDriverAccount => dripList.account,
+  },
+  DripListChainData: {
+    chain: (chainDripListData: ResolverDripListChainData): SupportedChain =>
+      chainDripListData.chain,
+    data: (chainDripListData: ResolverDripListChainData) =>
+      chainDripListData.data,
+  },
+  DripListData: {
+    name: (dripListData: ResolverDripListData) =>
+      dripListData.name ?? 'Unnamed Drip List',
+    creator: (dripListData: ResolverDripListData) => dripListData.creator,
+    description: (dripListData: ResolverDripListData) =>
+      dripListData.description,
+    previousOwnerAddress: (dripListData: ResolverDripListData) =>
+      dripListData.previousOwnerAddress,
+    latestVotingRoundId: (dripList: DripListModel) =>
+      dripList.latestVotingRoundId,
+    owner: (dripListData: ResolverDripListData): AddressDriverAccount =>
+      dripListData.owner,
     splits: async (
-      dripList: DripListModel,
+      dripListData: ResolverDripListData,
       _: any,
       context: Context,
     ): Promise<SplitsReceiver[]> => {
@@ -83,10 +106,16 @@ const dripListResolvers = {
         },
       } = context;
 
+      const {
+        parentDripListInfo: { dripListId, dripListChain },
+      } = dripListData;
+
       const receiversOfTypeAddressModels =
         await receiversOfTypeAddressDb.getReceiversOfTypeAddressByDripListId(
-          dripList.id,
+          dripListId,
+          [dripListChain],
         );
+
       const addressSplits = receiversOfTypeAddressModels.map((receiver) => ({
         driver: Driver.ADDRESS,
         weight: receiver.weight,
@@ -100,12 +129,13 @@ const dripListResolvers = {
 
       const receiversOfTypeProjectModels =
         await receiversOfTypeProjectDb.getReceiversOfTypeProjectByDripListId(
-          dripList.id,
+          dripListId,
+          [dripListChain],
         );
 
       const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
         receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
-        [SupportedChain.sepolia], // TODO: Hardcoded until multiple chains are supported. Fix.
+        [dripListChain],
       );
 
       const projectReceivers = receiversOfTypeProjectModels.map((receiver) => ({
@@ -128,11 +158,13 @@ const dripListResolvers = {
 
       const receiversOfTypeDripListModels =
         await receiversOfTypeDripListDb.getReceiversOfTypeDripListByDripListId(
-          dripList.id,
+          dripListId,
+          [dripListChain],
         );
 
       const splitsOfTypeDripListModels = await dripListsDb.getDripListsByIds(
         receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
+        [dripListChain],
       );
 
       const dripListReceivers = receiversOfTypeDripListModels.map(
@@ -146,7 +178,8 @@ const dripListResolvers = {
           dripList:
             (splitsOfTypeDripListModels
               .filter(
-                (l): l is DripListModel => l && (l as any).id !== undefined,
+                (l): l is DripListDataValues =>
+                  l && (l as any).id !== undefined,
               )
               .find(
                 (p) => (p as any).id === receiver.fundeeDripListId,
@@ -156,25 +189,34 @@ const dripListResolvers = {
 
       return [...addressSplits, ...projectReceivers, ...dripListReceivers];
     },
-    support: async (dripList: DripListModel, _: any, context: Context) => {
+    support: async (
+      dripListData: ResolverDripListData,
+      _: any,
+      context: Context,
+    ) => {
+      const {
+        parentDripListInfo: { dripListId, dripListChain },
+      } = dripListData;
+
       const {
         dataSources: { projectAndDripListSupportDb },
       } = context;
 
       const projectAndDripListSupport =
         await projectAndDripListSupportDb.getProjectAndDripListSupportByDripListId(
-          dripList.id,
+          dripListId,
+          [dripListChain],
         );
 
       const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
-          dripList.id,
-          [], // TODO: Only for compilation. Fix.
+          dripListId,
+          [dripListChain],
         );
 
       const streamSupport =
         await projectAndDripListSupportDb.getStreamSupportByAccountId(
-          dripList.id,
+          dripListId,
         );
 
       return [
@@ -183,8 +225,6 @@ const dripListResolvers = {
         ...oneTimeDonationSupport,
       ];
     },
-    latestVotingRoundId: (dripList: DripListModel) =>
-      dripList.latestVotingRoundId,
   },
 };
 

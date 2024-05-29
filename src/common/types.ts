@@ -1,6 +1,8 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
 import type {
   ClaimedProjectData,
+  DripList,
+  DripListData,
   Project,
   SupportedChain,
   UnClaimedProjectData,
@@ -68,14 +70,15 @@ export type StreamHistoryHashes = string & {
 
 export type ResolverProject = Project & {
   chainData: (
-    | ResolverClaimedChainProjectData
-    | ResolverUnClaimedChainProjectData
+    | ResolverClaimedProjectChainData
+    | ResolverUnClaimedProjectChainData
   )[];
 };
 
 type ProjectDataParentProjectInfo = {
-  parentProject: {
+  parentProjectInfo: {
     projectId: ProjectId;
+    projectChain: SupportedChain;
     queriedChains: SupportedChain[];
   };
 };
@@ -83,7 +86,7 @@ type ProjectDataParentProjectInfo = {
 export type ResolverClaimedProjectData = ClaimedProjectData &
   ProjectDataParentProjectInfo;
 
-export type ResolverClaimedChainProjectData = {
+export type ResolverClaimedProjectChainData = {
   chain: SupportedChain;
   data: ResolverClaimedProjectData;
 };
@@ -91,7 +94,7 @@ export type ResolverClaimedChainProjectData = {
 export type ResolverUnClaimedProjectData = UnClaimedProjectData &
   ProjectDataParentProjectInfo;
 
-export type ResolverUnClaimedChainProjectData = {
+export type ResolverUnClaimedProjectChainData = {
   chain: SupportedChain;
   data: ResolverUnClaimedProjectData;
 };
@@ -101,7 +104,38 @@ export interface DripListMultiChainKey {
   chains: SupportedChain[];
 }
 
+export interface StreamMultiChainKey {
+  accountId: AccountId;
+  chains: SupportedChain[];
+}
+
 export interface ProjectMultiChainKey {
   projectId: ProjectId;
   chains: SupportedChain[];
 }
+
+export type ResolverDripList = DripList & {
+  chainData: ResolverDripListChainData[];
+};
+
+export type ResolverDripListChainData = {
+  chain: SupportedChain;
+  data: ResolverDripListData | null;
+};
+
+type DripListDataParentDripListInfo = {
+  parentDripListInfo: {
+    dripListId: DripListId;
+    dripListChain: SupportedChain;
+    queriedChains: SupportedChain[];
+  };
+};
+
+export type ResolverDripListData = DripListData &
+  DripListDataParentDripListInfo;
+
+export type CommonDataValues = {
+  createdAt: Date;
+  updatedAt: Date;
+  chain: SupportedChain;
+};

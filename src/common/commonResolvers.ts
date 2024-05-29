@@ -16,6 +16,8 @@ import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
+import { toResolverProjects } from '../project/projectUtils';
+import toResolverDripLists from '../drip-list/dripListUtils';
 
 const commonResolvers = {
   SupportItem: {
@@ -50,7 +52,6 @@ const commonResolvers = {
     account: async (
       parent: {
         funderProjectId: ProjectId;
-        weight: number;
         chain: SupportedChain;
       },
       _: any,
@@ -71,8 +72,12 @@ const commonResolvers = {
     },
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
-    project: (
-      parent: { funderProjectId: ProjectId; chain: SupportedChain },
+    project: async (
+      parent: {
+        funderProjectId: ProjectId;
+        chain: SupportedChain;
+        queriedChains: SupportedChain[];
+      },
       _: any,
       context: Context,
     ) => {
@@ -82,12 +87,26 @@ const commonResolvers = {
 
       const { funderProjectId, chain } = parent;
 
-      return projectsDb.getProjectById(funderProjectId, chain);
+      const projectDataValues =
+        (await projectsDb.getProjectById(funderProjectId, chain)) ||
+        shouldNeverHappen();
+
+      const resolverProjects = await toResolverProjects(
+        [chain],
+        [projectDataValues],
+      );
+
+      const [project] = resolverProjects;
+
+      return project;
     },
   },
   DripListSupport: {
     account: async (
-      parent: { funderDripListId: DripListId; weight: number },
+      parent: {
+        funderDripListId: DripListId;
+        chain: SupportedChain;
+      },
       _: any,
       context: Context,
     ): Promise<NftDriverAccount> => {
@@ -95,8 +114,11 @@ const commonResolvers = {
         dataSources: { dripListsDb },
       } = context;
 
+      const { funderDripListId, chain } = parent;
+
       const dripList = await dripListsDb.getDripListById(
-        parent.funderDripListId,
+        funderDripListId,
+        chain,
       );
 
       return {
@@ -106,8 +128,8 @@ const commonResolvers = {
     },
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
-    dripList: (
-      parent: { funderDripListId: DripListId },
+    dripList: async (
+      parent: { funderDripListId: DripListId; chain: SupportedChain },
       _: any,
       context: Context,
     ) => {
@@ -115,7 +137,20 @@ const commonResolvers = {
         dataSources: { dripListsDb },
       } = context;
 
-      return dripListsDb.getDripListById(parent.funderDripListId);
+      const { funderDripListId, chain } = parent;
+
+      const dripListDataValues =
+        (await dripListsDb.getDripListById(funderDripListId, chain)) ||
+        shouldNeverHappen();
+
+      const resolverDripLists = await toResolverDripLists(
+        [chain],
+        [dripListDataValues],
+      );
+
+      const [dripLists] = resolverDripLists;
+
+      return dripLists;
     },
   },
   OneTimeDonationSupport: {

@@ -72,7 +72,3 @@ export function isProjectVerificationStatus(
 export function isAccountId(id: string): boolean {
   return isAddressDriverId(id) || isDripListId(id) || isProjectId(id);
 }
-
-export function isSortableProjectField(field: string): boolean {
-  return ['claimedAt'].includes(field);
-}

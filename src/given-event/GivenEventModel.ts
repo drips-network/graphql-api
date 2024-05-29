@@ -4,15 +4,16 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import type { AccountId, Address, BigIntString } from '../common/types';
+import type {
+  AccountId,
+  Address,
+  BigIntString,
+  CommonDataValues,
+} from '../common/types';
 import getSchema from '../utils/getSchema';
-import type { SupportedChain } from '../generated/graphql';
 
-export type GivenEventModelDataValues = GivenEventModel['dataValues'] & {
-  createdAt: Date;
-  updatedAt: Date;
-  chain: SupportedChain;
-};
+export type GivenEventModelDataValues = GivenEventModel['dataValues'] &
+  CommonDataValues;
 
 export default class GivenEventModel extends Model<
   InferAttributes<GivenEventModel>,
