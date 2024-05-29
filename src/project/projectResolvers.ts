@@ -28,6 +28,9 @@ import assert, {
   isProjectId,
   isSortableProjectField,
 } from '../utils/assert';
+import SplitEventModel from '../models/SplitEventModel';
+import GivenEventModel from '../given-event/GivenEventModel';
+import mergeAmounts from '../utils/mergeAmounts';
 
 const projectResolvers = {
   Query: {
@@ -266,6 +269,30 @@ const projectResolvers = {
         );
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
+    },
+    totalEarned: async (project: ProjectModel) => {
+      const [splitEvents, givenEvents] = await Promise.all([
+        SplitEventModel.findAll({
+          where: {
+            receiver: project.id,
+          },
+        }),
+        GivenEventModel.findAll({
+          where: {
+            receiver: project.id,
+          },
+        }),
+      ]);
+
+      return mergeAmounts(
+        [...splitEvents, ...givenEvents].map((event) => ({
+          tokenAddress: event.erc20,
+          amount: BigInt(event.amt),
+        })),
+      ).map((amount) => ({
+        ...amount,
+        amount: amount.amount.toString(),
+      }));
     },
   },
   SplitsReceiver: {

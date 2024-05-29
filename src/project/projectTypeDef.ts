@@ -37,6 +37,7 @@ const projectTypeDef = gql`
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
     claimedAt: Date!
+    totalEarned: [Amount!]!
   }
 
   type UnclaimedProject {
