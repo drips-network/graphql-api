@@ -9,18 +9,17 @@ import streamTypeDef from './stream/streamTypeDef';
 const rootTypeDef = gql`
   type Query {
     projects(
-      chains: [SupportedChain!]!
+      chains: [SupportedChain!]
       where: ProjectWhereInput
       sort: ProjectSortInput
     ): [Project!]!
     projectById(id: ID!, chain: SupportedChain!): Project
-    projectByUrl(url: String!): Project
+    projectByUrl(url: String!, chain: SupportedChain!): Project
     dripLists(
-      chains: [SupportedChain!]!
+      chains: [SupportedChain!]
       where: DripListWhereInput
     ): [DripList!]!
     dripList(id: ID!, chain: SupportedChain!): DripList
-    gives(where: GiveWhereInput): [Give!]!
     mintedTokensCountByOwnerAddress(ownerAddress: String!): Int!
     earnedFunds(projectId: String!): [Amount!]!
     userById(accountId: ID!): User!

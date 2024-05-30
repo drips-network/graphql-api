@@ -65,20 +65,39 @@ const projectResolvers = {
       _: any,
       { id, chain }: { id: ProjectId; chain: SupportedChain },
       { dataSources }: Context,
-    ): Promise<ProjectDataValues | null> => {
+    ): Promise<ResolverProject | null> => {
       assert(isProjectId(id));
       assert(chain in SupportedChain);
 
-      return dataSources.projectsDb.getProjectById(id, chain);
+      const projectDataValues = await dataSources.projectsDb.getProjectById(
+        id,
+        chain,
+      );
+
+      if (!projectDataValues) {
+        return null;
+      }
+
+      return (await toResolverProjects([chain], [projectDataValues]))[0];
     },
     projectByUrl: async (
       _: any,
-      { url }: { url: string },
+      { url, chain }: { url: string; chain: SupportedChain },
       { dataSources }: Context,
-    ): Promise<ProjectDataValues | null> => {
+    ): Promise<ResolverProject | null> => {
       assert(isGitHubUrl(url));
+      assert(chain in SupportedChain);
 
-      return dataSources.projectsDb.getProjectByUrl(url);
+      const projectDataValues = await dataSources.projectsDb.getProjectByUrl(
+        url,
+        chain,
+      );
+
+      if (!projectDataValues) {
+        return null;
+      }
+
+      return (await toResolverProjects([chain], [projectDataValues]))[0];
     },
     earnedFunds: async (
       _: any,

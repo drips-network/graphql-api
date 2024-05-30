@@ -90,11 +90,39 @@ export default class ProjectsDataSource {
     );
   }
 
-  public async getProjectByUrl(url: string): Promise<ProjectDataValues | null> {
-    const project = (await ProjectModel.findOne({ where: { url } }))
-      ?.dataValues as ProjectDataValues;
+  public async getProjectByUrl(
+    url: string,
+    chain: SupportedChain,
+  ): Promise<ProjectDataValues | null> {
+    // Define base SQL to query from multiple chains (schemas).
+    const baseSQL = (schema: SupportedChain) => `
+        SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
+        FROM "${schema}"."GitProjects"
+    `;
 
-    if (project) {
+    // Initialize the WHERE clause parts.
+    const conditions: string[] = ['"url" = :url'];
+    const parameters: { [key: string]: any } = { url };
+
+    // Join conditions into a single WHERE clause.
+    const whereClause =
+      conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+
+    // Build the SQL for each specified schema.
+    const query = `${baseSQL(chain) + whereClause} LIMIT 1`;
+
+    const projectDataValues = (
+      await dbConnection.query(query, {
+        type: QueryTypes.SELECT,
+        replacements: parameters,
+        mapToModel: true,
+        model: ProjectModel,
+      })
+    ).map((p) => p.dataValues as ProjectDataValues);
+
+    const [project] = projectDataValues || [];
+
+    if (projectDataValues) {
       return toApiProject(project);
     }
 

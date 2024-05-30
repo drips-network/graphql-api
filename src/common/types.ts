@@ -3,6 +3,7 @@ import type {
   ClaimedProjectData,
   DripList,
   DripListData,
+  Give,
   Project,
   SupportedChain,
   UnClaimedProjectData,
@@ -11,6 +12,7 @@ import type StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEvent
 import type { FORGES_MAP } from './constants';
 import type { addressDriverAccountMetadataParser } from '../schemas';
 import type StreamsSetEventModel from '../models/StreamsSetEventModel';
+import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 
 export type KnownAny = any;
 export type ValuesOf<T> = T[keyof T];
@@ -138,4 +140,13 @@ export type CommonDataValues = {
   createdAt: Date;
   updatedAt: Date;
   chain: SupportedChain;
+};
+
+export type ResolverGive = Give & {
+  chainData: ResolverGiveChainData[];
+};
+
+export type ResolverGiveChainData = {
+  chain: SupportedChain;
+  data: GivenEventModelDataValues | null;
 };

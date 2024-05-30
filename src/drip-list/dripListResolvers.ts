@@ -53,11 +53,20 @@ const dripListResolvers = {
       _: any,
       { id, chain }: { id: DripListId; chain: SupportedChain },
       { dataSources }: Context,
-    ): Promise<DripListDataValues | null> => {
+    ): Promise<ResolverDripList | null> => {
       assert(isDripListId(id));
       assert(chain in SupportedChain);
 
-      return dataSources.dripListsDb.getDripListById(id, chain);
+      const dripListDataValues = await dataSources.dripListsDb.getDripListById(
+        id,
+        chain,
+      );
+
+      if (!dripListDataValues) {
+        return null;
+      }
+
+      return (await toResolverDripLists([chain], [dripListDataValues]))[0];
     },
     mintedTokensCountByOwnerAddress: async (
       _: any,

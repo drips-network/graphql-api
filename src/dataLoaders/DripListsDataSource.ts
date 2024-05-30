@@ -77,6 +77,8 @@ export default class DripListsDataSource {
     chains: SupportedChain[],
     where: DripListWhereInput,
   ): Promise<DripListDataValues[]> {
+    // TODO: For all data sources, extract the SQL query building logic into a separate function/file.
+
     // Define base SQL to query from multiple chains (schemas).
     const baseSQL = (schema: SupportedChain) => `
         SELECT "id", "isValid", "name", "creator", "description", "ownerAddress", "ownerAccountId", "latestVotingRoundId", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
