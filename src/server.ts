@@ -30,6 +30,7 @@ import GivenEventsDataSource from './dataLoaders/GivenEventsDataSource';
 import ProjectAndDripListSupportDataSource from './dataLoaders/ProjectAndDripListSupportDataSource';
 import UsersDataSource from './user/UserDataSource';
 import StreamsDataSource from './stream/StreamsDataSource';
+import TotalEarnedDataSource from './dataLoaders/TotalEarnedDataSource';
 
 export interface Context {
   dataSources: {
@@ -43,6 +44,7 @@ export interface Context {
     givesDb: GivenEventsDataSource;
     usersDb: UsersDataSource;
     streamsDb: StreamsDataSource;
+    totalEarnedDb: TotalEarnedDataSource;
   };
 }
 
@@ -148,6 +150,7 @@ const startServer = async () => {
             givesDb: new GivenEventsDataSource(),
             usersDb: new UsersDataSource(),
             streamsDb: new StreamsDataSource(),
+            totalEarnedDb: new TotalEarnedDataSource(),
           },
         };
       },

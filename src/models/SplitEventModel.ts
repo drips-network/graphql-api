@@ -5,8 +5,16 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import getSchema from '../utils/getSchema';
-import type { AccountId, Address, BigIntString } from '../common/types';
+import type {
+  AccountId,
+  Address,
+  BigIntString,
+  CommonDataValues,
+} from '../common/types';
 import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
+
+export type SplitEventModelDataValues = SplitEventModel['dataValues'] &
+  CommonDataValues;
 
 export default class SplitEventModel extends Model<
   InferAttributes<SplitEventModel>,

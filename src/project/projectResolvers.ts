@@ -30,11 +30,8 @@ import queryableChains from '../common/queryableChains';
 import type { ProjectDataValues } from './ProjectModel';
 import verifyProjectsInput from './projectValidators';
 import type { DripListDataValues } from '../drip-list/DripListModel';
-import SplitEventModel from '../models/SplitEventModel';
-import GivenEventModel from '../given-event/GivenEventModel';
-import mergeAmounts from '../utils/mergeAmounts';
 import assert, { isGitHubUrl, isProjectId } from '../utils/assert';
-import type ProjectModel from './ProjectModel';
+import { resolveTotalEarned } from '../common/commonResolverLogic';
 
 const projectResolvers = {
   Query: {
@@ -282,6 +279,11 @@ const projectResolvers = {
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
+    totalEarned: async (
+      projectData: ResolverUnClaimedProjectData,
+      _: any,
+      context: Context,
+    ) => resolveTotalEarned(projectData, _, context),
   },
   UnClaimedProjectData: {
     verificationStatus: (projectData: ResolverUnClaimedProjectData) =>
@@ -291,9 +293,7 @@ const projectResolvers = {
       _: any,
       context: Context,
     ) => {
-      const {
-        dataSources: { projectAndDripListSupportDb },
-      } = context;
+      const { projectAndDripListSupportDb } = context.dataSources;
 
       const {
         parentProjectInfo: { projectId, projectChain },
@@ -315,30 +315,11 @@ const projectResolvers = {
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
-    totalEarned: async (project: ProjectModel) => {
-      const [splitEvents, givenEvents] = await Promise.all([
-        SplitEventModel.findAll({
-          where: {
-            receiver: project.id,
-          },
-        }),
-        GivenEventModel.findAll({
-          where: {
-            receiver: project.id,
-          },
-        }),
-      ]);
-
-      return mergeAmounts(
-        [...splitEvents, ...givenEvents].map((event) => ({
-          tokenAddress: event.erc20,
-          amount: BigInt(event.amt),
-        })),
-      ).map((amount) => ({
-        ...amount,
-        amount: amount.amount.toString(),
-      }));
-    },
+    totalEarned: async (
+      projectData: ResolverUnClaimedProjectData,
+      _: any,
+      context: Context,
+    ) => resolveTotalEarned(projectData, _, context),
   },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {

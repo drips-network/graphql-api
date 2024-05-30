@@ -8,7 +8,7 @@ import type {
 import { Driver } from '../generated/graphql';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import type GivenEventModel from '../given-event/GivenEventModel';
-import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
+import type DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { DripListId, ProjectId } from './types';
@@ -18,47 +18,7 @@ import type { ProtoStream } from '../utils/buildAssetConfigs';
 import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
 import { toResolverProjects } from '../project/projectUtils';
 import toResolverDripLists from '../drip-list/dripListUtils';
-import SplitEventModel from '../models/SplitEventModel';
-import mergeAmounts from '../utils/mergeAmounts';
-import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
-
-async function resolveTotalSplit(
-  parent: DripListSplitReceiverModel | RepoDriverSplitReceiverModel,
-) {
-  let incomingAccountId: DripListId | ProjectId;
-  let recipientAccountId: DripListId | ProjectId;
-
-  if (parent instanceof DripListSplitReceiverModel) {
-    const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
-    recipientAccountId = fundeeDripListId;
-    incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
-  } else if (parent instanceof RepoDriverSplitReceiverModel) {
-    const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
-    recipientAccountId = fundeeProjectId;
-    incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
-  } else {
-    shouldNeverHappen('Invalid SupportItem type');
-  }
-
-  const splitEvents = await SplitEventModel.findAll({
-    where: {
-      accountId: incomingAccountId,
-      receiver: recipientAccountId,
-    },
-  });
-
-  return mergeAmounts(
-    splitEvents.map((splitEvent) => ({
-      tokenAddress: splitEvent.erc20,
-      amount: BigInt(splitEvent.amt),
-    })),
-  ).map((amount) => ({
-    ...amount,
-    amount: amount.amount.toString(),
-  }));
-}
+import { resolveTotalSplit } from './commonResolverLogic';
 
 const commonResolvers = {
   SupportItem: {
