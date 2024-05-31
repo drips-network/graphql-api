@@ -101,12 +101,20 @@ const projectResolvers = {
     },
     earnedFunds: async (
       _: any,
-      { projectId }: { projectId: ProjectId },
+      { projectId, chains }: { projectId: ProjectId; chains: SupportedChain[] },
       { dataSources }: Context,
     ) => {
       assert(isProjectId(projectId));
 
-      return dataSources.projectsDb.getEarnedFunds(projectId);
+      if (chains) {
+        chains.forEach((chain) => {
+          assert(chain in SupportedChain);
+        });
+      }
+
+      const chainsToQuery = chains?.length ? chains : queryableChains;
+
+      return dataSources.projectsDb.getEarnedFunds(projectId, chainsToQuery);
     },
   },
   Project: {

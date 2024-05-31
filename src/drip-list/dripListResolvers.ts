@@ -70,12 +70,14 @@ const dripListResolvers = {
     },
     mintedTokensCountByOwnerAddress: async (
       _: any,
-      { ownerAddress }: { ownerAddress: Address },
+      { ownerAddress, chain }: { ownerAddress: Address; chain: SupportedChain },
       { dataSources }: Context,
-    ): Promise<number> => {
+    ): Promise<{ chain: SupportedChain; total: number }> => {
       assert(isAddress(ownerAddress));
+      assert(chain in SupportedChain);
 
       return dataSources.dripListsDb.getMintedTokensCountByAccountId(
+        chain,
         ownerAddress,
       );
     },

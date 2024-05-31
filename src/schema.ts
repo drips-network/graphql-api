@@ -20,8 +20,11 @@ const rootTypeDef = gql`
       where: DripListWhereInput
     ): [DripList!]!
     dripList(id: ID!, chain: SupportedChain!): DripList
-    mintedTokensCountByOwnerAddress(ownerAddress: String!): Int!
-    earnedFunds(projectId: String!): [Amount!]!
+    mintedTokensCountByOwnerAddress(
+      ownerAddress: String!
+      chain: SupportedChain!
+    ): MintedTokens!
+    earnedFunds(projectId: String!, chains: [SupportedChain!]): [ChainAmount!]!
     userById(accountId: ID!): User!
     userByAddress(address: String!): User!
     streams(where: StreamWhereInput): [Stream!]!

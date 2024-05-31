@@ -27,6 +27,11 @@ const dripListTypeDef = gql`
     id: String
     ownerAddress: String
   }
+
+  type MintedTokens {
+    chain: SupportedChain!
+    total: Int!
+  }
 `;
 
 export default dripListTypeDef;

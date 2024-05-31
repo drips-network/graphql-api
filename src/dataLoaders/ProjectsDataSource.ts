@@ -14,7 +14,9 @@ import type {
   ProjectWhereInput,
   SupportedChain,
 } from '../generated/graphql';
+import type { SplitEventModelDataValues } from '../models/SplitEventModel';
 import SplitEventModel from '../models/SplitEventModel';
+import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import { dbConnection } from '../database/connectToDatabase';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
@@ -211,31 +213,71 @@ export default class ProjectsDataSource {
     ) as Promise<ProjectDataValues[]>;
   }
 
-  public async getEarnedFunds(projectId: ProjectId): Promise<
+  public async getEarnedFunds(
+    projectId: ProjectId,
+    chains: SupportedChain[],
+  ): Promise<
     {
       tokenAddress: string;
       amount: string;
+      chain: SupportedChain;
     }[]
   > {
     const amounts = await Promise.all([
-      this._getIncomingSplitTotal(projectId),
-      this._getIncomingGivesTotal(projectId),
+      this._getIncomingSplitTotal(projectId, chains),
+      this._getIncomingGivesTotal(projectId, chains),
     ]);
 
     return this._mergeAmounts(...amounts);
   }
 
-  private async _getIncomingSplitTotal(accountId: string) {
-    const incomingSplitEvents = await SplitEventModel.findAll({
-      where: {
-        receiver: accountId,
-      },
-    });
+  private async _getIncomingSplitTotal(
+    accountId: string,
+    chains: SupportedChain[],
+  ) {
+    // Define base SQL to query from multiple chains (schemas).
+    const baseSQL = (schema: SupportedChain) =>
+      `SELECT 
+        "accountId", 
+        "receiver", 
+        "erc20", 
+        "amt", 
+        "transactionHash", 
+        "logIndex", 
+        "blockTimestamp", 
+        "blockNumber", 
+        "createdAt", 
+        "updatedAt", 
+        '${schema}' AS chain 
+      FROM "${schema}"."SplitEvents"`;
 
-    return incomingSplitEvents.reduce<
+    // Initialize the WHERE clause parts.
+    const conditions: string[] = ['"receiver" = :receiver'];
+    const parameters: { [receiver: string]: any } = { receiver: accountId };
+
+    // Create the WHERE clause.
+    const whereClause = ` WHERE ${conditions.join(' AND ')}`;
+
+    // Build the SQL for each specified schema.
+    const queries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+    // Combine all schema queries with UNION.
+    const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+    const incomingSplitEventModelDataValues = (
+      await dbConnection.query(fullQuery, {
+        type: QueryTypes.SELECT,
+        replacements: parameters,
+        mapToModel: true,
+        model: SplitEventModel,
+      })
+    ).map((p) => p.dataValues as SplitEventModelDataValues);
+
+    return incomingSplitEventModelDataValues.reduce<
       {
         tokenAddress: string;
         amount: bigint;
+        chain: SupportedChain;
       }[]
     >((acc, curr) => {
       const existing = acc.find((e) => e.tokenAddress === curr.erc20);
@@ -248,6 +290,7 @@ export default class ProjectsDataSource {
         acc.push({
           tokenAddress: curr.erc20,
           amount,
+          chain: curr.chain,
         });
       }
 
@@ -255,17 +298,53 @@ export default class ProjectsDataSource {
     }, []);
   }
 
-  private async _getIncomingGivesTotal(accountId: string) {
-    const incomingGiveEvents = await GivenEventModel.findAll({
-      where: {
-        receiver: accountId,
-      },
-    });
+  private async _getIncomingGivesTotal(
+    accountId: string,
+    chains: SupportedChain[],
+  ) {
+    // Define base SQL to query from multiple chains (schemas).
+    const baseSQL = (schema: SupportedChain) =>
+      `SELECT 
+        "accountId", 
+        "receiver", 
+        "erc20", 
+        "amt", 
+        "transactionHash", 
+        "logIndex", 
+        "blockTimestamp",
+        "blockNumber", 
+        "createdAt", 
+        "updatedAt", 
+        '${schema}' AS chain
+      FROM "${schema}"."GivenEvents"`;
 
-    return incomingGiveEvents.reduce<
+    // Initialize the WHERE clause parts.
+    const conditions: string[] = ['"receiver" = :receiver'];
+    const parameters: { [receiver: string]: any } = { receiver: accountId };
+
+    // Create the WHERE clause.
+    const whereClause = ` WHERE ${conditions.join(' AND ')}`;
+
+    // Build the SQL for each specified schema.
+    const queries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+    // Combine all schema queries with UNION.
+    const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+    const incomingGivenEventModelDataValues = (
+      await dbConnection.query(fullQuery, {
+        type: QueryTypes.SELECT,
+        replacements: parameters,
+        mapToModel: true,
+        model: GivenEventModel,
+      })
+    ).map((p) => p.dataValues as GivenEventModelDataValues);
+
+    return incomingGivenEventModelDataValues.reduce<
       {
         tokenAddress: string;
         amount: bigint;
+        chain: SupportedChain;
       }[]
     >((acc, curr) => {
       const existing = acc.find((e) => e.tokenAddress === curr.erc20);
@@ -277,6 +356,7 @@ export default class ProjectsDataSource {
         acc.push({
           tokenAddress: curr.erc20,
           amount,
+          chain: curr.chain,
         });
       }
 
@@ -288,6 +368,7 @@ export default class ProjectsDataSource {
     ...args: {
       tokenAddress: string;
       amount: bigint;
+      chain: SupportedChain;
     }[][]
   ) {
     const amounts = new Map<
@@ -295,26 +376,29 @@ export default class ProjectsDataSource {
       {
         tokenAddress: string;
         amount: bigint;
+        chain: SupportedChain;
       }
     >();
 
     args.forEach((amountsArray) => {
       amountsArray.forEach((amount) => {
-        const existingAmount = amounts.get(amount.tokenAddress);
+        const key = `${amount.chain}-${amount.tokenAddress}`;
+        const existingAmount = amounts.get(key);
         if (existingAmount) {
-          amounts.set(amount.tokenAddress, {
+          amounts.set(key, {
+            ...existingAmount,
             amount: existingAmount.amount + amount.amount,
-            tokenAddress: amount.tokenAddress,
           });
         } else {
-          amounts.set(amount.tokenAddress, amount);
+          amounts.set(key, amount);
         }
       });
     });
 
     return Array.from(amounts.values()).map((x) => ({
-      amount: x.amount.toString(),
       tokenAddress: x.tokenAddress,
+      amount: x.amount.toString(),
+      chain: x.chain,
     }));
   }
 }

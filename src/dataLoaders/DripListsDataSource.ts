@@ -134,15 +134,22 @@ export default class DripListsDataSource {
   }
 
   public async getMintedTokensCountByAccountId(
+    chain: SupportedChain,
     ownerAddress: Address,
-  ): Promise<number> {
+  ): Promise<{
+    chain: SupportedChain;
+    total: number;
+  }> {
     // TODO: Fix edge case. This will not count tokens minted by the owner but immediately transferred to another address.
-    const total = await TransferEventModel.count({
+    const total = await TransferEventModel.schema(chain).count({
       where: {
         to: ownerAddress,
       },
     });
 
-    return total;
+    return {
+      chain,
+      total,
+    };
   }
 }

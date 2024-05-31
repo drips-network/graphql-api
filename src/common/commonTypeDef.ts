@@ -103,6 +103,12 @@ const commonTypeDef = gql`
     amount: String!
   }
 
+  type ChainAmount {
+    tokenAddress: String!
+    amount: String!
+    chain: SupportedChain!
+  }
+
   type SupportGroup {
     items: [Support!]
   }
