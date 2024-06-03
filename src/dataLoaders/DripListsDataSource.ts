@@ -64,12 +64,12 @@ export default class DripListsDataSource {
   );
 
   public async getDripListById(
+    chains: SupportedChain[],
     id: DripListId,
-    chains: SupportedChain,
   ): Promise<DripListDataValues> {
     return this._batchDripListsByIds.load({
-      dripListId: id,
-      chains: [chains],
+      id,
+      chains,
     });
   }
 
@@ -127,7 +127,7 @@ export default class DripListsDataSource {
   ): Promise<DripListDataValues[]> {
     return this._batchDripListsByIds.loadMany(
       ids.map((id) => ({
-        dripListId: id,
+        id,
         chains,
       })),
     ) as Promise<DripListDataValues[]>;

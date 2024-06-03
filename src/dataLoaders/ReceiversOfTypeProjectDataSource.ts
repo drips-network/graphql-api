@@ -75,7 +75,7 @@ export default class ReceiversOfTypeProjectDataSource {
     chains: SupportedChain[],
   ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
     return this._batchReceiversOfTypeProjectByProjectIds.load({
-      projectId: id,
+      id,
       chains,
     });
   }
@@ -141,7 +141,7 @@ export default class ReceiversOfTypeProjectDataSource {
     chains: SupportedChain[],
   ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
     return this._batchReceiversOfTypeProjectByDripListIds.load({
-      dripListId: id,
+      id,
       chains,
     });
   }

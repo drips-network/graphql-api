@@ -86,7 +86,7 @@ export default class ProjectsDataSource {
   ): Promise<ProjectDataValues | null> {
     return toApiProject(
       await this._batchProjectsByIds.load({
-        projectId: id,
+        id,
         chains: [chain],
       }),
     );
@@ -207,7 +207,7 @@ export default class ProjectsDataSource {
   ): Promise<ProjectDataValues[]> {
     return this._batchProjectsByIds.loadMany(
       ids.map((id) => ({
-        projectId: id,
+        id,
         chains,
       })),
     ) as Promise<ProjectDataValues[]>;
@@ -237,19 +237,7 @@ export default class ProjectsDataSource {
   ) {
     // Define base SQL to query from multiple chains (schemas).
     const baseSQL = (schema: SupportedChain) =>
-      `SELECT 
-        "accountId", 
-        "receiver", 
-        "erc20", 
-        "amt", 
-        "transactionHash", 
-        "logIndex", 
-        "blockTimestamp", 
-        "blockNumber", 
-        "createdAt", 
-        "updatedAt", 
-        '${schema}' AS chain 
-      FROM "${schema}"."SplitEvents"`;
+      `SELECT *, '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
 
     // Initialize the WHERE clause parts.
     const conditions: string[] = ['"receiver" = :receiver'];
@@ -304,19 +292,7 @@ export default class ProjectsDataSource {
   ) {
     // Define base SQL to query from multiple chains (schemas).
     const baseSQL = (schema: SupportedChain) =>
-      `SELECT 
-        "accountId", 
-        "receiver", 
-        "erc20", 
-        "amt", 
-        "transactionHash", 
-        "logIndex", 
-        "blockTimestamp",
-        "blockNumber", 
-        "createdAt", 
-        "updatedAt", 
-        '${schema}' AS chain
-      FROM "${schema}"."GivenEvents"`;
+      `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
 
     // Initialize the WHERE clause parts.
     const conditions: string[] = ['"receiver" = :receiver'];

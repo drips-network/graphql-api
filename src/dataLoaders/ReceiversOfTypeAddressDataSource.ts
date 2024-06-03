@@ -76,7 +76,7 @@ export default class ReceiversOfTypeAddressDataSource {
     chains: SupportedChain[],
   ): Promise<AddressDriverSplitReceiverModelDataValues[]> {
     return this._batchReceiversOfTypeAddressByProjectIds.load({
-      projectId: id,
+      id,
       chains,
     });
   }
@@ -143,7 +143,7 @@ export default class ReceiversOfTypeAddressDataSource {
     chains: SupportedChain[],
   ): Promise<AddressDriverSplitReceiverModelDataValues[]> {
     return this._batchReceiversOfTypeAddressByDripListIds.load({
-      dripListId: id,
+      id,
       chains,
     });
   }

@@ -119,8 +119,8 @@ const commonResolvers = {
       const { funderDripListId, chain } = parent;
 
       const dripList = await dripListsDb.getDripListById(
+        [chain],
         funderDripListId,
-        chain,
       );
 
       return {
@@ -142,7 +142,7 @@ const commonResolvers = {
       const { funderDripListId, chain } = parent;
 
       const dripListDataValues =
-        (await dripListsDb.getDripListById(funderDripListId, chain)) ||
+        (await dripListsDb.getDripListById([chain], funderDripListId)) ||
         shouldNeverHappen();
 
       const resolverDripLists = await toResolverDripLists(

@@ -5,8 +5,11 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import getSchema from '../utils/getSchema';
-import type { IEventModel } from '../common/types';
+import type { CommonDataValues, IEventModel } from '../common/types';
 import getCommonEventAttributes from '../utils/getCommonEventAttributes';
+
+export type AccountMetadataEmittedEventModelDataValues =
+  AccountMetadataEmittedEventModel['dataValues'] & CommonDataValues;
 
 export default class AccountMetadataEmittedEventModel
   extends Model<

@@ -7,6 +7,8 @@ import type {
   Project,
   SupportedChain,
   UnClaimedProjectData,
+  User,
+  UserData,
 } from '../generated/graphql';
 import type StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
 import type { FORGES_MAP } from './constants';
@@ -101,20 +103,12 @@ export type ResolverUnClaimedProjectChainData = {
   data: ResolverUnClaimedProjectData;
 };
 
-export interface DripListMultiChainKey {
-  dripListId: DripListId;
+export interface MultiChainKey<T = AccountId> {
+  id: T;
   chains: SupportedChain[];
 }
-
-export interface StreamMultiChainKey {
-  accountId: AccountId;
-  chains: SupportedChain[];
-}
-
-export interface ProjectMultiChainKey {
-  projectId: ProjectId;
-  chains: SupportedChain[];
-}
+export type ProjectMultiChainKey = MultiChainKey<ProjectId>;
+export type DripListMultiChainKey = MultiChainKey<DripListId>;
 
 export type ResolverDripList = DripList & {
   chainData: ResolverDripListChainData[];
@@ -149,4 +143,23 @@ export type ResolverGive = Give & {
 export type ResolverGiveChainData = {
   chain: SupportedChain;
   data: GivenEventModelDataValues | null;
+};
+
+export type ResolverUser = User & {
+  chainData: ResolverUserChainData[];
+};
+
+export type ResolverUserChainData = {
+  chain: SupportedChain;
+  data: ResolverUserData | null;
+};
+
+export type ResolverUserData = UserData & UserDataParentDripListInfo;
+
+export type UserDataParentDripListInfo = {
+  parentUserInfo: {
+    accountId: AccountId;
+    userChain: SupportedChain;
+    queriedChains: SupportedChain[];
+  };
 };

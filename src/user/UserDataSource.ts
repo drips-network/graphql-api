@@ -1,39 +1,31 @@
-import type { Address, AddressDriverId } from '../common/types';
-import { Driver } from '../generated/graphql';
-import type { User } from '../generated/graphql';
-import getUserAddress from '../utils/getUserAddress';
+import type { Address, AddressDriverId, ResolverUser } from '../common/types';
+import type { SupportedChain } from '../generated/graphql';
 import getUserAccount from '../utils/getUserAccount';
-import dripsContracts from '../common/dripsContracts';
+import { getCrossChainAddressDriverAccountIdByAddress } from '../common/dripsContracts';
+import toResolverUsers from './userUtils';
 
 export default class UsersDataSource {
-  public async getUserAccount(accountId: AddressDriverId) {
-    return getUserAccount(accountId);
+  public async getUserAccount(
+    chains: SupportedChain[],
+    accountId: AddressDriverId,
+  ) {
+    return getUserAccount(chains, accountId);
   }
 
-  public async getUserByAccountId(accountId: AddressDriverId): Promise<User> {
-    return {
-      account: {
-        accountId,
-        address: getUserAddress(accountId),
-        driver: Driver.ADDRESS,
-      },
-      projects: [],
-      dripLists: [],
-      streams: {
-        outgoing: [],
-        incoming: [],
-      },
-      balances: [],
-    };
+  public async getUserByAccountId(
+    chains: SupportedChain[],
+    accountId: AddressDriverId,
+  ): Promise<ResolverUser> {
+    return toResolverUsers(chains, accountId);
   }
 
-  public async getUserByAddress(address: Address): Promise<User> {
-    const {
-      contracts: { addressDriver },
-    } = dripsContracts;
+  public async getUserByAddress(
+    chains: SupportedChain[],
+    address: Address,
+  ): Promise<ResolverUser> {
+    const accountId =
+      await getCrossChainAddressDriverAccountIdByAddress(address);
 
-    const accountId = (await addressDriver.calcAccountId(address)).toString();
-
-    return this.getUserByAccountId(accountId as AddressDriverId);
+    return this.getUserByAccountId(chains, accountId as AddressDriverId);
   }
 }

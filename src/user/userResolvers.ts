@@ -1,95 +1,166 @@
 import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
-import type { Address, AddressDriverId } from '../common/types';
-import { Driver, SupportedChain } from '../generated/graphql';
+import type {
+  Address,
+  AddressDriverId,
+  ResolverUser,
+  ResolverUserChainData,
+  ResolverUserData,
+} from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
-import type { User } from '../generated/graphql';
+import { SupportedChain } from '../generated/graphql';
+import type { AddressDriverAccount, User } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, { isAddressDriverId } from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
-import getLatestAccountMetadata from '../utils/getLatestAccountMetadata';
 import getUserAddress from '../utils/getUserAddress';
+import queryableChains from '../common/queryableChains';
+import { toResolverProjects } from '../project/projectUtils';
+import toResolverDripLists from '../drip-list/dripListUtils';
+import getLatestAccountMetadataByChain from '../utils/getLatestAccountMetadata';
 
 const userResolvers = {
   Query: {
     userById: async (
       _: any,
-      { accountId }: { accountId: AddressDriverId },
+      {
+        chains,
+        accountId,
+      }: { chains: SupportedChain[]; accountId: AddressDriverId },
       { dataSources }: Context,
-    ): Promise<User> => dataSources.usersDb.getUserByAccountId(accountId),
+    ): Promise<ResolverUser> => {
+      if (chains) {
+        chains.forEach((chain) => {
+          assert(chain in SupportedChain);
+        });
+      }
+
+      const chainsToQuery = chains?.length ? chains : queryableChains;
+
+      return dataSources.usersDb.getUserByAccountId(chainsToQuery, accountId);
+    },
     userByAddress: async (
       _: any,
-      { address }: { address: Address },
+      { chains, address }: { chains: SupportedChain[]; address: Address },
       { dataSources }: Context,
-    ): Promise<User> => dataSources.usersDb.getUserByAddress(address),
+    ): Promise<ResolverUser> => {
+      if (chains) {
+        chains.forEach((chain) => {
+          assert(chain in SupportedChain);
+        });
+      }
+
+      const chainsToQuery = chains?.length ? chains : queryableChains;
+
+      return dataSources.usersDb.getUserByAddress(chainsToQuery, address);
+    },
   },
   User: {
-    account: (parent: User) => ({
-      accountId: parent.account.accountId,
-      driver: Driver.ADDRESS,
-      address: getUserAddress(parent.account.accountId as AddressDriverId),
-    }),
-    streams: async (parent: User) => ({
-      accountId: parent.account.accountId,
-    }),
-    balances: async (parent: User) => {
-      const { metadata } =
-        (await getLatestAccountMetadata(
-          parent.account.accountId as AddressDriverId,
-        )) ?? {};
+    account: (user: ResolverUser): AddressDriverAccount => user.account,
+  },
+  UserChainData: {
+    chain: (chainUserData: ResolverUserChainData): SupportedChain =>
+      chainUserData.chain,
+    data: (chainUserData: ResolverUserChainData) => chainUserData.data,
+  },
+  UserData: {
+    streams: async (userData: ResolverUserData) => {
+      const { parentUserInfo, streams } = userData;
+
+      return {
+        incoming: streams.incoming,
+        outgoing: streams.outgoing,
+        parentUserInfo,
+      };
+    },
+    balances: async (userData: ResolverUserData) => {
+      const {
+        parentUserInfo: { accountId, userChain },
+      } = userData;
+      assert(isAddressDriverId(accountId));
+
+      const chainMetadata = await getLatestAccountMetadataByChain(
+        [userChain],
+        accountId as AddressDriverId,
+      );
+
+      const metadata = chainMetadata[userChain]?.metadata ?? {};
+
       const assetConfigs = await getAssetConfigs(
-        parent.account.accountId as AddressDriverId,
+        accountId as AddressDriverId,
         metadata,
       );
 
-      return assetConfigs.map((ac) => ({
-        tokenAddress: ac.tokenAddress,
-        incoming: [],
-        outgoing: assetOutgoingBalanceTimeline(ac.history),
+      return Object.entries(assetConfigs).map(([chain, chainAssetConfigs]) => ({
+        chain: chain as SupportedChain,
+
+        assetConfigs: chainAssetConfigs.map((ac) => ({
+          tokenAddress: ac.tokenAddress,
+          incoming: [],
+          outgoing: assetOutgoingBalanceTimeline(ac.history),
+        })),
       }));
     },
-    projects: (parent: User, _: any, { dataSources }: Context) => {
-      const { accountId } = parent.account;
+    projects: async (
+      userData: ResolverUserData,
+      _: any,
+      { dataSources }: Context,
+    ) => {
+      const { accountId, userChain } = userData.parentUserInfo;
       assert(isAddressDriverId(accountId));
 
-      return dataSources.projectsDb.getProjectsByFilter(
-        [SupportedChain.sepolia], // TODO: Temporary for compiling.
-        {
+      const projectDataValues =
+        await dataSources.projectsDb.getProjectsByFilter([userChain], {
           ownerAddress: getUserAddress(accountId),
-        },
-      );
+        });
+
+      return toResolverProjects([userChain], projectDataValues);
     },
-    dripLists: (parent: User, _: any, { dataSources }: Context) => {
-      const { accountId } = parent.account;
+    dripLists: async (
+      userData: ResolverUserData,
+      _: any,
+      { dataSources }: Context,
+    ) => {
+      const { accountId, userChain } = userData.parentUserInfo;
       assert(isAddressDriverId(accountId));
 
-      return dataSources.dripListsDb.getDripListsByFilter(
-        [SupportedChain.sepolia], // TODO: Temporary for compiling.
-        {
+      const dripListDataValues =
+        await dataSources.dripListsDb.getDripListsByFilter([userChain], {
           ownerAddress: getUserAddress(accountId),
-        },
-      );
+        });
+
+      return toResolverDripLists([userChain], dripListDataValues);
     },
   },
   UserStreams: {
     outgoing: async (
-      parent: { accountId: AddressDriverId },
+      userData: { parentUserInfo: { accountId: any; userChain: any } },
       _: any,
       { dataSources }: Context,
     ) => {
-      const { accountId } = parent;
+      const { accountId, userChain } = userData.parentUserInfo;
       assert(isAddressDriverId(accountId));
 
-      return dataSources.streamsDb.getUserOutgoingStreams(accountId);
+      return (
+        await dataSources.streamsDb.getUserOutgoingStreams(
+          [userChain],
+          accountId,
+        )
+      )[userChain as SupportedChain];
     },
     incoming: async (
-      parent: { accountId: AddressDriverId },
+      userData: { parentUserInfo: { accountId: any; userChain: any } },
       _: any,
       { dataSources }: Context,
     ) => {
-      const { accountId } = parent;
+      const { accountId, userChain } = userData.parentUserInfo;
       assert(isAddressDriverId(accountId));
 
-      return dataSources.streamsDb.getUserIncomingStreams(accountId);
+      return (
+        await dataSources.streamsDb.getUserIncomingStreams(
+          [userChain],
+          accountId,
+        )
+      )[userChain as SupportedChain];
     },
   },
   StreamReceiver: {

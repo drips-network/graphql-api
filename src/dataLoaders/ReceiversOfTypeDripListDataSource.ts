@@ -75,7 +75,7 @@ export default class ReceiversOfTypeDripListDataSource {
     chains: SupportedChain[],
   ): Promise<DripListSplitReceiverModelDataValues[]> {
     return this._batchReceiversOfTypeDripListByProjectIds.load({
-      projectId: id,
+      id,
       chains,
     });
   }
@@ -141,7 +141,7 @@ export default class ReceiversOfTypeDripListDataSource {
     chains: SupportedChain[],
   ): Promise<DripListSplitReceiverModelDataValues[]> {
     return this._batchReceiversOfTypeDripListByDripListIds.load({
-      dripListId: id,
+      id,
       chains,
     });
   }

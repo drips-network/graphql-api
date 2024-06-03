@@ -58,8 +58,8 @@ const dripListResolvers = {
       assert(chain in SupportedChain);
 
       const dripListDataValues = await dataSources.dripListsDb.getDripListById(
+        [chain],
         id,
-        chain,
       );
 
       if (!dripListDataValues) {
@@ -229,6 +229,7 @@ const dripListResolvers = {
       const streamSupport =
         await projectAndDripListSupportDb.getStreamSupportByAccountId(
           dripListId,
+          [dripListChain],
         );
 
       return [

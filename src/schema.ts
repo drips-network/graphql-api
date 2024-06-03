@@ -25,9 +25,8 @@ const rootTypeDef = gql`
       chain: SupportedChain!
     ): MintedTokens!
     earnedFunds(projectId: String!, chains: [SupportedChain!]): [ChainAmount!]!
-    userById(accountId: ID!): User!
-    userByAddress(address: String!): User!
-    streams(where: StreamWhereInput): [Stream!]!
+    userById(accountId: ID!, chains: [SupportedChain!]): User!
+    userByAddress(address: String!, chains: [SupportedChain!]): User!
   }
 `;
 

@@ -290,19 +290,17 @@ const projectResolvers = {
         dataSources: { projectAndDripListSupportDb },
       } = context;
 
-      const projectAndDripListSupport = (
+      const projectAndDripListSupport =
         await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
           projectId,
           [projectChain],
-        )
-      ).filter((s) => s.chain === projectChain);
+        );
 
-      const oneTimeDonationSupport = (
+      const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
           projectId,
           [projectChain],
-        )
-      ).filter((s) => s.chain === projectChain);
+        );
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
@@ -326,19 +324,17 @@ const projectResolvers = {
         parentProjectInfo: { projectId, projectChain },
       } = projectData;
 
-      const projectAndDripListSupport = (
+      const projectAndDripListSupport =
         await projectAndDripListSupportDb.getProjectAndDripListSupportByProjectId(
           projectId,
           [projectChain],
-        )
-      ).filter((s) => s.chain === projectChain);
+        );
 
-      const oneTimeDonationSupport = (
+      const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
           projectId,
           [projectChain],
-        )
-      ).filter((s) => s.chain === projectChain);
+        );
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },

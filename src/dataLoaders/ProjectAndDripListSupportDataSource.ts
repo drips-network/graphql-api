@@ -4,6 +4,7 @@ import type {
   AccountId,
   DripListId,
   DripListMultiChainKey,
+  MultiChainKey,
   ProjectId,
   ProjectMultiChainKey,
 } from '../common/types';
@@ -132,14 +133,25 @@ export default class ProjectAndDripListSupportDataSource {
   );
 
   private readonly _batchStreamSupportByAccountIds = new DataLoader(
-    async (accountIds: readonly AccountId[]) => {
+    async (accountKeys: readonly MultiChainKey[]) => {
+      const { chains, ids: accountIds } = parseMultiChainKeys(accountKeys);
+
       const streamsToList = (
         await Promise.all(
           accountIds.map((accountId) =>
-            streams.getUserIncomingStreams(accountId),
+            streams.getUserIncomingStreams(chains, accountId),
           ),
         )
-      ).flat();
+      )
+        .flatMap((s) =>
+          Object.entries(s).map(([chain, protoStreamsForChain]) =>
+            protoStreamsForChain.map((protoStream) => ({
+              ...protoStream,
+              chain: chain as SupportedChain,
+            })),
+          ),
+        )
+        .flat();
 
       const streamSupportToAccountMapping = streamsToList.reduce<
         Record<AccountId, ProtoStream[]>
@@ -152,7 +164,7 @@ export default class ProjectAndDripListSupportDataSource {
           ],
         }),
         {},
-      );
+      ) as Record<AccountId, (ProtoStream & { chain: SupportedChain })[]>;
 
       return accountIds.map((id) => streamSupportToAccountMapping[id] || []);
     },
@@ -212,7 +224,7 @@ export default class ProjectAndDripListSupportDataSource {
     chains: SupportedChain[],
   ): Promise<DripListSplitReceiverModelDataValues[]> {
     return this._batchProjectAndDripListSupportByDripListIds.load({
-      dripListId: id,
+      id,
       chains,
     });
   }
@@ -222,7 +234,7 @@ export default class ProjectAndDripListSupportDataSource {
     chains: SupportedChain[],
   ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
     return this._batchProjectAndDripListSupportByProjectIds.load({
-      projectId: id,
+      id,
       chains,
     });
   }
@@ -233,9 +245,9 @@ export default class ProjectAndDripListSupportDataSource {
   ): Promise<GivenEventModelDataValues[]> {
     // eslint-disable-next-line no-nested-ternary
     const key = isDripListId(id)
-      ? { dripListId: id, chains }
+      ? { id, chains }
       : isProjectId(id)
-      ? { projectId: id, chains }
+      ? { id, chains }
       : shouldNeverHappen();
 
     return this._batchOneTimeDonationSupportByAccountIds.load(key);
@@ -243,7 +255,11 @@ export default class ProjectAndDripListSupportDataSource {
 
   public async getStreamSupportByAccountId(
     id: AccountId,
-  ): Promise<ProtoStream[]> {
-    return this._batchStreamSupportByAccountIds.load(id);
+    chains: SupportedChain[],
+  ) {
+    return this._batchStreamSupportByAccountIds.load({
+      id,
+      chains,
+    });
   }
 }

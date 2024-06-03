@@ -1,7 +1,5 @@
-import { ethers } from 'ethers';
 import type {
   Forge,
-  ProjectId,
   ResolverClaimedProjectChainData,
   ResolverProject,
   ResolverUnClaimedProjectChainData,
@@ -11,7 +9,7 @@ import type { ProjectDataValues } from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
 import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
-import dripsContracts from '../common/dripsContracts';
+import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
 import { Driver } from '../generated/graphql';
 import type {
   Forge as GraphQlForge,
@@ -52,17 +50,6 @@ export function isValidProjectName(name: string): boolean {
   }
 
   return true;
-}
-
-function toContractForge(forge: Forge): 0 | 1 {
-  switch (forge) {
-    case `GitHub`:
-      return 0;
-    case `GitLab`:
-      return 1;
-    default:
-      return shouldNeverHappen(`Forge ${forge} not supported.`);
-  }
 }
 
 export async function doesRepoExists(url: string) {
@@ -118,16 +105,11 @@ export async function toFakeUnclaimedProjectFromUrl(url: string) {
   const ownerName = match[2];
   const repoName = match[3];
 
-  const {
-    contracts: { repoDriver },
-  } = dripsContracts;
-
-  const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
-
   return {
-    id: (
-      await repoDriver.calcAccountId(toContractForge(forge), nameAsBytesLike)
-    ).toString() as ProjectId,
+    id: await getCrossChainRepoDriverAccountIdByAddress(
+      forge,
+      `${ownerName}/${repoName}`,
+    ),
     name: `${ownerName}/${repoName}`,
     forge,
     url,
@@ -151,19 +133,9 @@ export async function toFakeUnclaimedProject(
 
   assert(name && forge, 'Project name and forge must be defined.');
 
-  const { ownerName, repoName } = splitProjectName(name);
-
-  const {
-    contracts: { repoDriver },
-  } = dripsContracts;
-
-  const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
-
   return {
-    id: (
-      await repoDriver.calcAccountId(toContractForge(forge), nameAsBytesLike)
-    ).toString() as ProjectId,
-    name: `${ownerName}/${repoName}`,
+    id: await getCrossChainRepoDriverAccountIdByAddress(forge, name),
+    name,
     forge,
     url: toUrl(forge, name),
     verificationStatus: ProjectVerificationStatus.Unclaimed,

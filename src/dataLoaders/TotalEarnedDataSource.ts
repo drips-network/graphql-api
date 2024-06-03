@@ -110,9 +110,9 @@ export default class TotalEarnedDataSource {
   }> {
     // eslint-disable-next-line no-nested-ternary
     const key = isDripListId(id)
-      ? { dripListId: id, chains }
+      ? { id, chains }
       : isProjectId(id)
-      ? { projectId: id, chains }
+      ? { id, chains }
       : shouldNeverHappen();
 
     return this._batchTotalEarnedByProjectIds.load(key);

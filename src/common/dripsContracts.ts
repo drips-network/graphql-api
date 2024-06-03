@@ -1,4 +1,4 @@
-import { JsonRpcProvider, WebSocketProvider } from 'ethers';
+import { JsonRpcProvider, WebSocketProvider, ethers } from 'ethers';
 import appSettings from './appSettings';
 import type { AddressDriver, RepoDriver } from '../generated/contracts';
 import {
@@ -7,6 +7,8 @@ import {
 } from '../generated/contracts';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { SupportedChain } from '../generated/graphql';
+import type { AccountId, Address, Forge, ProjectId } from './types';
+import queryableChains from './queryableChains';
 
 const chainConfigs: Record<
   SupportedChain,
@@ -39,25 +41,25 @@ const providers: {
   [network in SupportedChain]?: JsonRpcProvider | WebSocketProvider;
 } = {};
 
-for (const network of Object.keys(SupportedChain)) {
-  if (rpcUrls[network as SupportedChain]) {
-    const rpcUrl = rpcUrls[network as SupportedChain] as string;
-
+Object.values(SupportedChain).forEach((network) => {
+  const rpcUrl = rpcUrls[network];
+  if (rpcUrl) {
     // eslint-disable-next-line no-nested-ternary
     const provider = rpcUrl.startsWith('http')
       ? new JsonRpcProvider(rpcUrl)
       : rpcUrl.startsWith('wss')
       ? new WebSocketProvider(rpcUrl)
       : shouldNeverHappen(`Invalid RPC URL: ${rpcUrl}`);
-
-    providers[network as SupportedChain] = provider;
+    providers[network] = provider;
   }
-}
+});
 
-let dripsContracts: {
-  addressDriver: AddressDriver;
-  repoDriver: RepoDriver;
-} = {} as any;
+const dripsContracts: {
+  [network in SupportedChain]?: {
+    addressDriver: AddressDriver;
+    repoDriver: RepoDriver;
+  };
+} = {};
 
 Object.entries(providers).forEach(([network, provider]) => {
   if (!chainConfigs[network as SupportedChain]) {
@@ -71,15 +73,49 @@ Object.entries(providers).forEach(([network, provider]) => {
     addressDriverAddress,
     provider,
   );
-
   const repoDriver = RepoDriver__factory.connect(repoDriverAddress, provider);
 
-  dripsContracts = {
+  dripsContracts[network as SupportedChain] = {
     addressDriver,
     repoDriver,
   };
 });
 
-export default {
-  contracts: dripsContracts,
-};
+export default dripsContracts;
+
+export async function getCrossChainAddressDriverAccountIdByAddress(
+  address: Address,
+): Promise<AccountId> {
+  // AddressDriver account IDs are the same across all chains.
+  const { addressDriver } = dripsContracts[queryableChains[0]]!;
+
+  const accountId = (await addressDriver.calcAccountId(address)).toString();
+
+  return accountId as AccountId;
+}
+
+export async function getCrossChainRepoDriverAccountIdByAddress(
+  forge: Forge,
+  project: string,
+): Promise<AccountId> {
+  // RepoDriver account IDs are the same across all chains.
+  const { repoDriver } = dripsContracts[queryableChains[0]]!;
+
+  const nameAsBytesLike = ethers.toUtf8Bytes(project);
+
+  let forgeAsNum: 0 | 1 | undefined;
+
+  if (forge === 'GitHub') {
+    forgeAsNum = 0;
+  } else if (forge === 'GitLab') {
+    forgeAsNum = 1;
+  } else {
+    return shouldNeverHappen(`Forge ${forge} not supported.`);
+  }
+
+  const accountId = (
+    await repoDriver.calcAccountId(forgeAsNum, nameAsBytesLike)
+  ).toString();
+
+  return accountId as ProjectId;
+}
