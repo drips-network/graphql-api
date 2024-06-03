@@ -158,7 +158,11 @@ const commonResolvers = {
   },
   OneTimeDonationSupport: {
     account: async (
-      parent: { transactionHash: string; logIndex: number },
+      parent: {
+        transactionHash: string;
+        logIndex: number;
+        chain: SupportedChain;
+      },
       _: any,
       context: Context,
     ): Promise<AddressDriverAccount> => {
@@ -166,9 +170,10 @@ const commonResolvers = {
         dataSources: { givesDb },
       } = context;
 
-      const { transactionHash, logIndex } = parent;
+      const { transactionHash, logIndex, chain } = parent;
 
       const givenEvent = await givesDb.getGivenEventById(
+        [chain],
         transactionHash,
         logIndex,
       );

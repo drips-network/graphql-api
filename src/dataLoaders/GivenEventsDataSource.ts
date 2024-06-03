@@ -1,4 +1,6 @@
-import { Op, QueryTypes } from 'sequelize';
+/* eslint-disable no-param-reassign */
+
+import { QueryTypes } from 'sequelize';
 import DataLoader from 'dataloader';
 import type { GiveWhereInput, SupportedChain } from '../generated/graphql';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
@@ -12,23 +14,58 @@ type CompositePrimaryKey = readonly [TransactionHash, LogIndex];
 export default class GivenEventsDataSource {
   private readonly _batchGivenEventsByIds = new DataLoader(
     async (
-      givenEventIds: readonly CompositePrimaryKey[],
-    ): Promise<GivenEventModel[]> => {
-      const givenEvents = await GivenEventModel.findAll({
-        where: {
-          [Op.or]: givenEventIds.map(([transactionHash, logIndex]) => ({
-            transactionHash,
-            logIndex,
-          })),
-        },
-      });
+      keys: readonly {
+        chains: SupportedChain[];
+        key: CompositePrimaryKey;
+      }[],
+    ): Promise<GivenEventModelDataValues[]> => {
+      const chains = [...new Set(keys.flatMap((key) => key.chains))];
+      const givenEventIds = keys.map(({ key }) => key);
+      const transactionHashes = givenEventIds.map(
+        ([transactionHash]) => transactionHash,
+      );
+      const logIndexes = givenEventIds.map(([, logIndex]) => logIndex);
 
-      const idToEventMap = givenEvents.reduce<
-        Record<`${string}-${string}`, GivenEventModel>
+      // Define base SQL to query from multiple chains (schemas).
+      const baseSQL = (schema: SupportedChain) => `
+        SELECT "accountId", "receiver", "erc20", "amt", "transactionHash", "logIndex", "blockTimestamp", "blockNumber", "createdAt", "updatedAt", '${schema}' AS chain
+        FROM "${schema}"."GivenEvents"
+      `;
+
+      // Initialize the WHERE clause parts.
+      const conditions: string[] = [
+        '"transactionHash" IN (:transactionHashes)',
+        '"logIndex" IN (:logIndexes)',
+      ];
+      const parameters: { [key: string]: any } = {
+        transactionHashes,
+        logIndexes,
+      };
+
+      // Build the where clause.
+      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
+
+      // Build the SQL for each specified schema.
+      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+      // Combine all schema queries with UNION.
+      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+      const givenEventsDataValues = (
+        await dbConnection.query(fullQuery, {
+          type: QueryTypes.SELECT,
+          replacements: parameters,
+          mapToModel: true,
+          model: GivenEventModel,
+        })
+      ).map((p) => p.dataValues as GivenEventModelDataValues);
+
+      const idToEventMap = givenEventsDataValues.reduce<
+        Record<`${string}-${string}`, GivenEventModelDataValues>
       >((mapping, givenEvent) => {
         const key: `${string}-${string}` = `${givenEvent.transactionHash}-${givenEvent.logIndex}`;
 
-        mapping[key] = givenEvent; // eslint-disable-line no-param-reassign
+        mapping[key] = givenEvent;
 
         return mapping;
       }, {});
@@ -38,10 +75,14 @@ export default class GivenEventsDataSource {
   );
 
   public async getGivenEventById(
+    chains: SupportedChain[],
     transactionHash: TransactionHash,
     logIndex: LogIndex,
-  ): Promise<GivenEventModel> {
-    return this._batchGivenEventsByIds.load([transactionHash, logIndex]);
+  ): Promise<GivenEventModelDataValues> {
+    return this._batchGivenEventsByIds.load({
+      chains,
+      key: [transactionHash, logIndex],
+    });
   }
 
   public async getGivenEventsByFilter(
