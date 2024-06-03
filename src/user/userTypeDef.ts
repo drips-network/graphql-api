@@ -24,6 +24,7 @@ const userTypeDef = gql`
     projects: [Project]!
     dripLists: [DripList]!
     balances: [UserBalances!]!
+    support: [SupportItem!]!
   }
 `;
 

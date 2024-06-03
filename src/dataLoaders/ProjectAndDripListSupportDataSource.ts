@@ -1,11 +1,17 @@
 import DataLoader from 'dataloader';
 import { Op } from 'sequelize';
-import type { AccountId, DripListId, ProjectId } from '../common/types';
+import type {
+  AccountId,
+  AddressDriverId,
+  DripListId,
+  ProjectId,
+} from '../common/types';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import streams from '../utils/streams';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
+import AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
 
 export default class ProjectAndDripListSupportDataSource {
   private readonly _batchProjectAndDripListSupportByDripListIds =
@@ -67,6 +73,35 @@ export default class ProjectAndDripListSupportDataSource {
     },
   );
 
+  private readonly _batchProjectAndDripListSupportByAddressDriverIds =
+    new DataLoader(async (addressDriverIds: readonly AddressDriverId[]) => {
+      const projectAndDripListSupport =
+        await AddressDriverSplitReceiverModel.findAll({
+          where: {
+            fundeeAccountId: {
+              [Op.in]: addressDriverIds,
+            },
+          },
+        });
+
+      const projectAndDripListSupportToProjectMapping =
+        projectAndDripListSupport.reduce<
+          Record<AddressDriverId, AddressDriverSplitReceiverModel[]>
+        >((mapping, receiver) => {
+          if (!mapping[receiver.fundeeAccountId]) {
+            mapping[receiver.fundeeAccountId] = []; // eslint-disable-line no-param-reassign
+          }
+
+          mapping[receiver.fundeeAccountId].push(receiver);
+
+          return mapping;
+        }, {});
+
+      return addressDriverIds.map(
+        (id) => projectAndDripListSupportToProjectMapping[id] || [],
+      );
+    });
+
   private readonly _batchStreamSupportByAccountIds = new DataLoader(
     async (accountIds: readonly AccountId[]) => {
       const streamsToList = (
@@ -95,7 +130,7 @@ export default class ProjectAndDripListSupportDataSource {
   );
 
   private readonly _batchOneTimeDonationSupportByAccountIds = new DataLoader(
-    async (dripListIds: readonly (DripListId | ProjectId)[]) => {
+    async (dripListIds: readonly AccountId[]) => {
       const oneTimeDonationSupport = await GivenEventModel.findAll({
         where: {
           receiver: {
@@ -136,8 +171,14 @@ export default class ProjectAndDripListSupportDataSource {
     return this._batchProjectAndDripListSupportByProjectIds.load(id);
   }
 
+  public async getProjectAndDripListSupportByAddressDriverId(
+    id: AddressDriverId,
+  ): Promise<AddressDriverSplitReceiverModel[]> {
+    return this._batchProjectAndDripListSupportByAddressDriverIds.load(id);
+  }
+
   public async getOneTimeDonationSupportByAccountId(
-    id: DripListId | ProjectId,
+    id: AccountId,
   ): Promise<GivenEventModel[]> {
     return this._batchOneTimeDonationSupportByAccountIds.load(id);
   }

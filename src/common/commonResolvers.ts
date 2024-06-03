@@ -9,19 +9,25 @@ import GivenEventModel from '../given-event/GivenEventModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { DripListId, ProjectId } from './types';
+import type { AddressDriverId, DripListId, ProjectId } from './types';
 import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import SplitEventModel from '../models/SplitEventModel';
 import mergeAmounts from '../utils/mergeAmounts';
+import AddressDriverSplitReceiverModel, {
+  AddressDriverSplitReceiverType,
+} from '../models/AddressDriverSplitReceiverModel';
 
 async function resolveTotalSplit(
-  parent: DripListSplitReceiverModel | RepoDriverSplitReceiverModel,
+  parent:
+    | DripListSplitReceiverModel
+    | RepoDriverSplitReceiverModel
+    | AddressDriverSplitReceiverModel,
 ) {
   let incomingAccountId: DripListId | ProjectId;
-  let recipientAccountId: DripListId | ProjectId;
+  let recipientAccountId: DripListId | ProjectId | AddressDriverId;
 
   if (parent instanceof DripListSplitReceiverModel) {
     const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
@@ -31,6 +37,12 @@ async function resolveTotalSplit(
   } else if (parent instanceof RepoDriverSplitReceiverModel) {
     const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
     recipientAccountId = fundeeProjectId;
+    incomingAccountId =
+      funderDripListId || funderProjectId || shouldNeverHappen();
+  } else if (parent instanceof AddressDriverSplitReceiverModel) {
+    const { fundeeAccountId, funderDripListId, funderProjectId } = parent;
+
+    recipientAccountId = fundeeAccountId;
     incomingAccountId =
       funderDripListId || funderProjectId || shouldNeverHappen();
   } else {
@@ -61,22 +73,26 @@ const commonResolvers = {
       parent:
         | DripListSplitReceiverModel
         | RepoDriverSplitReceiverModel
+        | AddressDriverSplitReceiverModel
         | GivenEventModel
         | ProtoStream,
     ) {
       if (
         parent instanceof DripListSplitReceiverModel ||
-        parent instanceof RepoDriverSplitReceiverModel
+        parent instanceof RepoDriverSplitReceiverModel ||
+        parent instanceof AddressDriverSplitReceiverModel
       ) {
-        if (parent.type === DependencyType.ProjectDependency) {
-          return 'ProjectSupport';
+        switch (parent.type) {
+          case AddressDriverSplitReceiverType.ProjectMaintainer:
+          case AddressDriverSplitReceiverType.ProjectDependency:
+          case DependencyType.ProjectDependency:
+            return 'ProjectSupport';
+          case DependencyType.DripListDependency:
+          case AddressDriverSplitReceiverType.DripListDependency:
+            return 'DripListSupport';
+          default:
+            return shouldNeverHappen('Invalid SupportItem type');
         }
-
-        if (parent.type === DependencyType.DripListDependency) {
-          return 'DripListSupport';
-        }
-
-        return shouldNeverHappen('Invalid SupportItem type');
       }
 
       if (parent instanceof GivenEventModel) {

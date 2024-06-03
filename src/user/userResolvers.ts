@@ -1,5 +1,5 @@
 import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
-import type { Address, AddressDriverId } from '../common/types';
+import type { AccountId, Address, AddressDriverId } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import { Driver } from '../generated/graphql';
 import type { User } from '../generated/graphql';
@@ -62,6 +62,32 @@ const userResolvers = {
       return dataSources.dripListsDb.getDripListsByFilter({
         ownerAddress: getUserAddress(accountId),
       });
+    },
+    support: async (parent: User, _: any, context: Context) => {
+      const {
+        dataSources: { projectAndDripListSupportDb },
+      } = context;
+
+      const projectAndDripListSupport =
+        await projectAndDripListSupportDb.getProjectAndDripListSupportByAddressDriverId(
+          parent.account.accountId as AddressDriverId,
+        );
+
+      const oneTimeDonationSupport =
+        await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
+          parent.account.accountId as AccountId,
+        );
+
+      const streamSupport =
+        await projectAndDripListSupportDb.getStreamSupportByAccountId(
+          parent.account.accountId as AccountId,
+        );
+
+      return [
+        ...projectAndDripListSupport,
+        ...streamSupport,
+        ...oneTimeDonationSupport,
+      ];
     },
   },
   UserStreams: {
