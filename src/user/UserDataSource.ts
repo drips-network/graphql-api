@@ -26,6 +26,7 @@ export default class UsersDataSource {
         incoming: [],
       },
       balances: [],
+      support: [],
     };
   }
 
