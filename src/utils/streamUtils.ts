@@ -121,7 +121,7 @@ export function mapReceiverToStream(
   assetConfigMetadata?: AssetConfigMetadata,
 ): any {
   const streamMetadata = assetConfigMetadata?.streams.find(
-    (s) => s.id === receiver.streamId,
+    (s) => s.id.toLowerCase() === receiver.streamId.toLowerCase(),
   );
   const initialDripsConfig = streamMetadata?.initialDripsConfig;
 
