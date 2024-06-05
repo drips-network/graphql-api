@@ -1,8 +1,10 @@
+import { hexlify, toUtf8Bytes, toUtf8String, zeroPadBytes } from 'ethers';
 import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
 import type { AccountId, Address, AddressDriverId } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import { Driver } from '../generated/graphql';
 import type { User } from '../generated/graphql';
+import AccountMetadataEmittedEventModel from '../models/AccountMetadataEmittedEventModel';
 import type { Context } from '../server';
 import assert, { isAddressDriverId } from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
@@ -88,6 +90,27 @@ const userResolvers = {
         ...streamSupport,
         ...oneTimeDonationSupport,
       ];
+    },
+    latestMetadataIpfsHash: async (parent: User) => {
+      const { accountId } = parent.account;
+
+      const latestAccountMetadataEmittedEvent =
+        await AccountMetadataEmittedEventModel.findOne({
+          where: {
+            accountId,
+            key: zeroPadBytes(hexlify(toUtf8Bytes('ipfs')), 32),
+          },
+          order: [
+            ['blockNumber', 'DESC'],
+            ['logIndex', 'DESC'],
+          ],
+        });
+
+      console.log(latestAccountMetadataEmittedEvent);
+
+      return latestAccountMetadataEmittedEvent?.value
+        ? toUtf8String(latestAccountMetadataEmittedEvent.value)
+        : undefined;
     },
   },
   UserStreams: {

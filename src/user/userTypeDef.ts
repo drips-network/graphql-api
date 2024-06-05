@@ -25,6 +25,7 @@ const userTypeDef = gql`
     dripLists: [DripList]!
     balances: [UserBalances!]!
     support: [SupportItem!]!
+    latestMetadataIpfsHash: String
   }
 `;
 
