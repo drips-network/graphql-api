@@ -4,7 +4,6 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import getSchema from '../utils/getSchema';
 import type {
   AccountId,
   BigIntString,
@@ -67,7 +66,6 @@ export default class StreamsSetEventModel
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'StreamsSetEvents',
       },
     );

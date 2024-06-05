@@ -6,7 +6,7 @@ import type {
   ResolverUnClaimedProjectChainData,
   ResolverUnClaimedProjectData,
 } from '../common/types';
-import { toResolverProjects } from './projectUtils';
+import { toResolverProject, toResolverProjects } from './projectUtils';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { Driver, SupportedChain } from '../generated/graphql';
 import type {
@@ -28,10 +28,11 @@ import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitRece
 import groupBy from '../utils/linq';
 import queryableChains from '../common/queryableChains';
 import type { ProjectDataValues } from './ProjectModel';
-import verifyProjectsInput from './projectValidators';
+import validateProjectsInput from './projectValidators';
 import type { DripListDataValues } from '../drip-list/DripListModel';
 import assert, { isGitHubUrl, isProjectId } from '../utils/assert';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
+import { validateChainsInput } from '../utils/inputValidators';
 
 const projectResolvers = {
   Query: {
@@ -46,75 +47,63 @@ const projectResolvers = {
         where: ProjectWhereInput;
         sort: ProjectSortInput;
       },
-      { dataSources }: Context,
+      { dataSources: { projectsDb } }: Context,
     ): Promise<ResolverProject[]> => {
-      verifyProjectsInput({ chains, where, sort });
+      validateProjectsInput({ chains, where, sort });
 
       const chainsToQuery = chains?.length ? chains : queryableChains;
 
-      const projectsDataValues =
-        await dataSources.projectsDb.getProjectsByFilter(
-          chainsToQuery,
-          where,
-          sort,
-        );
+      const dbProjects = await projectsDb.getProjectsByFilter(
+        chainsToQuery,
+        where,
+        sort,
+      );
 
-      return toResolverProjects(chainsToQuery, projectsDataValues);
+      return toResolverProjects(chainsToQuery, dbProjects);
     },
     projectById: async (
       _: any,
       { id, chain }: { id: ProjectId; chain: SupportedChain },
-      { dataSources }: Context,
+      { dataSources: { projectsDb } }: Context,
     ): Promise<ResolverProject | null> => {
       assert(isProjectId(id));
       assert(chain in SupportedChain);
 
-      const projectDataValues = await dataSources.projectsDb.getProjectById(
-        id,
-        chain,
-      );
+      const dbProjects = await projectsDb.getProjectById(id, chain);
 
-      if (!projectDataValues) {
+      if (!dbProjects) {
         return null;
       }
 
-      return (await toResolverProjects([chain], [projectDataValues]))[0];
+      return toResolverProject(chain, dbProjects);
     },
     projectByUrl: async (
       _: any,
       { url, chain }: { url: string; chain: SupportedChain },
-      { dataSources }: Context,
+      { dataSources: { projectsDb } }: Context,
     ): Promise<ResolverProject | null> => {
       assert(isGitHubUrl(url));
       assert(chain in SupportedChain);
 
-      const projectDataValues = await dataSources.projectsDb.getProjectByUrl(
-        url,
-        chain,
-      );
+      const dbProjects = await projectsDb.getProjectByUrl(url, chain);
 
-      if (!projectDataValues) {
+      if (!dbProjects) {
         return null;
       }
 
-      return (await toResolverProjects([chain], [projectDataValues]))[0];
+      return toResolverProject(chain, dbProjects);
     },
     earnedFunds: async (
       _: any,
       { projectId, chains }: { projectId: ProjectId; chains: SupportedChain[] },
-      { dataSources }: Context,
+      { dataSources: { projectsDb } }: Context,
     ) => {
       assert(isProjectId(projectId));
-
-      if (chains) {
-        chains.forEach((chain) => {
-          assert(chain in SupportedChain);
-        });
-      }
+      validateChainsInput(chains);
 
       const chainsToQuery = chains?.length ? chains : queryableChains;
 
-      return dataSources.projectsDb.getEarnedFunds(projectId, chainsToQuery);
+      return projectsDb.getEarnedFunds(projectId, chainsToQuery);
     },
   },
   Project: {

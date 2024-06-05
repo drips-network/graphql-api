@@ -4,7 +4,6 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import getSchema from '../utils/getSchema';
 import type {
   AccountId,
   Address,
@@ -54,7 +53,6 @@ export default class SplitEventModel extends Model<
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'SplitEvents',
       },
     );

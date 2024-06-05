@@ -1,5 +1,6 @@
 import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
 import type {
+  AccountId,
   Address,
   AddressDriverId,
   ResolverUser,
@@ -133,7 +134,9 @@ const userResolvers = {
   },
   UserStreams: {
     outgoing: async (
-      userData: { parentUserInfo: { accountId: any; userChain: any } },
+      userData: {
+        parentUserInfo: { accountId: AccountId; userChain: SupportedChain };
+      },
       _: any,
       { dataSources }: Context,
     ) => {
@@ -148,7 +151,9 @@ const userResolvers = {
       )[userChain as SupportedChain];
     },
     incoming: async (
-      userData: { parentUserInfo: { accountId: any; userChain: any } },
+      userData: {
+        parentUserInfo: { accountId: AccountId; userChain: SupportedChain };
+      },
       _: any,
       { dataSources }: Context,
     ) => {

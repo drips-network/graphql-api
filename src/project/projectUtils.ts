@@ -142,6 +142,13 @@ export async function toFakeUnclaimedProject(
   } as ProjectDataValues;
 }
 
+export async function toResolverProject(
+  chain: SupportedChain,
+  project: ProjectDataValues,
+) {
+  return (await toResolverProjects([chain], [project]))[0];
+}
+
 export async function toResolverProjects(
   chains: SupportedChain[],
   projects: ProjectDataValues[],

@@ -35,6 +35,7 @@ export default async function getAssetConfigs(
       accountId,
       accountMetadata[chain]?.metadata,
       accountStreamsSetEventsWithReceiversByErc20,
+      chain,
     );
   });
 

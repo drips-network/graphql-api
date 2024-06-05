@@ -10,7 +10,6 @@ import type {
   BigIntString,
   CommonDataValues,
 } from '../common/types';
-import getSchema from '../utils/getSchema';
 
 export type GivenEventModelDataValues = GivenEventModel['dataValues'] &
   CommonDataValues;
@@ -70,7 +69,6 @@ export default class GivenEventModel extends Model<
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'GivenEvents',
       },
     );

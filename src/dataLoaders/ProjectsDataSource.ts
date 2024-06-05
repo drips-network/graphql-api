@@ -20,6 +20,7 @@ import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import { dbConnection } from '../database/connectToDatabase';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
+import sqlQueries from '../utils/sqlQueries';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
@@ -135,62 +136,14 @@ export default class ProjectsDataSource {
 
   public async getProjectsByFilter(
     chains: SupportedChain[],
-    where: ProjectWhereInput,
+    where?: ProjectWhereInput,
     sort?: ProjectSortInput,
   ): Promise<ProjectDataValues[]> {
-    // Define base SQL to query from multiple chains (schemas).
-    const baseSQL = (schema: SupportedChain) => `
-        SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
-        FROM "${schema}"."GitProjects"
-    `;
-
-    // Initialize the WHERE clause parts.
-    const conditions: string[] = [];
-    const parameters: { [key: string]: any } = {};
-
-    // Build the WHERE clause based on input filters.
-    if (where?.id) {
-      conditions.push(`"id" = :id`);
-      parameters.id = where.id;
-    }
-    if (where?.ownerAddress) {
-      conditions.push(`"ownerAddress" = :ownerAddress`);
-      parameters.ownerAddress = where.ownerAddress;
-    }
-    if (where?.url) {
-      conditions.push(`"url" = :url`);
-      parameters.url = where.url;
-    }
-    if (where?.verificationStatus) {
-      conditions.push(`"verificationStatus" = :verificationStatus`);
-      parameters.verificationStatus = where.verificationStatus;
-    }
-
-    // Join conditions into a single WHERE clause.
-    const whereClause =
-      conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
-
-    // Define the order.
-    const orderClause = sort
-      ? ` ORDER BY "${sort.field}" ${sort.direction || 'DESC'}`
-      : '';
-
-    // Build the SQL for each specified schema.
-    const queries = chains.map(
-      (chain) => baseSQL(chain) + whereClause + orderClause,
+    const projectsDataValues = await sqlQueries.projects.getProjectsByFilter(
+      chains,
+      where,
+      sort,
     );
-
-    // Combine all schema queries with UNION.
-    const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-    const projectsDataValues = (
-      await dbConnection.query(fullQuery, {
-        type: QueryTypes.SELECT,
-        replacements: parameters,
-        mapToModel: true,
-        model: ProjectModel,
-      })
-    ).map((p) => p.dataValues as ProjectDataValues);
 
     return Promise.all(
       projectsDataValues

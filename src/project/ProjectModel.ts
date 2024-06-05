@@ -5,7 +5,6 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
-import getSchema from '../utils/getSchema';
 import type {
   AccountId,
   CommonDataValues,
@@ -103,7 +102,6 @@ export default class ProjectModel extends Model<
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'GitProjects',
       },
     );

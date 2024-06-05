@@ -1,38 +1,48 @@
-import { Driver, SupportedChain } from '../generated/graphql';
+import type { AddressDriverId, DripListId } from '../common/types';
+import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
+import type { ProtoStream } from '../utils/buildAssetConfigs';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 
 const streamResolvers = {
   Stream: {
-    receiver: (parent: any, _: any, { dataSources }: Context) => {
-      if (parent.receiver.driver === Driver.ADDRESS) {
+    receiver: (
+      { chain, receiver }: ProtoStream,
+      _: any,
+      { dataSources }: Context,
+    ) => {
+      if (receiver.driver === Driver.ADDRESS) {
         return dataSources.usersDb.getUserByAccountId(
-          [SupportedChain.sepolia], // TODO: Temporary for compiling.
-          parent.receiver.accountId,
+          [chain],
+          receiver.accountId as AddressDriverId,
         );
       }
 
-      if (parent.receiver.driver === Driver.NFT) {
+      if (receiver.driver === Driver.NFT) {
         return dataSources.dripListsDb.getDripListById(
-          [SupportedChain.sepolia], // TODO: Temporary for compiling.
-          parent.receiver.accountId,
+          [chain],
+          receiver.accountId as DripListId,
         );
       }
 
       throw shouldNeverHappen();
     },
-    sender: (parent: any, _: any, { dataSources }: Context) => {
-      if (parent.sender.driver === Driver.ADDRESS) {
+    sender: (
+      { chain, sender }: ProtoStream,
+      _: any,
+      { dataSources }: Context,
+    ) => {
+      if (sender.driver === Driver.ADDRESS) {
         return dataSources.usersDb.getUserByAccountId(
-          [SupportedChain.sepolia], // TODO: Temporary for compiling.
-          parent.sender.accountId,
+          [chain],
+          sender.accountId as AddressDriverId,
         );
       }
 
-      if (parent.sender.driver === Driver.NFT) {
+      if (sender.driver === Driver.NFT) {
         return dataSources.dripListsDb.getDripListById(
-          [SupportedChain.sepolia], // TODO: Temporary for compiling.
-          parent.sender.accountId,
+          [chain],
+          sender.accountId as DripListId,
         );
       }
 

@@ -5,7 +5,6 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import getSchema from '../utils/getSchema';
 import type { CommonDataValues, DripListId, ProjectId } from '../common/types';
 import { DependencyType } from '../common/types';
 import ProjectModel from '../project/ProjectModel';
@@ -77,7 +76,6 @@ export default class RepoDriverSplitReceiverModel extends Model<
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'RepoDriverSplitReceivers',
       },
     );

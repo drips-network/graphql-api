@@ -5,7 +5,6 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import getSchema from '../utils/getSchema';
 import type { CommonDataValues, DripListId } from '../common/types';
 import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
 
@@ -45,7 +44,6 @@ export default class TransferEventModel extends Model<
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'TransferEvents',
       },
     );

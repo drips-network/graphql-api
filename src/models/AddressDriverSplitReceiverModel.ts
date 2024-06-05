@@ -6,7 +6,6 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
-import getSchema from '../utils/getSchema';
 import type {
   AddressDriverId,
   CommonDataValues,
@@ -85,7 +84,6 @@ export default class AddressDriverSplitReceiverModel extends Model<
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'AddressDriverSplitReceivers',
       },
     );

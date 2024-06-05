@@ -4,7 +4,6 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import getSchema from '../utils/getSchema';
 import type { CommonDataValues, IEventModel } from '../common/types';
 import getCommonEventAttributes from '../utils/getCommonEventAttributes';
 
@@ -48,7 +47,6 @@ export default class AccountMetadataEmittedEventModel
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'AccountMetadataEmittedEvents',
       },
     );

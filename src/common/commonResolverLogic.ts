@@ -12,7 +12,7 @@ import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { SplitEventModelDataValues } from '../models/SplitEventModel';
 import SplitEventModel from '../models/SplitEventModel';
-import { SupportedChain } from '../generated/graphql';
+import type { SupportedChain } from '../generated/graphql';
 import { dbConnection } from '../database/connectToDatabase';
 
 export async function resolveTotalSplit(
@@ -71,7 +71,7 @@ export async function resolveTotalSplit(
     splitEventModelDataValues.map((splitEvent) => ({
       tokenAddress: splitEvent.erc20,
       amount: BigInt(splitEvent.amt),
-      chain: SupportedChain.sepolia, // TODO: Only for compilation.
+      chain: splitEvent.chain,
     })),
   ).map((amount) => ({
     ...amount,

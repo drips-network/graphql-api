@@ -1,20 +1,24 @@
 import { isAddress } from 'ethers';
-import { SupportedChain } from '../generated/graphql';
-import type { ProjectSortInput, ProjectWhereInput } from '../generated/graphql';
+import type {
+  SupportedChain,
+  ProjectSortInput,
+  ProjectWhereInput,
+} from '../generated/graphql';
 import assert, {
   isGitHubUrl,
   isProjectId,
   isProjectVerificationStatus,
 } from '../utils/assert';
+import { validateChainsInput } from '../utils/inputValidators';
 
 function isSortableProjectField(field: string): boolean {
   return ['claimedAt'].includes(field);
 }
 
-export default function verifyProjectsInput(input: {
-  chains: SupportedChain[];
-  where: ProjectWhereInput;
-  sort: ProjectSortInput;
+export default function validateProjectsInput(input: {
+  chains?: SupportedChain[];
+  where?: ProjectWhereInput;
+  sort?: ProjectSortInput;
 }) {
   const { where, sort, chains } = input;
 
@@ -34,13 +38,11 @@ export default function verifyProjectsInput(input: {
     assert(isProjectVerificationStatus(where.verificationStatus));
   }
 
-  if (sort?.field === 'claimedAt') {
+  if (sort?.field) {
     assert(isSortableProjectField(sort.field));
   }
 
-  if (chains) {
-    chains.forEach((chain) => {
-      assert(chain in SupportedChain);
-    });
+  if (chains?.length) {
+    validateChainsInput(chains);
   }
 }
