@@ -106,8 +106,6 @@ const userResolvers = {
           ],
         });
 
-      console.log(latestAccountMetadataEmittedEvent);
-
       return latestAccountMetadataEmittedEvent?.value
         ? toUtf8String(latestAccountMetadataEmittedEvent.value)
         : undefined;
