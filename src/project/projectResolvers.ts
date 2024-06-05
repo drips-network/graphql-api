@@ -287,8 +287,8 @@ const projectResolvers = {
 
       const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
-          projectId,
           [projectChain],
+          projectId,
         );
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
@@ -321,8 +321,8 @@ const projectResolvers = {
 
       const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
-          projectId,
           [projectChain],
+          projectId,
         );
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];

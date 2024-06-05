@@ -6,36 +6,97 @@ import type {
   SupportedChain,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
-import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import type GivenEventModel from '../given-event/GivenEventModel';
-import type DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
+import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { DripListId, ProjectId } from './types';
+import type { AddressDriverId, DripListId, ProjectId } from './types';
 import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
-import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
 import { toResolverProjects } from '../project/projectUtils';
 import toResolverDripLists from '../drip-list/dripListUtils';
-import { resolveTotalSplit } from './commonResolverLogic';
+import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
+import mergeAmounts from '../utils/mergeAmounts';
+import AddressDriverSplitReceiverModel, {
+  AddressDriverSplitReceiverType,
+} from '../models/AddressDriverSplitReceiverModel';
+import sqlQueries from '../utils/sqlQueries';
+
+async function resolveTotalSplit(
+  chains: SupportedChain[],
+  parent:
+    | DripListSplitReceiverModel
+    | RepoDriverSplitReceiverModel
+    | AddressDriverSplitReceiverModel,
+) {
+  let incomingAccountId: DripListId | ProjectId;
+  let recipientAccountId: DripListId | ProjectId | AddressDriverId;
+
+  if (parent instanceof DripListSplitReceiverModel) {
+    const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
+    recipientAccountId = fundeeDripListId;
+    incomingAccountId =
+      funderDripListId || funderProjectId || shouldNeverHappen();
+  } else if (parent instanceof RepoDriverSplitReceiverModel) {
+    const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
+    recipientAccountId = fundeeProjectId;
+    incomingAccountId =
+      funderDripListId || funderProjectId || shouldNeverHappen();
+  } else if (parent instanceof AddressDriverSplitReceiverModel) {
+    const { fundeeAccountId, funderDripListId, funderProjectId } = parent;
+
+    recipientAccountId = fundeeAccountId;
+    incomingAccountId =
+      funderDripListId || funderProjectId || shouldNeverHappen();
+  } else {
+    shouldNeverHappen('Invalid SupportItem type');
+  }
+
+  const splitEvents =
+    await sqlQueries.events.getSplitEventsByAccountIdAndReceiver(
+      chains,
+      incomingAccountId,
+      recipientAccountId,
+    );
+
+  return mergeAmounts(
+    splitEvents.map((splitEvent) => ({
+      tokenAddress: splitEvent.erc20,
+      amount: BigInt(splitEvent.amt),
+      chain: splitEvent.chain,
+    })),
+  ).map((amount) => ({
+    ...amount,
+    amount: amount.amount.toString(),
+  }));
+}
 
 const commonResolvers = {
   SupportItem: {
     __resolveType(
       parent:
         | DripListSplitReceiverModel
-        | RepoDriverSplitReceiverModelDataValues
-        | GivenEventModelDataValues
+        | RepoDriverSplitReceiverModel
+        | AddressDriverSplitReceiverModel
+        | GivenEventModel
         | ProtoStream,
     ) {
       if ('funderDripListId' in parent || 'funderProjectId' in parent) {
-        // TODO: Fix these type assertions.
-        if ((parent as any).type === DependencyType.ProjectDependency) {
+        const { type } = parent as any;
+
+        if (
+          type === DependencyType.ProjectDependency ||
+          type === AddressDriverSplitReceiverType.ProjectDependency ||
+          type === AddressDriverSplitReceiverType.ProjectMaintainer
+        ) {
           return 'ProjectSupport';
         }
 
-        if ((parent as any).type === DependencyType.DripListDependency) {
+        if (
+          type === DependencyType.DripListDependency ||
+          type === AddressDriverSplitReceiverType.DripListDependency
+        ) {
           return 'DripListSupport';
         }
 

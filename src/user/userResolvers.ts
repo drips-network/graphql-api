@@ -131,6 +131,47 @@ const userResolvers = {
 
       return toResolverDripLists([userChain], dripListDataValues);
     },
+    support: async (userData: ResolverUserData, _: any, context: Context) => {
+      const {
+        dataSources: { projectAndDripListSupportDb },
+      } = context;
+
+      const projectAndDripListSupport =
+        await projectAndDripListSupportDb.getProjectAndDripListSupportByAddressDriverId(
+          [userData.parentUserInfo.userChain],
+          userData.parentUserInfo.accountId as AddressDriverId,
+        );
+
+      const oneTimeDonationSupport =
+        await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
+          [userData.parentUserInfo.userChain],
+          userData.parentUserInfo.accountId as AccountId,
+        );
+
+      const streamSupport =
+        await projectAndDripListSupportDb.getStreamSupportByAccountId(
+          [userData.parentUserInfo.userChain],
+          userData.parentUserInfo.accountId as AccountId,
+        );
+
+      return [
+        ...projectAndDripListSupport,
+        ...streamSupport,
+        ...oneTimeDonationSupport,
+      ];
+    },
+    latestMetadataIpfsHash: async (userData: ResolverUserData) => {
+      const {
+        parentUserInfo: { accountId, userChain },
+      } = userData;
+
+      const chainMetadata = await getLatestAccountMetadataByChain(
+        [userChain],
+        accountId as AddressDriverId,
+      );
+
+      return chainMetadata[userChain]?.ipfsHash;
+    },
   },
   UserStreams: {
     outgoing: async (

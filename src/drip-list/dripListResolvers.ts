@@ -222,14 +222,14 @@ const dripListResolvers = {
 
       const oneTimeDonationSupport =
         await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
-          dripListId,
           [dripListChain],
+          dripListId,
         );
 
       const streamSupport =
         await projectAndDripListSupportDb.getStreamSupportByAccountId(
-          dripListId,
           [dripListChain],
+          dripListId,
         );
 
       return [

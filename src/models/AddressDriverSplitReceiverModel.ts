@@ -36,6 +36,7 @@ export default class AddressDriverSplitReceiverModel extends Model<
   public declare type: AddressDriverSplitReceiverType;
   public declare fundeeAccountId: AddressDriverId;
   public declare fundeeAccountAddress: AddressLike;
+  public declare blockTimestamp: Date;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -79,6 +80,10 @@ export default class AddressDriverSplitReceiverModel extends Model<
           type: DataTypes.ENUM(
             ...Object.values(AddressDriverSplitReceiverType),
           ),
+          allowNull: false,
+        },
+        blockTimestamp: {
+          type: DataTypes.DATE,
           allowNull: false,
         },
       },

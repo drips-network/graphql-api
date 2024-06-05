@@ -1,4 +1,3 @@
-import { QueryTypes } from 'sequelize';
 import type {
   DripListId,
   ProjectId,
@@ -10,10 +9,8 @@ import mergeAmounts from '../utils/mergeAmounts';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { SplitEventModelDataValues } from '../models/SplitEventModel';
-import SplitEventModel from '../models/SplitEventModel';
 import type { SupportedChain } from '../generated/graphql';
-import { dbConnection } from '../database/connectToDatabase';
+import sqlQueries from '../utils/sqlQueries';
 
 export async function resolveTotalSplit(
   chains: SupportedChain[],
@@ -36,36 +33,12 @@ export async function resolveTotalSplit(
     shouldNeverHappen('Invalid SupportItem type');
   }
 
-  const baseSQL = (schema: SupportedChain) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
-
-  // Initialize the WHERE clause parts.
-  const conditions: string[] = [
-    '"accountId" = :accountId',
-    '"receiver" = :receiver',
-  ];
-  const parameters: { [receiver: string]: any } = {
-    accountId: incomingAccountId,
-    receiver: recipientAccountId,
-  };
-
-  // Create the WHERE clause.
-  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
-
-  // Build the SQL for each specified schema.
-  const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-  // Combine all schema queries with UNION.
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-  const splitEventModelDataValues = (
-    await dbConnection.query(fullQuery, {
-      type: QueryTypes.SELECT,
-      replacements: parameters,
-      mapToModel: true,
-      model: SplitEventModel,
-    })
-  ).map((p) => p.dataValues as SplitEventModelDataValues);
+  const splitEventModelDataValues =
+    await sqlQueries.events.getSplitEventsByAccountIdAndReceiver(
+      chains,
+      incomingAccountId,
+      recipientAccountId,
+    );
 
   return mergeAmounts(
     splitEventModelDataValues.map((splitEvent) => ({
