@@ -2,7 +2,11 @@ import { QueryTypes } from 'sequelize';
 import DataLoader from 'dataloader';
 import type { ProjectDataValues } from '../project/ProjectModel';
 import ProjectModel from '../project/ProjectModel';
-import type { ProjectId, ProjectMultiChainKey } from '../common/types';
+import type {
+  AccountId,
+  ProjectId,
+  ProjectMultiChainKey,
+} from '../common/types';
 import {
   doesRepoExists,
   isValidProjectName,
@@ -16,11 +20,9 @@ import type {
 } from '../generated/graphql';
 import type { SplitEventModelDataValues } from '../models/SplitEventModel';
 import SplitEventModel from '../models/SplitEventModel';
-import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
-import GivenEventModel from '../given-event/GivenEventModel';
 import { dbConnection } from '../database/connectToDatabase';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
-import sqlQueries from '../utils/sqlQueries';
+import sqlQueries from './sqlQueries';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
@@ -240,34 +242,11 @@ export default class ProjectsDataSource {
   }
 
   private async _getIncomingGivesTotal(
-    accountId: string,
+    accountId: AccountId,
     chains: SupportedChain[],
   ) {
-    // Define base SQL to query from multiple chains (schemas).
-    const baseSQL = (schema: SupportedChain) =>
-      `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
-
-    // Initialize the WHERE clause parts.
-    const conditions: string[] = ['"receiver" = :receiver'];
-    const parameters: { [receiver: string]: any } = { receiver: accountId };
-
-    // Create the WHERE clause.
-    const whereClause = ` WHERE ${conditions.join(' AND ')}`;
-
-    // Build the SQL for each specified schema.
-    const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-    // Combine all schema queries with UNION.
-    const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-    const incomingGivenEventModelDataValues = (
-      await dbConnection.query(fullQuery, {
-        type: QueryTypes.SELECT,
-        replacements: parameters,
-        mapToModel: true,
-        model: GivenEventModel,
-      })
-    ).map((p) => p.dataValues as GivenEventModelDataValues);
+    const incomingGivenEventModelDataValues =
+      await sqlQueries.events.given.getByReceiver(chains, accountId);
 
     return incomingGivenEventModelDataValues.reduce<
       {

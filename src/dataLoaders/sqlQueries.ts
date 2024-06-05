@@ -1,6 +1,7 @@
 import { QueryTypes } from 'sequelize';
 import { dbConnection } from '../database/connectToDatabase';
 import type {
+  GiveWhereInput,
   ProjectSortInput,
   ProjectWhereInput,
   SupportedChain,
@@ -12,6 +13,8 @@ import type { SplitEventModelDataValues } from '../models/SplitEventModel';
 import SplitEventModel from '../models/SplitEventModel';
 import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
 import AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
+import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
+import GivenEventModel from '../given-event/GivenEventModel';
 
 async function getProjectsByFilter(
   chains: SupportedChain[],
@@ -129,12 +132,143 @@ async function getAddressDriverSplitReceiversByFundeeAccountIds(
   ).map((p) => p.dataValues as AddressDriverSplitReceiverModelDataValues);
 }
 
+async function getGivenEventsByFilter(
+  chains: SupportedChain[],
+  where: GiveWhereInput,
+) {
+  const baseSQL = (schema: SupportedChain) =>
+    `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+
+  const conditions: string[] = [];
+  const parameters: { [key: string]: any } = {};
+
+  if (where?.receiverAccountId) {
+    conditions.push(`"receiver" = :receiver`);
+    parameters.receiver = where.receiverAccountId;
+  }
+  if (where?.senderAccountId) {
+    conditions.push(`"accountId" = :accountId`);
+    parameters.accountId = where.senderAccountId;
+  }
+  if (where?.tokenAddress) {
+    conditions.push(`"erc20" = :erc20`);
+    parameters.erc20 = where.tokenAddress;
+  }
+
+  const whereClause =
+    conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+
+  const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(multiChainQuery, {
+      type: QueryTypes.SELECT,
+      replacements: parameters,
+      mapToModel: true,
+      model: GivenEventModel,
+    })
+  ).map((p) => p.dataValues as GivenEventModelDataValues);
+}
+
+async function getGivenEventsByReceivers(
+  chains: SupportedChain[],
+  receivers: AccountId[],
+) {
+  const baseSQL = (schema: SupportedChain) =>
+    `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+
+  const parameters: { [key: string]: any } = { receivers };
+
+  const whereClause = ` WHERE "receiver" IN (:receivers)`;
+
+  const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(multiChainQuery, {
+      type: QueryTypes.SELECT,
+      replacements: parameters,
+      mapToModel: true,
+      model: GivenEventModel,
+    })
+  ).map((p) => p.dataValues as GivenEventModelDataValues);
+}
+
+async function getGivenEventsByTxHashesAndLogIndex(
+  chains: SupportedChain[],
+  transactionHashes: string[],
+  logIndexes: number[],
+) {
+  const baseSQL = (schema: SupportedChain) =>
+    `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+
+  const conditions: string[] = [
+    '"transactionHash" IN (:transactionHashes)',
+    '"logIndex" IN (:logIndexes)',
+  ];
+  const parameters: { [key: string]: any } = {
+    transactionHashes,
+    logIndexes,
+  };
+
+  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
+
+  const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(multiChainQuery, {
+      type: QueryTypes.SELECT,
+      replacements: parameters,
+      mapToModel: true,
+      model: GivenEventModel,
+    })
+  ).map((p) => p.dataValues as GivenEventModelDataValues);
+}
+
+async function getGivenEventsByReceiver(
+  chains: SupportedChain[],
+  receiver: AccountId,
+) {
+  const baseSQL = (schema: SupportedChain) =>
+    `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+
+  const parameters: { [receiver: string]: any } = { receiver };
+
+  const whereClause = ` WHERE "receiver" = :receiver`;
+
+  const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(multiChainQuery, {
+      type: QueryTypes.SELECT,
+      replacements: parameters,
+      mapToModel: true,
+      model: GivenEventModel,
+    })
+  ).map((p) => p.dataValues as GivenEventModelDataValues);
+}
+
 export default {
   projects: {
     getProjectsByFilter,
   },
   events: {
-    getSplitEventsByAccountIdAndReceiver,
+    given: {
+      getByFilter: getGivenEventsByFilter,
+      getByTxHashesAndLogIndex: getGivenEventsByTxHashesAndLogIndex,
+      getByReceivers: getGivenEventsByReceivers,
+      getByReceiver: getGivenEventsByReceiver,
+    },
+    slit: {
+      getByAccountIdAndReceiver: getSplitEventsByAccountIdAndReceiver,
+    },
   },
   receivers: {
     getAddressDriverSplitReceiversByFundeeAccountIds,

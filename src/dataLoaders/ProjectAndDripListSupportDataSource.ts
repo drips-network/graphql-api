@@ -12,7 +12,6 @@ import type {
 } from '../common/types';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
-import GivenEventModel from '../given-event/GivenEventModel';
 import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import streams from '../utils/streams';
@@ -20,7 +19,7 @@ import type { ProtoStream } from '../utils/buildAssetConfigs';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import type { SupportedChain } from '../generated/graphql';
 import { dbConnection } from '../database/connectToDatabase';
-import sqlQueries from '../utils/sqlQueries';
+import sqlQueries from './sqlQueries';
 import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
 
 export default class ProjectAndDripListSupportDataSource {
@@ -204,33 +203,8 @@ export default class ProjectAndDripListSupportDataSource {
     async (keys: readonly MultiChainKey[]) => {
       const { chains, ids } = parseMultiChainKeys(keys);
 
-      const baseSQL = (schema: SupportedChain) => `
-        SELECT "accountId", "receiver", "erc20", "amt", "blockTimestamp", "logIndex", "transactionHash", "createdAt", "updatedAt",'${schema}' AS chain
-        FROM "${schema}"."GivenEvents"
-      `;
-
-      // Build the WHERE clause.
-      const conditions: string[] = [`"receiver" IN (:ids)`];
-      const parameters: { [key: string]: any } = { ids };
-
-      // Join conditions into a single WHERE clause.
-      const whereClause =
-        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
-
-      // Build the SQL for each specified schema.
-      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-      // Combine all schema queries with UNION.
-      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-      const oneTimeDonationSupport = (
-        await dbConnection.query(fullQuery, {
-          type: QueryTypes.SELECT,
-          replacements: parameters,
-          mapToModel: true,
-          model: GivenEventModel,
-        })
-      ).map((p) => p.dataValues as GivenEventModelDataValues);
+      const oneTimeDonationSupport =
+        await sqlQueries.events.given.getByReceivers(chains, ids);
 
       const oneTimeDonationSupportToDripListMapping =
         oneTimeDonationSupport.reduce<
