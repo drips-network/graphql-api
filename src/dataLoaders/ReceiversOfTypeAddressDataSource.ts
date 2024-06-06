@@ -1,5 +1,4 @@
 import DataLoader from 'dataloader';
-import { QueryTypes } from 'sequelize';
 import type {
   DripListId,
   DripListMultiChainKey,
@@ -7,50 +6,20 @@ import type {
   ProjectMultiChainKey,
 } from '../common/types';
 import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
-import AddressDriverSplitReceiverModel, {
-  AddressDriverSplitReceiverType,
-} from '../models/AddressDriverSplitReceiverModel';
 import type { SupportedChain } from '../generated/graphql';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
-import { dbConnection } from '../database/connectToDatabase';
+import addressDriverSplitReceiversQueries from './sqlQueries/addressDriverSplitReceiversQueries';
 
 export default class ReceiversOfTypeAddressDataSource {
   private readonly _batchReceiversOfTypeAddressByProjectIds = new DataLoader(
     async (projectKeys: readonly ProjectMultiChainKey[]) => {
       const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
 
-      const baseSQL = (schema: SupportedChain) => `
-      SELECT "id", "fundeeAccountId", "fundeeAccountAddress", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "createdAt", "updatedAt",'${schema}' AS chain
-      FROM "${schema}"."AddressDriverSplitReceivers"
-      `;
-
-      // Build the WHERE clause.
-      const conditions: string[] = [
-        `"funderDripListId" IN (:funderProjectIds)`,
-        `type IN ('${AddressDriverSplitReceiverType.ProjectMaintainer}', '${AddressDriverSplitReceiverType.ProjectDependency}')`,
-      ];
-      const parameters: { [key: string]: any } = {
-        funderProjectIds: projectIds,
-      };
-
-      // Join conditions into a single WHERE clause.
-      const whereClause =
-        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
-
-      // Build the SQL for each specified schema.
-      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-      // Combine all schema queries with UNION.
-      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-      const addressDriverSplitReceiverModelDataValues = (
-        await dbConnection.query(fullQuery, {
-          type: QueryTypes.SELECT,
-          replacements: parameters,
-          mapToModel: true,
-          model: AddressDriverSplitReceiverModel,
-        })
-      ).map((p) => p.dataValues as AddressDriverSplitReceiverModelDataValues);
+      const addressDriverSplitReceiverModelDataValues =
+        await addressDriverSplitReceiversQueries.getProjectDependenciesByFunders(
+          chains,
+          projectIds,
+        );
 
       const receiversOfTypeAddressToProjectMapping =
         addressDriverSplitReceiverModelDataValues.reduce<
@@ -85,39 +54,11 @@ export default class ReceiversOfTypeAddressDataSource {
     async (dripListKeys: readonly DripListMultiChainKey[]) => {
       const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
 
-      // Define base SQL to query from multiple chains (schemas).
-      const baseSQL = (schema: SupportedChain) => `
-          SELECT "id", "fundeeAccountId", "fundeeAccountAddress", "funderProjectId", "funderDripListId","weight", "type"::TEXT, "createdAt", "updatedAt", '${schema}' AS chain
-          FROM "${schema}"."AddressDriverSplitReceivers"
-      `;
-
-      // Build the WHERE clause.
-      const conditions: string[] = [
-        `"funderDripListId" IN (:funderDripListIds)`,
-        `"type" IN ('${AddressDriverSplitReceiverType.DripListDependency}')`,
-      ];
-      const parameters: { [key: string]: any } = {
-        funderDripListIds: dripListIds,
-      };
-
-      // Join conditions into a single WHERE clause.
-      const whereClause =
-        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
-
-      // Build the SQL for each specified schema.
-      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-      // Combine all schema queries with UNION.
-      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-      const addressDriverSplitReceiverModelDataValues = (
-        await dbConnection.query(fullQuery, {
-          type: QueryTypes.SELECT,
-          replacements: parameters,
-          mapToModel: true,
-          model: AddressDriverSplitReceiverModel,
-        })
-      ).map((p) => p.dataValues as AddressDriverSplitReceiverModelDataValues);
+      const addressDriverSplitReceiverModelDataValues =
+        await addressDriverSplitReceiversQueries.getDripListDependenciesByFunders(
+          chains,
+          dripListIds,
+        );
 
       const receiversOfTypeAddressToDripListMapping =
         addressDriverSplitReceiverModelDataValues.reduce<

@@ -2,11 +2,7 @@ import type { MultiChainKey } from '../common/types';
 import type { SupportedChain } from '../generated/graphql';
 
 type ExtractedValues<T> = {
-  ids: (T extends { projectId: infer P }
-    ? P
-    : T extends { dripListId: infer D }
-    ? D
-    : never)[];
+  ids: (T extends { id: infer ID } ? ID : never)[];
   chains: SupportedChain[];
 };
 

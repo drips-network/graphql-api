@@ -10,7 +10,7 @@ import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { SupportedChain } from '../generated/graphql';
-import sqlQueries from '../dataLoaders/sqlQueries';
+import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
 
 export async function resolveTotalSplit(
   chains: SupportedChain[],
@@ -34,7 +34,7 @@ export async function resolveTotalSplit(
   }
 
   const splitEventModelDataValues =
-    await sqlQueries.events.slit.getByAccountIdAndReceiver(
+    await splitEventsQueries.getByAccountIdAndReceiver(
       chains,
       incomingAccountId,
       recipientAccountId,

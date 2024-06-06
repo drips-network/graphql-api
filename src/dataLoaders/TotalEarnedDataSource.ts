@@ -16,7 +16,7 @@ import SplitEventModel from '../models/SplitEventModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import { isDripListId, isProjectId } from '../utils/assert';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import sqlQueries from './sqlQueries';
+import givenEventsQueries from './sqlQueries/givenEventsQueries';
 
 export default class TotalEarnedDataSource {
   private readonly _batchTotalEarnedByProjectIds = new DataLoader(
@@ -34,8 +34,7 @@ export default class TotalEarnedDataSource {
       };
 
       // Join conditions into a single WHERE clause.
-      const whereClause =
-        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
       // Build the SQL for each specified schema.
       const splitsQueries = chains.map(
@@ -54,8 +53,10 @@ export default class TotalEarnedDataSource {
         })
       ).map((p) => p.dataValues as SplitEventModelDataValues);
 
-      const givenEventModelDataValues =
-        await sqlQueries.events.given.getByReceivers(chains, projectIds);
+      const givenEventModelDataValues = await givenEventsQueries.getByReceivers(
+        chains,
+        projectIds,
+      );
 
       const splitEventsByDripListId = splitEventModelDataValues.reduce<
         Record<AccountId, SplitEventModelDataValues[]>

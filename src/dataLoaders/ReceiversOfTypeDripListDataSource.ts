@@ -33,8 +33,7 @@ export default class ReceiversOfTypeDripListDataSource {
       };
 
       // Join conditions into a single WHERE clause.
-      const whereClause =
-        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
       // Build the SQL for each specified schema.
       const queries = chains.map((chain) => baseSQL(chain) + whereClause);
@@ -99,8 +98,7 @@ export default class ReceiversOfTypeDripListDataSource {
       };
 
       // Join conditions into a single WHERE clause.
-      const whereClause =
-        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
       // Build the SQL for each specified schema.
       const queries = chains.map((chain) => baseSQL(chain) + whereClause);

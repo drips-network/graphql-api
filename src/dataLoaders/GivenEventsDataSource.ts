@@ -3,7 +3,7 @@
 import DataLoader from 'dataloader';
 import type { GiveWhereInput, SupportedChain } from '../generated/graphql';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
-import sqlQueries from './sqlQueries';
+import givenEventsQueries from './sqlQueries/givenEventsQueries';
 
 type TransactionHash = string;
 type LogIndex = number;
@@ -25,7 +25,7 @@ export default class GivenEventsDataSource {
       const logIndexes = givenEventIds.map(([, logIndex]) => logIndex);
 
       const givenEventsDataValues =
-        await sqlQueries.events.given.getByTxHashesAndLogIndex(
+        await givenEventsQueries.getByTxHashesAndLogIndex(
           chains,
           transactionHashes,
           logIndexes,
@@ -60,6 +60,6 @@ export default class GivenEventsDataSource {
     chains: SupportedChain[],
     where: GiveWhereInput,
   ): Promise<GivenEventModelDataValues[]> {
-    return sqlQueries.events.given.getByFilter(chains, where);
+    return givenEventsQueries.getByFilter(chains, where);
   }
 }

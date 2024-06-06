@@ -19,8 +19,9 @@ import type { ProtoStream } from '../utils/buildAssetConfigs';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import type { SupportedChain } from '../generated/graphql';
 import { dbConnection } from '../database/connectToDatabase';
-import sqlQueries from './sqlQueries';
 import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
+import addressDriverSplitReceiversQueries from './sqlQueries/addressDriverSplitReceiversQueries';
+import givenEventsQueries from './sqlQueries/givenEventsQueries';
 
 export default class ProjectAndDripListSupportDataSource {
   private readonly _batchProjectAndDripListSupportByDripListIds =
@@ -42,8 +43,7 @@ export default class ProjectAndDripListSupportDataSource {
       };
 
       // Join conditions into a single WHERE clause.
-      const whereClause =
-        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
       // Build the SQL for each specified schema.
       const queries = chains.map((chain) => baseSQL(chain) + whereClause);
@@ -95,8 +95,7 @@ export default class ProjectAndDripListSupportDataSource {
       };
 
       // Join conditions into a single WHERE clause.
-      const whereClause =
-        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
       // Build the SQL for each specified schema.
       const queries = chains.map((chain) => baseSQL(chain) + whereClause);
@@ -138,7 +137,7 @@ export default class ProjectAndDripListSupportDataSource {
         parseMultiChainKeys(addressDriverKeys);
 
       const projectAndDripListSupport =
-        await sqlQueries.receivers.getAddressDriverSplitReceiversByFundeeAccountIds(
+        await addressDriverSplitReceiversQueries.getByFundeeAccountIds(
           chains,
           addressDriverIds,
         );
@@ -157,7 +156,9 @@ export default class ProjectAndDripListSupportDataSource {
         }, {});
 
       return addressDriverIds.map(
-        (id) => projectAndDripListSupportToProjectMapping[id] || [],
+        (id) =>
+          projectAndDripListSupportToProjectMapping[id as AddressDriverId] ||
+          [],
       );
     });
 
@@ -203,8 +204,10 @@ export default class ProjectAndDripListSupportDataSource {
     async (keys: readonly MultiChainKey[]) => {
       const { chains, ids } = parseMultiChainKeys(keys);
 
-      const oneTimeDonationSupport =
-        await sqlQueries.events.given.getByReceivers(chains, ids);
+      const oneTimeDonationSupport = await givenEventsQueries.getByReceivers(
+        chains,
+        ids,
+      );
 
       const oneTimeDonationSupportToDripListMapping =
         oneTimeDonationSupport.reduce<

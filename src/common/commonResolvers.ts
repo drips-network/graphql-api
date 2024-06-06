@@ -21,7 +21,7 @@ import mergeAmounts from '../utils/mergeAmounts';
 import AddressDriverSplitReceiverModel, {
   AddressDriverSplitReceiverType,
 } from '../models/AddressDriverSplitReceiverModel';
-import sqlQueries from '../dataLoaders/sqlQueries';
+import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
 
 async function resolveTotalSplit(
   chains: SupportedChain[],
@@ -53,7 +53,7 @@ async function resolveTotalSplit(
     shouldNeverHappen('Invalid SupportItem type');
   }
 
-  const splitEvents = await sqlQueries.events.slit.getByAccountIdAndReceiver(
+  const splitEvents = await splitEventsQueries.getByAccountIdAndReceiver(
     chains,
     incomingAccountId,
     recipientAccountId,

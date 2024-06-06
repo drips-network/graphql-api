@@ -1,7 +1,6 @@
 import { QueryTypes } from 'sequelize';
 import DataLoader from 'dataloader';
 import type { ProjectDataValues } from '../project/ProjectModel';
-import ProjectModel from '../project/ProjectModel';
 import type {
   AccountId,
   ProjectId,
@@ -22,7 +21,8 @@ import type { SplitEventModelDataValues } from '../models/SplitEventModel';
 import SplitEventModel from '../models/SplitEventModel';
 import { dbConnection } from '../database/connectToDatabase';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
-import sqlQueries from './sqlQueries';
+import projectsQueries from './sqlQueries/projectsQueries';
+import givenEventsQueries from './sqlQueries/givenEventsQueries';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
@@ -31,37 +31,10 @@ export default class ProjectsDataSource {
     ): Promise<ProjectDataValues[]> => {
       const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
 
-      // Define base SQL to query from multiple chains (schemas).
-      const baseSQL = (schema: SupportedChain) => `
-        SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
-        FROM "${schema}"."GitProjects"
-      `;
-
-      // Initialize the WHERE clause parts.
-      const conditions: string[] = ['"id" IN (:projectIds)'];
-      const parameters: { [key: string]: any } = { projectIds };
-
-      // Join conditions into a single WHERE clause.
-      const whereClause =
-        conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
-
-      // Build the SQL for each specified schema.
-      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-      // Combine all schema queries with UNION.
-      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-      const projectsDataValues = (
-        await dbConnection.query(fullQuery, {
-          type: QueryTypes.SELECT,
-          replacements: parameters,
-          mapToModel: true,
-          model: ProjectModel,
-        })
-      )
-        .map((p) => p.dataValues as ProjectDataValues)
-        .filter((p) => p.isValid)
-        .filter((p) => (p.name ? isValidProjectName(p.name) : true));
+      const projectsDataValues = await projectsQueries.getByIds(
+        chains,
+        projectIds,
+      );
 
       const projectsDataValuesWithApi = await Promise.all(
         projectsDataValues.map(toApiProject),
@@ -99,35 +72,9 @@ export default class ProjectsDataSource {
     url: string,
     chain: SupportedChain,
   ): Promise<ProjectDataValues | null> {
-    // Define base SQL to query from multiple chains (schemas).
-    const baseSQL = (schema: SupportedChain) => `
-        SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
-        FROM "${schema}"."GitProjects"
-    `;
+    const project = await projectsQueries.getByUrl(chain, url);
 
-    // Initialize the WHERE clause parts.
-    const conditions: string[] = ['"url" = :url'];
-    const parameters: { [key: string]: any } = { url };
-
-    // Join conditions into a single WHERE clause.
-    const whereClause =
-      conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
-
-    // Build the SQL for each specified schema.
-    const query = `${baseSQL(chain) + whereClause} LIMIT 1`;
-
-    const projectDataValues = (
-      await dbConnection.query(query, {
-        type: QueryTypes.SELECT,
-        replacements: parameters,
-        mapToModel: true,
-        model: ProjectModel,
-      })
-    ).map((p) => p.dataValues as ProjectDataValues);
-
-    const [project] = projectDataValues || [];
-
-    if (projectDataValues) {
+    if (project) {
       return toApiProject(project);
     }
 
@@ -141,7 +88,7 @@ export default class ProjectsDataSource {
     where?: ProjectWhereInput,
     sort?: ProjectSortInput,
   ): Promise<ProjectDataValues[]> {
-    const projectsDataValues = await sqlQueries.projects.getProjectsByFilter(
+    const projectsDataValues = await projectsQueries.getByFilter(
       chains,
       where,
       sort,
@@ -246,7 +193,7 @@ export default class ProjectsDataSource {
     chains: SupportedChain[],
   ) {
     const incomingGivenEventModelDataValues =
-      await sqlQueries.events.given.getByReceiver(chains, accountId);
+      await givenEventsQueries.getByReceiver(chains, accountId);
 
     return incomingGivenEventModelDataValues.reduce<
       {
