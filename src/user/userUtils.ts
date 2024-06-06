@@ -27,6 +27,7 @@ export default function toResolverUsers(
           incoming: [], // Will be populated by the resolver.
           outgoing: [], // Will be populated by the resolver.
         },
+        support: [], // Will be populated by the resolver.
       },
     })),
   };
