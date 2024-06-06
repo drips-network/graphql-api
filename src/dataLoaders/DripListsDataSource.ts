@@ -46,14 +46,9 @@ export default class DripListsDataSource {
 
   public async getDripListsByFilter(
     chains: SupportedChain[],
-    where: DripListWhereInput,
+    where?: DripListWhereInput,
   ): Promise<DripListDataValues[]> {
-    const dripListsDataValues = await dripListsQueries.getByFilter(
-      chains,
-      where,
-    );
-
-    return dripListsDataValues.filter((p) => p.isValid && p.name);
+    return dripListsQueries.getByFilter(chains, where);
   }
 
   public async getDripListsByIds(

@@ -22,7 +22,7 @@ import type { Context } from '../server';
 import assert, { isDripListId } from '../utils/assert';
 import type { ProjectDataValues } from '../project/ProjectModel';
 import queryableChains from '../common/queryableChains';
-import toResolverDripLists from './dripListUtils';
+import { toResolverDripList, toResolverDripLists } from './dripListUtils';
 import verifyDripListsInput from './dripListValidators';
 import type { DripListDataValues } from './DripListModel';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
@@ -30,53 +30,45 @@ import { resolveTotalEarned } from '../common/commonResolverLogic';
 const dripListResolvers = {
   Query: {
     dripLists: async (
-      _: any,
+      _: undefined,
       {
         chains,
         where,
-      }: { chains: SupportedChain[]; where: DripListWhereInput },
-      { dataSources }: Context,
+      }: { chains?: SupportedChain[]; where?: DripListWhereInput },
+      { dataSources: { dripListsDataSource } }: Context,
     ): Promise<ResolverDripList[]> => {
       verifyDripListsInput({ chains, where });
 
       const chainsToQuery = chains?.length ? chains : queryableChains;
 
-      const dripListDataValues =
-        await dataSources.dripListsDb.getDripListsByFilter(
-          chainsToQuery,
-          where,
-        );
+      const dbDripLists = await dripListsDataSource.getDripListsByFilter(
+        chainsToQuery,
+        where,
+      );
 
-      return toResolverDripLists(chainsToQuery, dripListDataValues);
+      return toResolverDripLists(chainsToQuery, dbDripLists);
     },
     dripList: async (
-      _: any,
+      _: undefined,
       { id, chain }: { id: DripListId; chain: SupportedChain },
-      { dataSources }: Context,
+      { dataSources: { dripListsDataSource } }: Context,
     ): Promise<ResolverDripList | null> => {
       assert(isDripListId(id));
       assert(chain in SupportedChain);
 
-      const dripListDataValues = await dataSources.dripListsDb.getDripListById(
-        [chain],
-        id,
-      );
+      const dbDripList = await dripListsDataSource.getDripListById([chain], id);
 
-      if (!dripListDataValues) {
-        return null;
-      }
-
-      return (await toResolverDripLists([chain], [dripListDataValues]))[0];
+      return dbDripList ? toResolverDripList(chain, dbDripList) : null;
     },
     mintedTokensCountByOwnerAddress: async (
-      _: any,
+      _: undefined,
       { ownerAddress, chain }: { ownerAddress: Address; chain: SupportedChain },
-      { dataSources }: Context,
+      { dataSources: { dripListsDataSource } }: Context,
     ): Promise<{ chain: SupportedChain; total: number }> => {
       assert(isAddress(ownerAddress));
       assert(chain in SupportedChain);
 
-      return dataSources.dripListsDb.getMintedTokensCountByAccountId(
+      return dripListsDataSource.getMintedTokensCountByAccountId(
         chain,
         ownerAddress,
       );
@@ -104,26 +96,22 @@ const dripListResolvers = {
     owner: (dripListData: ResolverDripListData): AddressDriverAccount =>
       dripListData.owner,
     splits: async (
-      dripListData: ResolverDripListData,
-      _: any,
-      context: Context,
-    ): Promise<SplitsReceiver[]> => {
-      const {
-        dataSources: {
-          projectsDb,
-          dripListsDb,
-          receiversOfTypeAddressDb,
-          receiversOfTypeProjectDb,
-          receiversOfTypeDripListDb,
-        },
-      } = context;
-
-      const {
+      {
         parentDripListInfo: { dripListId, dripListChain },
-      } = dripListData;
-
+      }: ResolverDripListData,
+      _: {},
+      {
+        dataSources: {
+          projectsDataSource,
+          dripListsDataSource,
+          receiversOfTypeAddressDataSource,
+          receiversOfTypeProjectDataSource,
+          receiversOfTypeDripListDataSource,
+        },
+      }: Context,
+    ): Promise<SplitsReceiver[]> => {
       const receiversOfTypeAddressModels =
-        await receiversOfTypeAddressDb.getReceiversOfTypeAddressByDripListId(
+        await receiversOfTypeAddressDataSource.getReceiversOfTypeAddressByDripListId(
           dripListId,
           [dripListChain],
         );
@@ -140,15 +128,16 @@ const dripListResolvers = {
       })) as AddressReceiver[];
 
       const receiversOfTypeProjectModels =
-        await receiversOfTypeProjectDb.getReceiversOfTypeProjectByDripListId(
+        await receiversOfTypeProjectDataSource.getReceiversOfTypeProjectByDripListId(
           dripListId,
           [dripListChain],
         );
 
-      const splitsOfTypeProjectModels = await projectsDb.getProjectsByIds(
-        receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
-        [dripListChain],
-      );
+      const splitsOfTypeProjectModels =
+        await projectsDataSource.getProjectsByIds(
+          receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
+          [dripListChain],
+        );
 
       const projectReceivers = receiversOfTypeProjectModels.map((receiver) => ({
         driver: Driver.REPO,
@@ -169,15 +158,16 @@ const dripListResolvers = {
       }));
 
       const receiversOfTypeDripListModels =
-        await receiversOfTypeDripListDb.getReceiversOfTypeDripListByDripListId(
+        await receiversOfTypeDripListDataSource.getReceiversOfTypeDripListByDripListId(
           dripListId,
           [dripListChain],
         );
 
-      const splitsOfTypeDripListModels = await dripListsDb.getDripListsByIds(
-        receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
-        [dripListChain],
-      );
+      const splitsOfTypeDripListModels =
+        await dripListsDataSource.getDripListsByIds(
+          receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
+          [dripListChain],
+        );
 
       const dripListReceivers = receiversOfTypeDripListModels.map(
         (receiver) => ({
@@ -202,32 +192,26 @@ const dripListResolvers = {
       return [...addressSplits, ...projectReceivers, ...dripListReceivers];
     },
     support: async (
-      dripListData: ResolverDripListData,
-      _: any,
-      context: Context,
-    ) => {
-      const {
+      {
         parentDripListInfo: { dripListId, dripListChain },
-      } = dripListData;
-
-      const {
-        dataSources: { projectAndDripListSupportDb },
-      } = context;
-
+      }: ResolverDripListData,
+      _: {},
+      { dataSources: { projectAndDripListSupportDataSource } }: Context,
+    ) => {
       const projectAndDripListSupport =
-        await projectAndDripListSupportDb.getProjectAndDripListSupportByDripListId(
+        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByDripListId(
           dripListId,
           [dripListChain],
         );
 
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDb.getOneTimeDonationSupportByAccountId(
+        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountId(
           [dripListChain],
           dripListId,
         );
 
       const streamSupport =
-        await projectAndDripListSupportDb.getStreamSupportByAccountId(
+        await projectAndDripListSupportDataSource.getStreamSupportByAccountId(
           [dripListChain],
           dripListId,
         );
@@ -240,9 +224,9 @@ const dripListResolvers = {
     },
     totalEarned: async (
       dripListData: ResolverDripListData,
-      _: any,
+      _: {},
       context: Context,
-    ) => resolveTotalEarned(dripListData, _, context),
+    ) => resolveTotalEarned(dripListData, context),
   },
 };
 

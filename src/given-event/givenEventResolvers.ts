@@ -34,7 +34,7 @@ const givenEventResolvers = {
 
       const chainsToQuery = chains?.length ? chains : queryableChains;
 
-      return dataSources.givenEventsDb.getGivenEventsByFilter(
+      return dataSources.givenEventsDataSource.getGivenEventsByFilter(
         chainsToQuery,
         where,
       );

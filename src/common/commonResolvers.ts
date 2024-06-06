@@ -15,7 +15,7 @@ import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import { toResolverProjects } from '../project/projectUtils';
-import toResolverDripLists from '../drip-list/dripListUtils';
+import { toResolverDripLists } from '../drip-list/dripListUtils';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import mergeAmounts from '../utils/mergeAmounts';
 import AddressDriverSplitReceiverModel, {
@@ -119,12 +119,15 @@ const commonResolvers = {
       context: Context,
     ): Promise<RepoDriverAccount> => {
       const {
-        dataSources: { projectsDb },
+        dataSources: { projectsDataSource },
       } = context;
 
       const { funderProjectId, chain } = parent;
 
-      const project = await projectsDb.getProjectById(funderProjectId, chain);
+      const project = await projectsDataSource.getProjectById(
+        funderProjectId,
+        chain,
+      );
 
       return {
         driver: Driver.REPO,
@@ -143,13 +146,13 @@ const commonResolvers = {
       context: Context,
     ) => {
       const {
-        dataSources: { projectsDb },
+        dataSources: { projectsDataSource },
       } = context;
 
       const { funderProjectId, chain } = parent;
 
       const projectDataValues =
-        (await projectsDb.getProjectById(funderProjectId, chain)) ||
+        (await projectsDataSource.getProjectById(funderProjectId, chain)) ||
         shouldNeverHappen();
 
       const resolverProjects = await toResolverProjects(
@@ -173,12 +176,12 @@ const commonResolvers = {
       context: Context,
     ): Promise<NftDriverAccount> => {
       const {
-        dataSources: { dripListsDb },
+        dataSources: { dripListsDataSource },
       } = context;
 
       const { funderDripListId, chain } = parent;
 
-      const dripList = await dripListsDb.getDripListById(
+      const dripList = await dripListsDataSource.getDripListById(
         [chain],
         funderDripListId,
       );
@@ -196,14 +199,16 @@ const commonResolvers = {
       context: Context,
     ) => {
       const {
-        dataSources: { dripListsDb },
+        dataSources: { dripListsDataSource },
       } = context;
 
       const { funderDripListId, chain } = parent;
 
       const dripListDataValues =
-        (await dripListsDb.getDripListById([chain], funderDripListId)) ||
-        shouldNeverHappen();
+        (await dripListsDataSource.getDripListById(
+          [chain],
+          funderDripListId,
+        )) || shouldNeverHappen();
 
       const resolverDripLists = await toResolverDripLists(
         [chain],
@@ -227,12 +232,12 @@ const commonResolvers = {
       context: Context,
     ): Promise<AddressDriverAccount> => {
       const {
-        dataSources: { givesDb },
+        dataSources: { givenEventsDataSource },
       } = context;
 
       const { transactionHash, logIndex, chain } = parent;
 
-      const givenEvent = await givesDb.getGivenEventById(
+      const givenEvent = await givenEventsDataSource.getGivenEventById(
         [chain],
         transactionHash,
         logIndex,

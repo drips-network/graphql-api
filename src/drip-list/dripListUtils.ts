@@ -5,7 +5,14 @@ import type {
 import { Driver, type SupportedChain } from '../generated/graphql';
 import type { DripListDataValues } from './DripListModel';
 
-export default async function toResolverDripLists(
+export async function toResolverDripList(
+  chain: SupportedChain,
+  dripList: DripListDataValues,
+): Promise<ResolverDripList> {
+  return (await toResolverDripLists([chain], [dripList]))[0];
+}
+
+export async function toResolverDripLists(
   chains: SupportedChain[],
   dripLists: DripListDataValues[],
 ): Promise<ResolverDripList[]> {

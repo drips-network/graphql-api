@@ -15,6 +15,7 @@ const rootTypeDef = gql`
     ): [Project!]!
     projectById(id: ID!, chain: SupportedChain!): Project
     projectByUrl(url: String!, chain: SupportedChain!): Project
+    earnedFunds(projectId: String!, chains: [SupportedChain!]): [ChainAmount!]!
     dripLists(
       chains: [SupportedChain!]
       where: DripListWhereInput
@@ -24,7 +25,6 @@ const rootTypeDef = gql`
       ownerAddress: String!
       chain: SupportedChain!
     ): MintedTokens!
-    earnedFunds(projectId: String!, chains: [SupportedChain!]): [ChainAmount!]!
     userById(accountId: ID!, chains: [SupportedChain!]): User!
     userByAddress(address: String!, chains: [SupportedChain!]): User!
   }

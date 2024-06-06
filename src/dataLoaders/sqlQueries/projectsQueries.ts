@@ -7,7 +7,6 @@ import type {
 } from '../../generated/graphql';
 import type { ProjectDataValues } from '../../project/ProjectModel';
 import ProjectModel from '../../project/ProjectModel';
-import { isValidProjectName } from '../../project/projectUtils';
 import type { ProjectId } from '../../common/types';
 
 async function getProjectByUrl(
@@ -19,11 +18,10 @@ async function getProjectByUrl(
     FROM "${schema}"."GitProjects"
   `;
 
-  const conditions: string[] = ['"url" = :url'];
+  const conditions: string[] = ['"url" = :url', '"isValid" = true'];
   const parameters: { [key: string]: any } = { url };
 
-  const whereClause =
-    conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
   const query = `${baseSQL(chain) + whereClause} LIMIT 1`;
 
@@ -51,7 +49,7 @@ async function getProjectsByIds(
 
   const parameters: { [key: string]: any } = { projectIds };
 
-  const whereClause = ` WHERE "id" IN (:projectIds)`;
+  const whereClause = ` WHERE "id" IN (:projectIds) AND "isValid" = true`;
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
@@ -64,10 +62,7 @@ async function getProjectsByIds(
       mapToModel: true,
       model: ProjectModel,
     })
-  )
-    .map((p) => p.dataValues as ProjectDataValues)
-    .filter((p) => p.isValid)
-    .filter((p) => (p.name ? isValidProjectName(p.name) : true));
+  ).map((p) => p.dataValues as ProjectDataValues);
 }
 
 async function getProjectsByFilter(
@@ -80,7 +75,7 @@ async function getProjectsByFilter(
       "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain 
      FROM "${schema}"."GitProjects" `;
 
-  const conditions: string[] = [];
+  const conditions: string[] = ['"isValid" = true'];
   const parameters: { [key: string]: any } = {};
 
   if (where?.id) {
@@ -100,18 +95,17 @@ async function getProjectsByFilter(
     parameters.verificationStatus = where.verificationStatus;
   }
 
-  const whereClause =
-    conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
   const orderClause = sort
     ? ` ORDER BY "${sort.field}" ${sort.direction || 'DESC'}`
     : '';
 
-  const chainQueries = chains.map(
+  const queries = chains.map(
     (chain) => baseSQL(chain) + whereClause + orderClause,
   );
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${queries.join(' UNION ')} LIMIT 1000`;
 
   return (
     await dbConnection.query(multiChainQuery, {

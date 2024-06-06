@@ -1,6 +1,4 @@
 import DataLoader from 'dataloader';
-import { QueryTypes } from 'sequelize';
-import { DependencyType } from '../common/types';
 import type {
   DripListMultiChainKey,
   DripListId,
@@ -8,47 +6,20 @@ import type {
   ProjectMultiChainKey,
 } from '../common/types';
 import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
-import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import type { SupportedChain } from '../generated/graphql';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
-import { dbConnection } from '../database/connectToDatabase';
+import repoDriverSplitReceiversQueries from './sqlQueries/repoDriverSplitReceiversQueries';
 
 export default class ReceiversOfTypeProjectDataSource {
   private readonly _batchReceiversOfTypeProjectByProjectIds = new DataLoader(
     async (projectKeys: readonly ProjectMultiChainKey[]) => {
       const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
 
-      const baseSQL = (schema: SupportedChain) => `
-        SELECT "id", "fundeeProjectId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt",'${schema}' AS chain
-        FROM "${schema}"."RepoDriverSplitReceivers"
-      `;
-
-      // Build the WHERE clause.
-      const conditions: string[] = [
-        `"funderProjectId" IN (:funderProjectIds)`,
-        `type = '${DependencyType.ProjectDependency}'`,
-      ];
-      const parameters: { [key: string]: any } = {
-        funderProjectIds: projectIds,
-      };
-
-      // Join conditions into a single WHERE clause.
-      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
-
-      // Build the SQL for each specified schema.
-      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-      // Combine all schema queries with UNION.
-      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-      const repoDriverSplitReceiverModelDataValues = (
-        await dbConnection.query(fullQuery, {
-          type: QueryTypes.SELECT,
-          replacements: parameters,
-          mapToModel: true,
-          model: RepoDriverSplitReceiverModel,
-        })
-      ).map((p) => p.dataValues as RepoDriverSplitReceiverModelDataValues);
+      const repoDriverSplitReceiverModelDataValues =
+        await repoDriverSplitReceiversQueries.getByFunderProjectIds(
+          chains,
+          projectIds,
+        );
 
       const receiversOfTypeProjectToProjectMapping =
         repoDriverSplitReceiverModelDataValues.reduce<
@@ -83,37 +54,11 @@ export default class ReceiversOfTypeProjectDataSource {
     async (dripListKeys: readonly DripListMultiChainKey[]) => {
       const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
 
-      const baseSQL = (schema: SupportedChain) => `
-        SELECT "id", "fundeeProjectId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt",'${schema}' AS chain
-        FROM "${schema}"."RepoDriverSplitReceivers"
-      `;
-
-      // Build the WHERE clause.
-      const conditions: string[] = [
-        `"funderDripListId" IN (:funderDripListIds)`,
-        `type = '${DependencyType.DripListDependency}'`,
-      ];
-      const parameters: { [key: string]: any } = {
-        funderDripListIds: dripListIds,
-      };
-
-      // Join conditions into a single WHERE clause.
-      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
-
-      // Build the SQL for each specified schema.
-      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-      // Combine all schema queries with UNION.
-      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-      const repoDriverSplitReceiverModelDataValues = (
-        await dbConnection.query(fullQuery, {
-          type: QueryTypes.SELECT,
-          replacements: parameters,
-          mapToModel: true,
-          model: RepoDriverSplitReceiverModel,
-        })
-      ).map((p) => p.dataValues as RepoDriverSplitReceiverModelDataValues);
+      const repoDriverSplitReceiverModelDataValues =
+        await repoDriverSplitReceiversQueries.getByFunderDripListIds(
+          chains,
+          dripListIds,
+        );
 
       const receiversOfTypeProjectToDripListMapping =
         repoDriverSplitReceiverModelDataValues.reduce<

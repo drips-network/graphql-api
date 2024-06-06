@@ -34,17 +34,16 @@ import TotalEarnedDataSource from './dataLoaders/TotalEarnedDataSource';
 
 export interface Context {
   dataSources: {
-    projectsDb: ProjectsDataSource;
-    givenEventsDb: GivenEventsDataSource;
-    dripListsDb: DripListsDataSource;
-    receiversOfTypeAddressDb: ReceiversOfTypeAddressDataSource;
-    receiversOfTypeProjectDb: ReceiversOfTypeProjectDataSource;
-    receiversOfTypeDripListDb: ReceiversOfTypeDripListDataSource;
-    projectAndDripListSupportDb: ProjectAndDripListSupportDataSource;
-    givesDb: GivenEventsDataSource;
-    usersDb: UsersDataSource;
-    streamsDb: StreamsDataSource;
-    totalEarnedDb: TotalEarnedDataSource;
+    projectsDataSource: ProjectsDataSource;
+    givenEventsDataSource: GivenEventsDataSource;
+    dripListsDataSource: DripListsDataSource;
+    receiversOfTypeAddressDataSource: ReceiversOfTypeAddressDataSource;
+    receiversOfTypeProjectDataSource: ReceiversOfTypeProjectDataSource;
+    receiversOfTypeDripListDataSource: ReceiversOfTypeDripListDataSource;
+    projectAndDripListSupportDataSource: ProjectAndDripListSupportDataSource;
+    usersDataSource: UsersDataSource;
+    streamsDataSource: StreamsDataSource;
+    totalEarnedDataSource: TotalEarnedDataSource;
   };
 }
 
@@ -139,18 +138,21 @@ const startServer = async () => {
 
         return {
           dataSources: {
-            projectsDb: new ProjectsDataSource(),
-            givenEventsDb: new GivenEventsDataSource(),
-            dripListsDb: new DripListsDataSource(),
-            receiversOfTypeAddressDb: new ReceiversOfTypeAddressDataSource(),
-            receiversOfTypeProjectDb: new ReceiversOfTypeProjectDataSource(),
-            receiversOfTypeDripListDb: new ReceiversOfTypeDripListDataSource(),
-            projectAndDripListSupportDb:
+            projectsDataSource: new ProjectsDataSource(),
+            givenEventsDataSource: new GivenEventsDataSource(),
+            dripListsDataSource: new DripListsDataSource(),
+            receiversOfTypeAddressDataSource:
+              new ReceiversOfTypeAddressDataSource(),
+            receiversOfTypeProjectDataSource:
+              new ReceiversOfTypeProjectDataSource(),
+            receiversOfTypeDripListDataSource:
+              new ReceiversOfTypeDripListDataSource(),
+            projectAndDripListSupportDataSource:
               new ProjectAndDripListSupportDataSource(),
             givesDb: new GivenEventsDataSource(),
-            usersDb: new UsersDataSource(),
-            streamsDb: new StreamsDataSource(),
-            totalEarnedDb: new TotalEarnedDataSource(),
+            usersDataSource: new UsersDataSource(),
+            streamsDataSource: new StreamsDataSource(),
+            totalEarnedDataSource: new TotalEarnedDataSource(),
           },
         };
       },

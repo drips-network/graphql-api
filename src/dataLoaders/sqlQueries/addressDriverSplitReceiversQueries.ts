@@ -57,8 +57,7 @@ async function getAddressDriverSplitReceiversProjectDependenciesByFunders(
     funderProjectIds,
   };
 
-  const whereClause =
-    conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 

@@ -38,6 +38,64 @@ async function getSplitEventsByAccountIdAndReceiver(
   ).map((p) => p.dataValues as SplitEventModelDataValues);
 }
 
+async function getSplitEventsByReceiver(
+  chains: SupportedChain[],
+  receiver: AccountId,
+): Promise<SplitEventModelDataValues[]> {
+  const baseSQL = (schema: SupportedChain) =>
+    `SELECT *, '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
+
+  const conditions: string[] = ['"receiver" = :receiver'];
+  const parameters: { [receiver: string]: any } = { receiver };
+
+  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
+
+  const queries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(fullQuery, {
+      type: QueryTypes.SELECT,
+      replacements: parameters,
+      mapToModel: true,
+      model: SplitEventModel,
+    })
+  ).map((p) => p.dataValues as SplitEventModelDataValues);
+}
+
+async function getSplitEventsByProjectReceivers(
+  chains: SupportedChain[],
+  accountIds: AccountId[],
+): Promise<SplitEventModelDataValues[]> {
+  const baseSplitEventsSQL = (schema: SupportedChain) =>
+    `SELECT "accountId", "receiver", "erc20", "amt", "transactionHash", "logIndex", "blockTimestamp", "blockNumber", "createdAt", "updatedAt", '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
+
+  const conditions: string[] = [`"receiver" IN (:receivers)`];
+  const parameters: { [key: string]: any } = {
+    receivers: accountIds,
+  };
+
+  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
+
+  const splitsQueries = chains.map(
+    (chain) => baseSplitEventsSQL(chain) + whereClause,
+  );
+
+  const fullSplitsQuery = `${splitsQueries.join(' UNION ')} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(fullSplitsQuery, {
+      type: QueryTypes.SELECT,
+      replacements: parameters,
+      mapToModel: true,
+      model: SplitEventModel,
+    })
+  ).map((p) => p.dataValues as SplitEventModelDataValues);
+}
+
 export default {
   getByAccountIdAndReceiver: getSplitEventsByAccountIdAndReceiver,
+  getByReceiver: getSplitEventsByReceiver,
+  getByProjectReceivers: getSplitEventsByProjectReceivers,
 };

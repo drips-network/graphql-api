@@ -54,7 +54,6 @@ export async function resolveTotalSplit(
 
 export async function resolveTotalEarned(
   projectOrDripListData: ResolverUnClaimedProjectData | ResolverDripListData,
-  _: any,
   context: Context,
 ) {
   let accountId: ProjectId | DripListId;
@@ -67,10 +66,10 @@ export async function resolveTotalEarned(
     chain = projectOrDripListData.parentDripListInfo.dripListChain;
   }
 
-  const { totalEarnedDb } = context.dataSources;
+  const { totalEarnedDataSource } = context.dataSources;
 
   const { splitEventsForDripListDataValues, givenEventsForDripListDataValues } =
-    await totalEarnedDb.getTotalEarnedByProjectIds(accountId, [chain]);
+    await totalEarnedDataSource.getTotalEarnedByProjectIds(accountId, [chain]);
 
   return mergeAmounts(
     [

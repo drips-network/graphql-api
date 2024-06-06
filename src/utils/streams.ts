@@ -1,8 +1,3 @@
-import { QueryTypes } from 'sequelize';
-import type { StreamReceiverSeenEventModelDataValues } from '../models/StreamReceiverSeenEventModel';
-import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import type { StreamsSetEventModelDataValues } from '../models/StreamsSetEventModel';
-import StreamsSetEventModel from '../models/StreamsSetEventModel';
 import assert, { isAddressDriverId } from './assert';
 import getUserAccount from './getUserAccount';
 import type {
@@ -13,55 +8,22 @@ import type {
 
 import type { AccountId } from '../common/types';
 import type { ProtoStream } from './buildAssetConfigs';
-import { dbConnection } from '../database/connectToDatabase';
+import streamReceiverSeenEventQueries from '../dataLoaders/sqlQueries/streamReceiverSeenEventQueries';
+import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
 
 async function getUserIncomingStreams(
   chains: SupportedChain[],
   accountId: AccountId,
 ) {
-  const baseStreamReceiverSeenEventsSQL = (schema: SupportedChain) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."StreamReceiverSeenEvents" WHERE "accountId" = :accountId`;
+  const streamReceiverSeenEventModelDataValuesForUser =
+    await streamReceiverSeenEventQueries.getByAccountId(chains, accountId);
 
-  const streamReceiverSeenEventsSqlQueries = `${chains
-    .map((chain) => `${baseStreamReceiverSeenEventsSQL(chain)}`)
-    .join(' UNION ')} LIMIT 1000`;
-
-  const streamReceiverSeenEventModelDataValuesForUser = (
-    await dbConnection.query(streamReceiverSeenEventsSqlQueries, {
-      type: QueryTypes.SELECT,
-      replacements: { accountId },
-      mapToModel: true,
-      model: StreamReceiverSeenEventModel,
-    })
-  ).map((p) => p.dataValues as StreamReceiverSeenEventModelDataValues);
-
-  const baseStreamsSetEventsSQL = (schema: SupportedChain) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
-
-  const whereClause = streamReceiverSeenEventModelDataValuesForUser.length
-    ? ` WHERE "receiversHash" IN (:receiversHash)`
-    : '';
-
-  const streamsSetEventsSqlQueries = chains.map(
-    (chain) => baseStreamsSetEventsSQL(chain) + whereClause,
+  const receiversHashes = streamReceiverSeenEventModelDataValuesForUser.map(
+    (event) => event.receiversHash,
   );
 
-  const fullStreamsSetEventsQuery = `${streamsSetEventsSqlQueries.join(
-    ' UNION ',
-  )} LIMIT 1000`;
-
-  const streamsSetEventsWithMatchingHistoryHash = (
-    await dbConnection.query(fullStreamsSetEventsQuery, {
-      type: QueryTypes.SELECT,
-      replacements: {
-        receiversHash: streamReceiverSeenEventModelDataValuesForUser.map(
-          (event) => event.receiversHash,
-        ),
-      },
-      mapToModel: true,
-      model: StreamsSetEventModel,
-    })
-  ).map((p) => p.dataValues as StreamsSetEventModelDataValues);
+  const streamsSetEventsWithMatchingHistoryHash =
+    await streamsSetEventsQueries.getByReceiversHashes(chains, receiversHashes);
 
   const accountIdsStreamingToUser = streamsSetEventsWithMatchingHistoryHash
     .map((event) => event.accountId)

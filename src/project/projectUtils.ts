@@ -30,28 +30,6 @@ export function splitProjectName(projectName: string): {
   return { ownerName: components[0], repoName: components[1] };
 }
 
-export function isValidProjectName(name: string): boolean {
-  const components = name.split('/');
-
-  if (components.length !== 2) {
-    return false;
-  }
-
-  const ownerName = components[0];
-  const repoName = components[1];
-
-  const validProjectNameRegex: RegExp = /^[\w.-]+$/;
-
-  if (
-    !validProjectNameRegex.test(ownerName) ||
-    !validProjectNameRegex.test(repoName)
-  ) {
-    return false;
-  }
-
-  return true;
-}
-
 export async function doesRepoExists(url: string) {
   if (appSettings.pretendAllReposExist) return true;
 

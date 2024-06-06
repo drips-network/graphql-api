@@ -10,15 +10,14 @@ import type {
 
 async function getDripListsByFilter(
   chains: SupportedChain[],
-  where: DripListWhereInput,
+  where?: DripListWhereInput,
 ) {
-  // Define base SQL to query from multiple chains (schemas).
   const baseSQL = (schema: SupportedChain) => `
     SELECT "id", "isValid", "name", "creator", "description", "ownerAddress", "ownerAccountId", "latestVotingRoundId", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."DripLists"
   `;
 
-  const conditions: string[] = [];
+  const conditions: string[] = ['isValid = true', 'name IS NOT NULL'];
   const parameters: { [key: string]: any } = {};
 
   if (where?.id) {
@@ -30,8 +29,7 @@ async function getDripListsByFilter(
     parameters.ownerAddress = where.ownerAddress;
   }
 
-  const whereClause =
-    conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
+  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 

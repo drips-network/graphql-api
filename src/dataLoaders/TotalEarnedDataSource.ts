@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
 import DataLoader from 'dataloader';
-import { QueryTypes } from 'sequelize';
 import type {
   AccountId,
   DripListId,
@@ -10,53 +9,25 @@ import type {
 } from '../common/types';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import type { SupportedChain } from '../generated/graphql';
-import { dbConnection } from '../database/connectToDatabase';
 import type { SplitEventModelDataValues } from '../models/SplitEventModel';
-import SplitEventModel from '../models/SplitEventModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import { isDripListId, isProjectId } from '../utils/assert';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import givenEventsQueries from './sqlQueries/givenEventsQueries';
+import splitEventsQueries from './sqlQueries/splitEventsQueries';
 
 export default class TotalEarnedDataSource {
   private readonly _batchTotalEarnedByProjectIds = new DataLoader(
     async (keys: readonly (DripListMultiChainKey | ProjectMultiChainKey)[]) => {
       const { chains, ids: projectIds } = parseMultiChainKeys(keys);
 
-      // Define base SQL to query from multiple chains (schemas).
-      const baseSplitEventsSQL = (schema: SupportedChain) =>
-        `SELECT "accountId", "receiver", "erc20", "amt", "transactionHash", "logIndex", "blockTimestamp", "blockNumber", "createdAt", "updatedAt", '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
-
-      // Build the WHERE clause.
-      const conditions: string[] = [`"receiver" IN (:receivers)`];
-      const parameters: { [key: string]: any } = {
-        receivers: projectIds,
-      };
-
-      // Join conditions into a single WHERE clause.
-      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
-
-      // Build the SQL for each specified schema.
-      const splitsQueries = chains.map(
-        (chain) => baseSplitEventsSQL(chain) + whereClause,
-      );
-
-      // Combine all schema queries with UNION.
-      const fullSplitsQuery = `${splitsQueries.join(' UNION ')} LIMIT 1000`;
-
-      const splitEventModelDataValues = (
-        await dbConnection.query(fullSplitsQuery, {
-          type: QueryTypes.SELECT,
-          replacements: parameters,
-          mapToModel: true,
-          model: SplitEventModel,
-        })
-      ).map((p) => p.dataValues as SplitEventModelDataValues);
-
       const givenEventModelDataValues = await givenEventsQueries.getByReceivers(
         chains,
         projectIds,
       );
+
+      const splitEventModelDataValues =
+        await splitEventsQueries.getByProjectReceivers(chains, projectIds);
 
       const splitEventsByDripListId = splitEventModelDataValues.reduce<
         Record<AccountId, SplitEventModelDataValues[]>

@@ -1,5 +1,4 @@
 import DataLoader from 'dataloader';
-import { QueryTypes } from 'sequelize';
 import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
 import type {
   AccountId,
@@ -10,55 +9,28 @@ import type {
   ProjectId,
   ProjectMultiChainKey,
 } from '../common/types';
-import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
-import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import streams from '../utils/streams';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import type { SupportedChain } from '../generated/graphql';
-import { dbConnection } from '../database/connectToDatabase';
 import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
 import addressDriverSplitReceiversQueries from './sqlQueries/addressDriverSplitReceiversQueries';
 import givenEventsQueries from './sqlQueries/givenEventsQueries';
+import dripListSplitReceiversQueries from './sqlQueries/dripListSplitReceiversQueries';
+import repoDriverSplitReceiversQueries from './sqlQueries/repoDriverSplitReceiversQueries';
 
 export default class ProjectAndDripListSupportDataSource {
   private readonly _batchProjectAndDripListSupportByDripListIds =
     new DataLoader(async (dripListKeys: readonly DripListMultiChainKey[]) => {
       const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
 
-      // Define base SQL to query from multiple chains (schemas).
-      const baseSQL = (schema: SupportedChain) => `
-       SELECT "id", "fundeeDripListId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt", '${schema}' AS chain
-       FROM "${schema}"."DripListSplitReceivers"
-      `;
-
-      // Build the WHERE clause.
-      const conditions: string[] = [
-        `"fundeeDripListId" IN (:fundeeDripListIds)`,
-      ];
-      const parameters: { [key: string]: any } = {
-        fundeeDripListIds: dripListIds,
-      };
-
-      // Join conditions into a single WHERE clause.
-      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
-
-      // Build the SQL for each specified schema.
-      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-      // Combine all schema queries with UNION.
-      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-      const dripListSplitReceiverModelDataValues = (
-        await dbConnection.query(fullQuery, {
-          type: QueryTypes.SELECT,
-          replacements: parameters,
-          mapToModel: true,
-          model: DripListSplitReceiverModel,
-        })
-      ).map((p) => p.dataValues as DripListSplitReceiverModelDataValues);
+      const dripListSplitReceiverModelDataValues =
+        await dripListSplitReceiversQueries.getByFundeeDripListIds(
+          chains,
+          dripListIds,
+        );
 
       const projectAndDripListSupportToDripListMapping =
         dripListSplitReceiverModelDataValues.reduce<
@@ -82,35 +54,11 @@ export default class ProjectAndDripListSupportDataSource {
     async (projectKeys: readonly ProjectMultiChainKey[]) => {
       const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
 
-      // Define base SQL to query from multiple chains (schemas).
-      const baseSQL = (schema: SupportedChain) => `
-          SELECT "id", "fundeeProjectId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt", '${schema}' AS chain
-          FROM "${schema}"."RepoDriverSplitReceivers"
-      `;
-
-      // Build the WHERE clause.
-      const conditions: string[] = [`"fundeeProjectId" IN (:fundeeProjectIds)`];
-      const parameters: { [key: string]: any } = {
-        fundeeProjectIds: projectIds,
-      };
-
-      // Join conditions into a single WHERE clause.
-      const whereClause = ` WHERE ${conditions.join(' AND ')}`;
-
-      // Build the SQL for each specified schema.
-      const queries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-      // Combine all schema queries with UNION.
-      const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
-
-      const repoDriverSplitReceiverModelDataValues = (
-        await dbConnection.query(fullQuery, {
-          type: QueryTypes.SELECT,
-          replacements: parameters,
-          mapToModel: true,
-          model: RepoDriverSplitReceiverModel,
-        })
-      ).map((p) => p.dataValues as RepoDriverSplitReceiverModelDataValues);
+      const repoDriverSplitReceiverModelDataValues =
+        await repoDriverSplitReceiversQueries.getByFundeeProjectIds(
+          chains,
+          projectIds,
+        );
 
       const projectAndDripListSupportToProjectMapping =
         repoDriverSplitReceiverModelDataValues.reduce<

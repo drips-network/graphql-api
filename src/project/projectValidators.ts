@@ -1,48 +1,50 @@
 import { isAddress } from 'ethers';
-import type {
-  SupportedChain,
-  ProjectSortInput,
-  ProjectWhereInput,
-} from '../generated/graphql';
-import assert, {
+import { SortDirection } from '../generated/graphql';
+import {
   isGitHubUrl,
   isProjectId,
   isProjectVerificationStatus,
 } from '../utils/assert';
-import { validateChainsInput } from '../utils/inputValidators';
+import { validateChainsQueryArg } from '../utils/commonInputValidators';
+import type projectResolvers from './projectResolvers';
 
 function isSortableProjectField(field: string): boolean {
   return ['claimedAt'].includes(field);
 }
 
-export default function validateProjectsInput(input: {
-  chains?: SupportedChain[];
-  where?: ProjectWhereInput;
-  sort?: ProjectSortInput;
-}) {
-  const { where, sort, chains } = input;
+export default function validateProjectsInput(
+  projectsQueryArgs: Parameters<typeof projectResolvers.Query.projects>[1],
+) {
+  const { where, sort, chains } = projectsQueryArgs;
 
-  if (where?.id) {
-    assert(isProjectId(where.id));
+  if (where?.id && !isProjectId(where.id)) {
+    throw new Error('Invalid project id.');
   }
 
-  if (where?.ownerAddress) {
-    assert(isAddress(where.ownerAddress));
+  if (where?.ownerAddress && !isAddress(where.ownerAddress)) {
+    throw new Error('Invalid owner address.');
   }
 
-  if (where?.url) {
-    assert(isGitHubUrl(where.url));
+  if (where?.url && !isGitHubUrl(where.url)) {
+    throw new Error('Invalid GitHub URL.');
   }
 
-  if (where?.verificationStatus) {
-    assert(isProjectVerificationStatus(where.verificationStatus));
+  if (
+    where?.verificationStatus &&
+    !isProjectVerificationStatus(where.verificationStatus)
+  ) {
+    throw new Error('Invalid verification status.');
   }
 
-  if (sort?.field) {
-    assert(isSortableProjectField(sort.field));
+  if (sort?.field && !isSortableProjectField(sort.field)) {
+    throw new Error('Invalid sort field.');
+  }
+
+  if (sort?.direction && sort.direction in SortDirection) {
+    throw new Error('Invalid sort direction.');
   }
 
   if (chains?.length) {
-    validateChainsInput(chains);
+    validateChainsQueryArg(chains);
   }
 }

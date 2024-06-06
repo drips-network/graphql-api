@@ -5,46 +5,16 @@ import type {
 } from '../common/types';
 import type { StreamReceiverSeenEventModelDataValues } from '../models/StreamReceiverSeenEventModel';
 import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import type { StreamsSetEventModelDataValues } from '../models/StreamsSetEventModel';
-import StreamsSetEventModel from '../models/StreamsSetEventModel';
 import type { SupportedChain } from '../generated/graphql';
 import { dbConnection } from '../database/connectToDatabase';
+import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
 
 export default async function getStreamsSetEventsWithReceivers(
   chains: SupportedChain[],
   accountId: AddressDriverId,
 ): Promise<StreamsSetEventWithReceivers[]> {
-  const baseStreamsSetEventsSQL = (schema: SupportedChain) => `
-    SELECT *, '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
-
-  // Initialize the WHERE clause parts.
-  const streamsSetEventModelConditions: string[] = ['"accountId" = :accountId'];
-  const streamsSetEventModelParameters: { [key: string]: any } = { accountId };
-
-  // Build the where clause.
-  const whereClause = ` WHERE ${streamsSetEventModelConditions.join(' AND ')}`;
-
-  // Define the order.
-  const orderClause = ' ORDER BY "blockNumber" ASC, "logIndex" ASC';
-
-  // Build the SQL for each specified schema.
-  const streamsSetEventModelDataValuesQueries = chains.map(
-    (chain) => `${baseStreamsSetEventsSQL(chain) + whereClause + orderClause}`,
-  );
-
-  // Combine all schema queries with UNION.
-  const fullQueryStreamsSetEventModelQuery = `${streamsSetEventModelDataValuesQueries.join(
-    ' UNION ',
-  )} LIMIT 1000`;
-
-  const sortedAccountStreamSetEventModelDataValues = (
-    await dbConnection.query(fullQueryStreamsSetEventModelQuery, {
-      type: QueryTypes.SELECT,
-      replacements: streamsSetEventModelParameters,
-      mapToModel: true,
-      model: StreamsSetEventModel,
-    })
-  ).map((p) => p.dataValues as StreamsSetEventModelDataValues);
+  const sortedAccountStreamSetEventModelDataValues =
+    await streamsSetEventsQueries.getByAccountIdSorted(chains, accountId);
 
   const uniqueReceiversHashes = [
     ...new Set(

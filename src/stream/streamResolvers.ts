@@ -12,14 +12,14 @@ const streamResolvers = {
       { dataSources }: Context,
     ) => {
       if (receiver.driver === Driver.ADDRESS) {
-        return dataSources.usersDb.getUserByAccountId(
+        return dataSources.usersDataSource.getUserByAccountId(
           [chain],
           receiver.accountId as AddressDriverId,
         );
       }
 
       if (receiver.driver === Driver.NFT) {
-        return dataSources.dripListsDb.getDripListById(
+        return dataSources.dripListsDataSource.getDripListById(
           [chain],
           receiver.accountId as DripListId,
         );
@@ -33,14 +33,14 @@ const streamResolvers = {
       { dataSources }: Context,
     ) => {
       if (sender.driver === Driver.ADDRESS) {
-        return dataSources.usersDb.getUserByAccountId(
+        return dataSources.usersDataSource.getUserByAccountId(
           [chain],
           sender.accountId as AddressDriverId,
         );
       }
 
       if (sender.driver === Driver.NFT) {
-        return dataSources.dripListsDb.getDripListById(
+        return dataSources.dripListsDataSource.getDripListById(
           [chain],
           sender.accountId as DripListId,
         );
