@@ -16,7 +16,7 @@ async function getDistinctErc20ByReceiversHashes(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
@@ -45,7 +45,7 @@ async function getSortedStreamsSetEventsByAccountId(
     (chain) => `${baseSQL(chain) + whereClause + orderClause}`,
   );
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
@@ -70,7 +70,7 @@ async function getSortedStreamsSetEventsByReceiversHashes(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
