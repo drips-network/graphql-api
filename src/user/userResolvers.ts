@@ -7,6 +7,7 @@ import type {
   ResolverUser,
   ResolverUserChainData,
   ResolverUserData,
+  UserDataParentDripListInfo,
 } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import type {
@@ -23,29 +24,30 @@ import { toResolverProjects } from '../project/projectUtils';
 import { toResolverDripLists } from '../drip-list/dripListUtils';
 import getLatestAccountMetadataByChain from '../utils/getLatestAccountMetadata';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
+import toResolverUser from './userUtils';
+import { getCrossChainAddressDriverAccountIdByAddress } from '../common/dripsContracts';
 
 const userResolvers = {
   Query: {
-    userById: async (
+    userById: (
       _: undefined,
       {
-        chains,
         accountId,
-      }: { chains?: SupportedChain[]; accountId: AddressDriverId },
-      { dataSources: { usersDataSource } }: Context,
-    ): Promise<ResolverUser> => {
+        chains,
+      }: { accountId: AddressDriverId; chains?: SupportedChain[] },
+    ): ResolverUser => {
+      assert(isAddressDriverId(accountId));
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
 
       const chainsToQuery = chains?.length ? chains : queryableChains;
 
-      return usersDataSource.getUserByAccountId(chainsToQuery, accountId);
+      return toResolverUser(chainsToQuery, accountId);
     },
     userByAddress: async (
       _: undefined,
-      { chains, address }: { chains?: SupportedChain[]; address: Address },
-      { dataSources }: Context,
+      { address, chains }: { address: Address; chains?: SupportedChain[] },
     ): Promise<ResolverUser> => {
       assert(isAddress(address));
       if (chains?.length) {
@@ -54,14 +56,15 @@ const userResolvers = {
 
       const chainsToQuery = chains?.length ? chains : queryableChains;
 
-      return dataSources.usersDataSource.getUserByAddress(
-        chainsToQuery,
-        address,
-      );
+      const accountId =
+        await getCrossChainAddressDriverAccountIdByAddress(address);
+
+      return toResolverUser(chainsToQuery, accountId);
     },
   },
   User: {
     account: (user: ResolverUser): AddressDriverAccount => user.account,
+    chainData: (user: ResolverUser): ResolverUserChainData[] => user.chainData,
   },
   UserChainData: {
     chain: (chainUserData: ResolverUserChainData): SupportedChain =>
@@ -69,9 +72,12 @@ const userResolvers = {
     data: (chainUserData: ResolverUserChainData) => chainUserData.data,
   },
   UserData: {
-    streams: async ({ parentUserInfo, streams }: ResolverUserData) => ({
-      incoming: streams.incoming,
-      outgoing: streams.outgoing,
+    streams: async ({
+      parentUserInfo,
+      streams: { incoming, outgoing },
+    }: ResolverUserData) => ({
+      incoming,
+      outgoing,
       parentUserInfo,
     }),
     balances: async ({
@@ -169,37 +175,27 @@ const userResolvers = {
   },
   UserStreams: {
     outgoing: async (
-      userData: {
-        parentUserInfo: { accountId: AccountId; userChain: SupportedChain };
-      },
+      { parentUserInfo }: UserDataParentDripListInfo,
       _: {},
-      { dataSources }: Context,
+      { dataSources: { streamsDataSource } }: Context,
     ) => {
-      const { accountId, userChain } = userData.parentUserInfo;
+      const { accountId, userChain } = parentUserInfo;
       assert(isAddressDriverId(accountId));
 
       return (
-        await dataSources.streamsDataSource.getUserOutgoingStreams(
-          [userChain],
-          accountId,
-        )
+        await streamsDataSource.getUserOutgoingStreams([userChain], accountId)
       )[userChain as SupportedChain];
     },
     incoming: async (
-      userData: {
-        parentUserInfo: { accountId: AccountId; userChain: SupportedChain };
-      },
-      _: any,
-      { dataSources }: Context,
+      { parentUserInfo }: UserDataParentDripListInfo,
+      _: {},
+      { dataSources: { streamsDataSource } }: Context,
     ) => {
-      const { accountId, userChain } = userData.parentUserInfo;
+      const { accountId, userChain } = parentUserInfo;
       assert(isAddressDriverId(accountId));
 
       return (
-        await dataSources.streamsDataSource.getUserIncomingStreams(
-          [userChain],
-          accountId,
-        )
+        await streamsDataSource.getUserIncomingStreams([userChain], accountId)
       )[userChain as SupportedChain];
     },
   },

@@ -1,49 +1,37 @@
 import type { AddressDriverId, DripListId } from '../common/types';
+import { toResolverDripList } from '../drip-list/dripListUtils';
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
+import toResolverUser from '../user/userUtils';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 
 const streamResolvers = {
   Stream: {
-    receiver: (
+    receiver: async (
       { chain, receiver }: ProtoStream,
-      _: any,
+      _: {},
       { dataSources }: Context,
     ) => {
       if (receiver.driver === Driver.ADDRESS) {
-        return dataSources.usersDataSource.getUserByAccountId(
-          [chain],
-          receiver.accountId as AddressDriverId,
-        );
+        return toResolverUser([chain], receiver.accountId as AddressDriverId);
       }
 
       if (receiver.driver === Driver.NFT) {
-        return dataSources.dripListsDataSource.getDripListById(
-          [chain],
-          receiver.accountId as DripListId,
-        );
+        const dbDripList =
+          await dataSources.dripListsDataSource.getDripListById(
+            [chain],
+            receiver.accountId as DripListId,
+          );
+
+        return toResolverDripList(chain, dbDripList);
       }
 
       throw shouldNeverHappen();
     },
-    sender: (
-      { chain, sender }: ProtoStream,
-      _: any,
-      { dataSources }: Context,
-    ) => {
+    sender: async ({ chain, sender }: ProtoStream) => {
       if (sender.driver === Driver.ADDRESS) {
-        return dataSources.usersDataSource.getUserByAccountId(
-          [chain],
-          sender.accountId as AddressDriverId,
-        );
-      }
-
-      if (sender.driver === Driver.NFT) {
-        return dataSources.dripListsDataSource.getDripListById(
-          [chain],
-          sender.accountId as DripListId,
-        );
+        return toResolverUser([chain], sender.accountId as AddressDriverId);
       }
 
       throw shouldNeverHappen();

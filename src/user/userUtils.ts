@@ -1,10 +1,10 @@
-import type { AccountId, ResolverUser } from '../common/types';
+import type { AddressDriverId, ResolverUser } from '../common/types';
 import { Driver, type SupportedChain } from '../generated/graphql';
 import getUserAddress from '../utils/getUserAddress';
 
-export default function toResolverUsers(
+export default function toResolverUser(
   chains: SupportedChain[],
-  accountId: AccountId,
+  accountId: AddressDriverId,
 ): ResolverUser {
   return {
     account: {

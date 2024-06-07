@@ -7,7 +7,13 @@ import {
 } from '../generated/contracts';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { SupportedChain } from '../generated/graphql';
-import type { AccountId, Address, Forge, ProjectId } from './types';
+import type {
+  AccountId,
+  Address,
+  AddressDriverId,
+  Forge,
+  ProjectId,
+} from './types';
 import queryableChains from './queryableChains';
 
 const chainConfigs: Record<
@@ -85,13 +91,13 @@ export default dripsContracts;
 
 export async function getCrossChainAddressDriverAccountIdByAddress(
   address: Address,
-): Promise<AccountId> {
+): Promise<AddressDriverId> {
   // AddressDriver account IDs are the same across all chains.
   const { addressDriver } = dripsContracts[queryableChains[0]]!;
 
   const accountId = (await addressDriver.calcAccountId(address)).toString();
 
-  return accountId as AccountId;
+  return accountId as AddressDriverId;
 }
 
 export async function getCrossChainRepoDriverAccountIdByAddress(
