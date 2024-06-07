@@ -83,5 +83,6 @@ export async function resolveTotalEarned(
   ).map((amount) => ({
     ...amount,
     amount: amount.amount.toString(),
+    chain,
   }));
 }

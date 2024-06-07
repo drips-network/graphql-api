@@ -318,11 +318,6 @@ const projectResolvers = {
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
-    totalEarned: async (
-      projectData: ResolverUnClaimedProjectData,
-      _: {},
-      context: Context,
-    ) => resolveTotalEarned(projectData, context),
   },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {
