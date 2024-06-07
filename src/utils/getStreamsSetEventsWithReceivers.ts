@@ -53,7 +53,7 @@ export default async function getStreamsSetEventsWithReceivers(
   // Combine all schema queries with UNION.
   const fullQueryStreamReceiverSeenEventModelQuery = `${streamReceiverSeenEventModelQueries.join(
     ' UNION ',
-  )} LIMIT 1000`;
+  )}`;
 
   const streamReceiverSeenEventModelDataValues = (
     await dbConnection.query(fullQueryStreamReceiverSeenEventModelQuery, {

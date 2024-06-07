@@ -14,7 +14,7 @@ async function getStreamReceiverSeenEventsByAccountId(
 
   const fullQuery = `${chains
     .map((chain) => `${baseSQL(chain)}`)
-    .join(' UNION ')} LIMIT 1000`;
+    .join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {

@@ -28,7 +28,7 @@ async function getAddressDriverSplitReceiversDripListDependenciesByFunders(
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${chainQueries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(multiChainQuery, {
@@ -61,7 +61,7 @@ async function getAddressDriverSplitReceiversProjectDependenciesByFunders(
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${chainQueries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(multiChainQuery, {
@@ -90,7 +90,7 @@ async function getAddressDriverSplitReceiversByFundeeAccountIds(
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${chainQueries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(multiChainQuery, {

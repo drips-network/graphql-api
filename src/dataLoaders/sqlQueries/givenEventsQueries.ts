@@ -16,7 +16,7 @@ async function getDistinctErc20ByReceiver(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
@@ -56,7 +56,7 @@ async function getGivenEventsByFilter(
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${chainQueries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(multiChainQuery, {
@@ -81,7 +81,7 @@ async function getGivenEventsByReceivers(
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${chainQueries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(multiChainQuery, {
@@ -114,7 +114,7 @@ async function getGivenEventsByTxHashesAndLogIndex(
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${chainQueries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(multiChainQuery, {
@@ -139,7 +139,7 @@ async function getGivenEventsByReceiver(
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${chainQueries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(multiChainQuery, {

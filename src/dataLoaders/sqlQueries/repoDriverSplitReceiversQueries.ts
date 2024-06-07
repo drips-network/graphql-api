@@ -24,7 +24,7 @@ async function getRepoDriverSplitReceiversByFundeeProjectIds(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
@@ -58,7 +58,7 @@ async function getRepoDriverSplitReceiversByFunderProjectIds(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
@@ -91,7 +91,7 @@ async function getRepoDriverSplitReceiversByFunderDripListIds(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {

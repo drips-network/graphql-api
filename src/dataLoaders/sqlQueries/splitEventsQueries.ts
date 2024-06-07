@@ -16,7 +16,7 @@ async function getDistinctErc20ByReceiver(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
@@ -49,7 +49,7 @@ async function getSplitEventsByAccountIdAndReceiver(
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${chainQueries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(multiChainQuery, {
@@ -75,7 +75,7 @@ async function getSplitEventsByReceiver(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
@@ -105,7 +105,7 @@ async function getSplitEventsByProjectReceivers(
     (chain) => baseSplitEventsSQL(chain) + whereClause,
   );
 
-  const fullSplitsQuery = `${splitsQueries.join(' UNION ')} LIMIT 1000`;
+  const fullSplitsQuery = `${splitsQueries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullSplitsQuery, {

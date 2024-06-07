@@ -28,7 +28,7 @@ async function getDripListSplitReceiversByFundeeDripListIds(
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
   // Combine all schema queries with UNION.
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
@@ -61,7 +61,7 @@ async function getDripListSplitReceiversByFunderProjectIds(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {
@@ -94,7 +94,7 @@ async function getDripListSplitReceiversByFunderDripListIds(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
     await dbConnection.query(fullQuery, {

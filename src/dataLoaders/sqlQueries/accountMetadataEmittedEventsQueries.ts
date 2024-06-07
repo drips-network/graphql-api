@@ -23,7 +23,7 @@ async function getAccountMetadataEmittedEventsByAccountId(
     (chain) => baseSQL(chain) + whereClause + orderClause,
   );
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')} LIMIT 1`;
 
   return (
     await dbConnection.query(fullQuery, {
