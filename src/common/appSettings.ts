@@ -1,7 +1,10 @@
 import dotenv from 'dotenv';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
 
 dotenv.config({ path: `.env.${process.env.ENV}` });
+
+function missingEnvVar(name: string): never {
+  throw new Error(`Missing ${name} in .env file.`);
+}
 
 export default {
   port: (process.env.PORT || 8080) as number,
@@ -17,6 +20,8 @@ export default {
   repoDriverAddress:
     process.env.REPO_DRIVER_ADDRESS ??
     '0x770023d55D09A9C110694827F1a6B32D5c2b373E',
+  dripsAddress:
+    process.env.DRIPS_ADDRESS ?? '0xd0Dd053392db676D57317CD4fe96Fc2cCf42D0b4',
   pretendAllReposExist:
     (process.env.PRETEND_ALL_REPOS_EXIST as unknown as string) === 'true',
   rateLimitWindowInMinutes: parseInt(
@@ -32,6 +37,6 @@ export default {
   // TODO: Refactor when we switch to multi-chain API.
   addressDriverAddress:
     process.env.ADDRESS_DRIVER_ADDRESS ||
-    shouldNeverHappen('Missing address driver address in .env file.'),
+    missingEnvVar('ADDRESS_DRIVER_ADDRESS'),
   ipfsGatewayUrl: process.env.IPFS_GATEWAY_URL,
 };

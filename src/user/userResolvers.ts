@@ -10,6 +10,7 @@ import assert, { isAddressDriverId } from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
 import getLatestAccountMetadata from '../utils/getLatestAccountMetadata';
 import getUserAddress from '../utils/getUserAddress';
+import getWithdrawableBalances from '../utils/getWithdrawableBalances';
 
 const userResolvers = {
   Query: {
@@ -33,6 +34,8 @@ const userResolvers = {
     streams: async (parent: User) => ({
       accountId: parent.account.accountId,
     }),
+    withdrawableBalances: async (parent: User) =>
+      getWithdrawableBalances(parent.account.accountId as AccountId),
     balances: async (parent: User) => {
       const { metadata } =
         (await getLatestAccountMetadata(

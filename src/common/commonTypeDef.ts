@@ -124,6 +124,13 @@ const commonTypeDef = gql`
     ASC
     DESC
   }
+
+  type WithdrawableBalance {
+    tokenAddress: String!
+    splittableAmount: String!
+    receivableAmount: String!
+    collectableAmount: String!
+  }
 `;
 
 export default commonTypeDef;

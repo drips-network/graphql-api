@@ -38,6 +38,7 @@ const projectTypeDef = gql`
     support: [SupportItem!]!
     claimedAt: Date!
     totalEarned: [Amount!]!
+    withdrawableBalances: [WithdrawableBalance!]!
   }
 
   type UnclaimedProject {
@@ -45,6 +46,7 @@ const projectTypeDef = gql`
     account: RepoDriverAccount!
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
+    withdrawableBalances: [WithdrawableBalance!]!
   }
 
   input ProjectWhereInput {

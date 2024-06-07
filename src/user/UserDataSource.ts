@@ -27,6 +27,7 @@ export default class UsersDataSource {
       },
       balances: [],
       support: [],
+      withdrawableBalances: [],
     };
   }
 

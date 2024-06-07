@@ -1,5 +1,9 @@
 import { isAddress } from 'ethers';
-import type { FakeUnclaimedProject, ProjectId } from '../common/types';
+import type {
+  AccountId,
+  FakeUnclaimedProject,
+  ProjectId,
+} from '../common/types';
 import type ProjectModel from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
 import { splitProjectName } from './projectUtils';
@@ -31,6 +35,7 @@ import assert, {
 import SplitEventModel from '../models/SplitEventModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import mergeAmounts from '../utils/mergeAmounts';
+import getWithdrawableBalances from '../utils/getWithdrawableBalances';
 
 const projectResolvers = {
   Query: {
@@ -294,6 +299,8 @@ const projectResolvers = {
         amount: amount.amount.toString(),
       }));
     },
+    withdrawableBalances: async (parent: ProjectModel) =>
+      getWithdrawableBalances(parent.id as AccountId),
   },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {
@@ -349,6 +356,8 @@ const projectResolvers = {
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
+    withdrawableBalances: async (parent: ProjectModel) =>
+      getWithdrawableBalances(parent.id as AccountId),
   },
 };
 
