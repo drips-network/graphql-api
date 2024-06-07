@@ -137,6 +137,13 @@ const commonTypeDef = gql`
     optimism_sepolia
     polygon_amoy
   }
+
+  type WithdrawableBalance {
+    tokenAddress: String!
+    splittableAmount: String!
+    receivableAmount: String!
+    collectableAmount: String!
+  }
 `;
 
 export default commonTypeDef;

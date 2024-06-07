@@ -35,6 +35,7 @@ const userTypeDef = gql`
     balances: [UserBalances!]!
     support: [SupportItem!]!
     latestMetadataIpfsHash: String
+    withdrawableBalances: [WithdrawableBalance!]!
   }
 `;
 

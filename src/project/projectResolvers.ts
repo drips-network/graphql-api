@@ -33,6 +33,7 @@ import type { DripListDataValues } from '../drip-list/DripListModel';
 import assert, { isGitHubUrl, isProjectId } from '../utils/assert';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
+import getWithdrawableBalances from '../utils/getWithdrawableBalances';
 
 const projectResolvers = {
   Query: {
@@ -293,6 +294,10 @@ const projectResolvers = {
       _: {},
       context: Context,
     ) => resolveTotalEarned(projectData, context),
+    withdrawableBalances: async ({
+      parentProjectInfo: { projectId, projectChain },
+    }: ResolverUnClaimedProjectData) =>
+      getWithdrawableBalances(projectId, projectChain),
   },
   UnClaimedProjectData: {
     verificationStatus: (projectData: ResolverUnClaimedProjectData) =>
@@ -318,6 +323,10 @@ const projectResolvers = {
 
       return [...projectAndDripListSupport, ...oneTimeDonationSupport];
     },
+    withdrawableBalances: async ({
+      parentProjectInfo: { projectId, projectChain },
+    }: ResolverUnClaimedProjectData) =>
+      getWithdrawableBalances(projectId, projectChain),
   },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {

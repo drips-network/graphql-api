@@ -5,6 +5,29 @@ import type { AccountId } from '../../common/types';
 import type { GivenEventModelDataValues } from '../../given-event/GivenEventModel';
 import GivenEventModel from '../../given-event/GivenEventModel';
 
+async function getDistinctErc20ByReceiver(
+  chains: SupportedChain[],
+  receiver: AccountId,
+) {
+  const baseSQL = (schema: SupportedChain) =>
+    `SELECT DISTINCT ON ("erc20"), "erc20", '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+
+  const whereClause = ` WHERE "accountId" = :receiver`;
+
+  const queries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(fullQuery, {
+      type: QueryTypes.SELECT,
+      replacements: { receiver },
+      mapToModel: true,
+      model: GivenEventModel,
+    })
+  ).map((p) => p.dataValues.erc20);
+}
+
 async function getGivenEventsByFilter(
   chains: SupportedChain[],
   where: GiveWhereInput,
@@ -133,4 +156,5 @@ export default {
   getByTxHashesAndLogIndex: getGivenEventsByTxHashesAndLogIndex,
   getByReceivers: getGivenEventsByReceivers,
   getByReceiver: getGivenEventsByReceiver,
+  getDistinctErc20ByReceiver,
 };

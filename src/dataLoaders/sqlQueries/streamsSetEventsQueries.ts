@@ -5,32 +5,52 @@ import type { SupportedChain } from '../../generated/graphql';
 import type { StreamsSetEventModelDataValues } from '../../models/StreamsSetEventModel';
 import StreamsSetEventModel from '../../models/StreamsSetEventModel';
 
+async function getDistinctErc20ByReceiversHashes(
+  chains: SupportedChain[],
+  receiversHashes: string[],
+) {
+  const baseSQL = (schema: SupportedChain) =>
+    `SELECT DISTINCT ON ("erc20"), "erc20", '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
+
+  const whereClause = ` WHERE "receiversHash" IN (:receiversHashes})`;
+
+  const queries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(fullQuery, {
+      type: QueryTypes.SELECT,
+      replacements: { receiversHashes },
+      mapToModel: true,
+      model: StreamsSetEventModel,
+    })
+  ).map((p) => p.dataValues.erc20);
+}
+
 async function getSortedStreamsSetEventsByAccountId(
   chains: SupportedChain[],
   accountId: AccountId,
 ) {
-  const baseStreamsSetEventsSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: SupportedChain) => `
     SELECT *, '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
 
-  const streamsSetEventModelConditions: string[] = ['"accountId" = :accountId'];
-  const streamsSetEventModelParameters: { [key: string]: any } = { accountId };
+  const parameters: { [key: string]: any } = { accountId };
 
-  const whereClause = ` WHERE ${streamsSetEventModelConditions.join(' AND ')}`;
+  const whereClause = ` WHERE "accountId" = :accountId`;
 
   const orderClause = ' ORDER BY "blockNumber" ASC, "logIndex" ASC';
 
-  const streamsSetEventModelDataValuesQueries = chains.map(
-    (chain) => `${baseStreamsSetEventsSQL(chain) + whereClause + orderClause}`,
+  const queries = chains.map(
+    (chain) => `${baseSQL(chain) + whereClause + orderClause}`,
   );
 
-  const fullQueryStreamsSetEventModelQuery = `${streamsSetEventModelDataValuesQueries.join(
-    ' UNION ',
-  )} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
 
   return (
-    await dbConnection.query(fullQueryStreamsSetEventModelQuery, {
+    await dbConnection.query(fullQuery, {
       type: QueryTypes.SELECT,
-      replacements: streamsSetEventModelParameters,
+      replacements: parameters,
       mapToModel: true,
       model: StreamsSetEventModel,
     })
@@ -67,4 +87,5 @@ async function getSortedStreamsSetEventsByReceiversHashes(
 export default {
   getByAccountIdSorted: getSortedStreamsSetEventsByAccountId,
   getByReceiversHashes: getSortedStreamsSetEventsByReceiversHashes,
+  getDistinctErc20ByReceiversHashes,
 };

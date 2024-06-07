@@ -26,6 +26,7 @@ import getLatestAccountMetadataByChain from '../utils/getLatestAccountMetadata';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import toResolverUser from './userUtils';
 import { getCrossChainAddressDriverAccountIdByAddress } from '../common/dripsContracts';
+import getWithdrawableBalances from '../utils/getWithdrawableBalances';
 
 const userResolvers = {
   Query: {
@@ -80,6 +81,9 @@ const userResolvers = {
       outgoing,
       parentUserInfo,
     }),
+    withdrawableBalances: async ({
+      parentUserInfo: { accountId, userChain },
+    }: ResolverUserData) => getWithdrawableBalances(accountId, userChain),
     balances: async ({
       parentUserInfo: { accountId, userChain },
     }: ResolverUserData) => {

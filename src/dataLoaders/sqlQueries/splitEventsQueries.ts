@@ -5,6 +5,29 @@ import type { SupportedChain } from '../../generated/graphql';
 import type { SplitEventModelDataValues } from '../../models/SplitEventModel';
 import SplitEventModel from '../../models/SplitEventModel';
 
+async function getDistinctErc20ByReceiver(
+  chains: SupportedChain[],
+  receiver: AccountId,
+) {
+  const baseSQL = (schema: SupportedChain) =>
+    `SELECT DISTINCT ON ("erc20"), "erc20", '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
+
+  const whereClause = ` WHERE "accountId" = :receiver`;
+
+  const queries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+  const fullQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(fullQuery, {
+      type: QueryTypes.SELECT,
+      replacements: { receiver },
+      mapToModel: true,
+      model: SplitEventModel,
+    })
+  ).map((p) => p.dataValues.erc20);
+}
+
 async function getSplitEventsByAccountIdAndReceiver(
   chains: SupportedChain[],
   accountId: AccountId,
@@ -98,4 +121,5 @@ export default {
   getByAccountIdAndReceiver: getSplitEventsByAccountIdAndReceiver,
   getByReceiver: getSplitEventsByReceiver,
   getByProjectReceivers: getSplitEventsByProjectReceivers,
+  getDistinctErc20ByReceiver,
 };

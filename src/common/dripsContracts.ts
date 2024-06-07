@@ -1,8 +1,9 @@
 import { JsonRpcProvider, WebSocketProvider, ethers } from 'ethers';
 import appSettings from './appSettings';
-import type { AddressDriver, RepoDriver } from '../generated/contracts';
+import type { AddressDriver, Drips, RepoDriver } from '../generated/contracts';
 import {
   AddressDriver__factory,
+  Drips__factory,
   RepoDriver__factory,
 } from '../generated/contracts';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
@@ -19,23 +20,28 @@ import queryableChains from './queryableChains';
 const chainConfigs: Record<
   SupportedChain,
   {
+    dripsAddress: string;
     addressDriverAddress: string;
     repoDriverAddress: string;
   }
 > = {
   mainnet: {
+    dripsAddress: '0xd0Dd053392db676D57317CD4fe96Fc2cCf42D0b4',
     addressDriverAddress: '0x1455d9bD6B98f95dd8FEB2b3D60ed825fcef0610',
     repoDriverAddress: '0x770023d55D09A9C110694827F1a6B32D5c2b373E',
   },
   sepolia: {
+    dripsAddress: '0x74A32a38D945b9527524900429b083547DeB9bF4',
     addressDriverAddress: '0x70E1E1437AeFe8024B6780C94490662b45C3B567',
     repoDriverAddress: '0xa71bdf410D48d4AA9aE1517A69D7E1Ef0c179b2B',
   },
   optimism_sepolia: {
+    dripsAddress: '0x74A32a38D945b9527524900429b083547DeB9bF4',
     addressDriverAddress: '0x70E1E1437AeFe8024B6780C94490662b45C3B567',
     repoDriverAddress: '0xa71bdf410D48d4AA9aE1517A69D7E1Ef0c179b2B',
   },
   polygon_amoy: {
+    dripsAddress: '0xeebCd570e50fa31bcf6eF10f989429C87C3A6981',
     addressDriverAddress: '0x004310a6d47893Dd6e443cbE471c24aDA1e6c619',
     repoDriverAddress: '0x54372850Db72915Fd9C5EC745683EB607b4a8642',
   },
@@ -62,6 +68,7 @@ Object.values(SupportedChain).forEach((network) => {
 
 const dripsContracts: {
   [network in SupportedChain]?: {
+    drips: Drips;
     addressDriver: AddressDriver;
     repoDriver: RepoDriver;
   };
@@ -72,7 +79,7 @@ Object.entries(providers).forEach(([network, provider]) => {
     throw new Error(`Missing chain config for network '${network}'.`);
   }
 
-  const { addressDriverAddress, repoDriverAddress } =
+  const { addressDriverAddress, repoDriverAddress, dripsAddress } =
     chainConfigs[network as SupportedChain];
 
   const addressDriver = AddressDriver__factory.connect(
@@ -81,7 +88,10 @@ Object.entries(providers).forEach(([network, provider]) => {
   );
   const repoDriver = RepoDriver__factory.connect(repoDriverAddress, provider);
 
+  const drips = Drips__factory.connect(dripsAddress, provider);
+
   dripsContracts[network as SupportedChain] = {
+    drips,
     addressDriver,
     repoDriver,
   };
