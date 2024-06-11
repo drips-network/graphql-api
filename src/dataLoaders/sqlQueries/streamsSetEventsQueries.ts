@@ -10,9 +10,11 @@ async function getDistinctErc20ByReceiversHashes(
   receiversHashes: string[],
 ) {
   const baseSQL = (schema: SupportedChain) =>
-    `SELECT DISTINCT ON ("erc20"), "erc20", '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
+    `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
 
-  const whereClause = ` WHERE "receiversHash" IN (:receiversHashes})`;
+  const whereClause = receiversHashes?.length
+    ? ` WHERE "receiversHash" IN (:receiversHashes)`
+    : '';
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 

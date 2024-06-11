@@ -10,7 +10,7 @@ async function getDistinctErc20ByReceiver(
   receiver: AccountId,
 ) {
   const baseSQL = (schema: SupportedChain) =>
-    `SELECT DISTINCT ON ("erc20"), "erc20", '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+    `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
 
   const whereClause = ` WHERE "accountId" = :receiver`;
 
