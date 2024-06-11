@@ -27,6 +27,7 @@ const rootTypeDef = gql`
     ): MintedTokens!
     userById(accountId: ID!, chains: [SupportedChain!]): User!
     userByAddress(address: String!, chains: [SupportedChain!]): User!
+    streams(where: StreamWhereInput): [Stream!]!
   }
 `;
 

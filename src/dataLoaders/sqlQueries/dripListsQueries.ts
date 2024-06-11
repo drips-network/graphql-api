@@ -17,7 +17,7 @@ async function getDripListsByFilter(
     FROM "${schema}"."DripLists"
   `;
 
-  const conditions: string[] = ['isValid = true', 'name IS NOT NULL'];
+  const conditions: string[] = ['"isValid" = true', 'name IS NOT NULL'];
   const parameters: { [key: string]: any } = {};
 
   if (where?.id) {

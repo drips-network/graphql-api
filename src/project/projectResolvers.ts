@@ -338,6 +338,10 @@ const projectResolvers = {
         return 'DripListReceiver';
       }
 
+      if (receiver.driver === Driver.ADDRESS) {
+        return 'AddressReceiver';
+      }
+
       return shouldNeverHappen();
     },
   },
