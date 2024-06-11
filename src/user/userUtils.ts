@@ -28,6 +28,7 @@ export default function toResolverUser(
           outgoing: [], // Will be populated by the resolver.
         },
         support: [], // Will be populated by the resolver.
+        withdrawableBalances: [], // Will be populated by the resolver.
       },
     })),
   };
