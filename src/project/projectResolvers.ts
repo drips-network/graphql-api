@@ -36,6 +36,7 @@ import SplitEventModel from '../models/SplitEventModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import mergeAmounts from '../utils/mergeAmounts';
 import getWithdrawableBalances from '../utils/getWithdrawableBalances';
+import { getLatestMetadataHash } from '../utils/getLatestAccountMetadata';
 
 const projectResolvers = {
   Query: {
@@ -301,6 +302,10 @@ const projectResolvers = {
     },
     withdrawableBalances: async (parent: ProjectModel) =>
       getWithdrawableBalances(parent.id as AccountId),
+    latestMetadataIpfsHash: async (parent: ProjectModel) => {
+      const { id } = parent;
+      return getLatestMetadataHash(id as AccountId);
+    },
   },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {

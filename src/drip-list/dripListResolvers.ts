@@ -1,5 +1,5 @@
 import { isAddress } from 'ethers';
-import type { Address, DripListId } from '../common/types';
+import type { AccountId, Address, DripListId } from '../common/types';
 import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
@@ -18,6 +18,7 @@ import assert, { isDripListId } from '../utils/assert';
 import SplitEventModel from '../models/SplitEventModel';
 import mergeAmounts from '../utils/mergeAmounts';
 import GivenEventModel from '../given-event/GivenEventModel';
+import { getLatestMetadataHash } from '../utils/getLatestAccountMetadata';
 
 const dripListResolvers = {
   Query: {
@@ -209,6 +210,10 @@ const dripListResolvers = {
         ...amount,
         amount: amount.amount.toString(),
       }));
+    },
+    latestMetadataIpfsHash: async (parent: DripListModel) => {
+      const { id } = parent;
+      return getLatestMetadataHash(id as AccountId);
     },
   },
 };

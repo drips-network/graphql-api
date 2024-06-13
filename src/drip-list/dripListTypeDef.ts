@@ -12,6 +12,7 @@ const dripListTypeDef = gql`
     support: [SupportItem!]!
     latestVotingRoundId: String
     totalEarned: [Amount!]!
+    latestMetadataIpfsHash: String
   }
 
   input DripListWhereInput {

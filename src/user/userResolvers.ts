@@ -1,4 +1,3 @@
-import { hexlify, toUtf8Bytes, toUtf8String, zeroPadBytes } from 'ethers';
 import {
   assetIncomingBalanceTimeline,
   assetOutgoingBalanceTimeline,
@@ -7,11 +6,12 @@ import type { AccountId, Address, AddressDriverId } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import { Driver } from '../generated/graphql';
 import type { User } from '../generated/graphql';
-import AccountMetadataEmittedEventModel from '../models/AccountMetadataEmittedEventModel';
 import type { Context } from '../server';
 import assert, { isAddressDriverId } from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
-import getLatestAccountMetadata from '../utils/getLatestAccountMetadata';
+import getLatestAccountMetadata, {
+  getLatestMetadataHash,
+} from '../utils/getLatestAccountMetadata';
 import getUserAddress from '../utils/getUserAddress';
 import getWithdrawableBalances, {
   getRelevantTokens,
@@ -130,22 +130,7 @@ const userResolvers = {
     },
     latestMetadataIpfsHash: async (parent: User) => {
       const { accountId } = parent.account;
-
-      const latestAccountMetadataEmittedEvent =
-        await AccountMetadataEmittedEventModel.findOne({
-          where: {
-            accountId,
-            key: zeroPadBytes(hexlify(toUtf8Bytes('ipfs')), 32),
-          },
-          order: [
-            ['blockNumber', 'DESC'],
-            ['logIndex', 'DESC'],
-          ],
-        });
-
-      return latestAccountMetadataEmittedEvent?.value
-        ? toUtf8String(latestAccountMetadataEmittedEvent.value)
-        : undefined;
+      return getLatestMetadataHash(accountId as AccountId);
     },
   },
   UserStreams: {
