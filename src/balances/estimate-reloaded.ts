@@ -1,13 +1,112 @@
 /* eslint-disable no-continue */
 
+import { AMT_PER_SEC_MULTIPLIER } from '../common/constants';
+import type { AccountId } from '../common/types';
 import {
   TimelineItemType,
   type UserBalanceTimelineItem,
   type Scalars,
   type TimelineItem,
 } from '../generated/graphql';
+import { currentAmounts } from '../utils/balance-timelines';
 import type { AssetConfigHistoryItem } from '../utils/buildAssetConfigs';
+import getCycleInfo from '../utils/cycle';
+import { getTokenBalances } from '../utils/getWithdrawableBalances';
 import minMax from '../utils/minMax';
+
+export async function assetIncomingBalanceTimeline(
+  accountId: AccountId,
+  tokenAddress: string,
+  incomingStreams: any[],
+): Promise<UserBalanceTimelineItem[]> {
+  const { currentCycleStartDate } = getCycleInfo();
+
+  const { receivable, splittable, collectable } = await getTokenBalances(
+    accountId,
+    tokenAddress,
+  );
+
+  const timeline: UserBalanceTimelineItem[] = [];
+
+  const incomingStreamsAmountsAtCycleStart = incomingStreams
+    .filter(
+      (stream) =>
+        stream.config.amountPerSecond.tokenAddress.toLowerCase() ===
+        tokenAddress.toLowerCase(),
+    )
+    .map((stream) =>
+      currentAmounts(stream.timeline, tokenAddress, currentCycleStartDate),
+    );
+
+  timeline.push({
+    timestamp: currentCycleStartDate,
+    currentAmount: {
+      tokenAddress,
+      amount: (
+        (receivable + splittable + collectable) *
+        BigInt(AMT_PER_SEC_MULTIPLIER)
+      ).toString(),
+    },
+    deltaPerSecond: {
+      tokenAddress,
+      amount: incomingStreamsAmountsAtCycleStart
+        .reduce((acc, amt) => acc + amt.currentDeltaPerSecond.amount, 0n)
+        .toString(),
+    },
+  });
+
+  const streamTimelinesByStreamId: { [streamId: string]: TimelineItem[] } =
+    incomingStreams.reduce((acc, stream) => {
+      acc[stream.id] = stream.timeline;
+      return acc;
+    }, {});
+
+  for (const streamTimeline of Object.values(streamTimelinesByStreamId)) {
+    for (const timelineItem of streamTimeline) {
+      if (timelineItem.timestamp.getTime() < currentCycleStartDate.getTime())
+        continue;
+
+      const previousStreamTimelineItem =
+        streamTimeline[streamTimeline.indexOf(timelineItem) - 1];
+
+      const diffBetweenCurrAndPrevDelta =
+        BigInt(timelineItem.deltaPerSecond.amount) -
+        BigInt(previousStreamTimelineItem.deltaPerSecond.amount);
+      if (diffBetweenCurrAndPrevDelta === 0n) continue;
+
+      const lastIncomingTimelineItem = timeline[timeline.length - 1];
+      const timeSinceLastIncomingTimelineItem = Math.floor(
+        (timelineItem.timestamp.getTime() -
+          lastIncomingTimelineItem.timestamp.getTime()) /
+          1000,
+      );
+
+      const receivedSinceLastTimelineItem =
+        BigInt(lastIncomingTimelineItem.deltaPerSecond.amount) *
+        BigInt(timeSinceLastIncomingTimelineItem);
+
+      timeline.push({
+        timestamp: timelineItem.timestamp,
+        currentAmount: {
+          tokenAddress,
+          amount: (
+            BigInt(lastIncomingTimelineItem.currentAmount.amount) +
+            receivedSinceLastTimelineItem
+          ).toString(),
+        },
+        deltaPerSecond: {
+          tokenAddress,
+          amount: (
+            BigInt(timeline[timeline.length - 1].deltaPerSecond.amount) +
+            BigInt(diffBetweenCurrAndPrevDelta)
+          ).toString(),
+        },
+      });
+    }
+  }
+
+  return timeline;
+}
 
 export function assetOutgoingBalanceTimeline(
   historyItems: AssetConfigHistoryItem[],
@@ -116,17 +215,6 @@ export function assetOutgoingBalanceTimeline(
           : previousBalance + totalStreamedSinceLastEvent;
       if (currentBalance < 0) currentBalance = 0n;
 
-      if (ts.getTime() === new Date('2024-05-23T03:03:15.000Z').getTime()) {
-        console.log('last item', {
-          previousTimelineItem,
-          previousBalance,
-          previousDeltaPerSecond,
-          secondsPassedSinceLastEvent,
-          totalStreamedSinceLastEvent,
-          currentBalance,
-        });
-      }
-
       let currentDeltaPerSecond =
         currentBalance > 0n
           ? streams.reduce((acc, stream) => {
@@ -160,25 +248,6 @@ export function assetOutgoingBalanceTimeline(
       // If balance cannot go any lower, we need to set the deltaPerSecond to 0.
       if (currentBalance - currentDeltaPerSecond <= 0n) {
         currentDeltaPerSecond = 0n;
-      }
-
-      if (
-        item.balance.tokenAddress ===
-        '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
-      ) {
-        console.log({
-          result: {
-            timestamp: ts,
-            currentAmount: {
-              tokenAddress: item.balance.tokenAddress,
-              amount: currentBalance.toString(),
-            },
-            deltaPerSecond: {
-              tokenAddress: item.balance.tokenAddress,
-              amount: (-currentDeltaPerSecond).toString(),
-            },
-          },
-        });
       }
 
       timeline.push({

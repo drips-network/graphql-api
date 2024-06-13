@@ -1,5 +1,8 @@
 import { hexlify, toUtf8Bytes, toUtf8String, zeroPadBytes } from 'ethers';
-import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
+import {
+  assetIncomingBalanceTimeline,
+  assetOutgoingBalanceTimeline,
+} from '../balances/estimate-reloaded';
 import type { AccountId, Address, AddressDriverId } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import { Driver } from '../generated/graphql';
@@ -10,7 +13,9 @@ import assert, { isAddressDriverId } from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
 import getLatestAccountMetadata from '../utils/getLatestAccountMetadata';
 import getUserAddress from '../utils/getUserAddress';
-import getWithdrawableBalances from '../utils/getWithdrawableBalances';
+import getWithdrawableBalances, {
+  getRelevantTokens,
+} from '../utils/getWithdrawableBalances';
 
 const userResolvers = {
   Query: {
@@ -36,21 +41,50 @@ const userResolvers = {
     }),
     withdrawableBalances: async (parent: User) =>
       getWithdrawableBalances(parent.account.accountId as AccountId),
-    balances: async (parent: User) => {
+    balances: async (parent: User, _: any, { dataSources }: Context) => {
       const { metadata } =
         (await getLatestAccountMetadata(
           parent.account.accountId as AddressDriverId,
         )) ?? {};
-      const assetConfigs = await getAssetConfigs(
-        parent.account.accountId as AddressDriverId,
-        metadata,
+
+      const [assetConfigs, incomingStreams, relevantTokensForIncomingBalance] =
+        await Promise.all([
+          getAssetConfigs(
+            parent.account.accountId as AddressDriverId,
+            metadata,
+          ),
+          dataSources.streamsDb.getUserIncomingStreams(
+            parent.account.accountId as AddressDriverId,
+          ),
+          getRelevantTokens(parent.account.accountId as AccountId),
+        ]);
+
+      const allTokens = Array.from(
+        new Set([
+          ...assetConfigs.map((ac) => ac.tokenAddress),
+          ...relevantTokensForIncomingBalance,
+        ]),
       );
 
-      return assetConfigs.map((ac) => ({
-        tokenAddress: ac.tokenAddress,
-        incoming: [],
-        outgoing: assetOutgoingBalanceTimeline(ac.history),
-      }));
+      return Promise.all(
+        allTokens.map(async (tokenAddress) => {
+          const outgoingAssetConfig = assetConfigs.find(
+            (ac) => ac.tokenAddress === tokenAddress,
+          );
+
+          return {
+            tokenAddress,
+            incoming: await assetIncomingBalanceTimeline(
+              parent.account.accountId as AccountId,
+              tokenAddress,
+              incomingStreams,
+            ),
+            outgoing: outgoingAssetConfig
+              ? assetOutgoingBalanceTimeline(outgoingAssetConfig.history)
+              : [],
+          };
+        }),
+      );
     },
     projects: (parent: User, _: any, { dataSources }: Context) => {
       const { accountId } = parent.account;

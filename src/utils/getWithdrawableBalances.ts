@@ -10,7 +10,7 @@ import provider from '../common/provider';
 
 const drips = Drips__factory.connect(appSettings.dripsAddress, provider);
 
-export default async function getWithdrawableBalances(accountId: AccountId) {
+export async function getRelevantTokens(accountId: AccountId) {
   const streamReceiverSeenEventsForUser =
     await StreamReceiverSeenEventModel.findAll({
       where: {
@@ -47,7 +47,7 @@ export default async function getWithdrawableBalances(accountId: AccountId) {
     }),
   ]);
 
-  const relevantTokenAddresses = [
+  return [
     ...incomingStreamTokenAddresses.map((event) => event.erc20),
     ...incomingGivesTokenAddresses.map((event) => event.erc20),
     ...incomingSplitEventsTokenAddresses.map((event) => event.erc20),
@@ -58,6 +58,27 @@ export default async function getWithdrawableBalances(accountId: AccountId) {
 
     return acc;
   }, []);
+}
+
+export async function getTokenBalances(
+  accountId: AccountId,
+  tokenAddress: string,
+) {
+  const [splittable, receivable, collectable] = await Promise.all([
+    drips.splittable(accountId, tokenAddress),
+    drips.receiveStreamsResult(accountId, tokenAddress, 10000),
+    drips.collectable(accountId, tokenAddress),
+  ]);
+
+  return {
+    splittable,
+    receivable,
+    collectable,
+  };
+}
+
+export default async function getWithdrawableBalances(accountId: AccountId) {
+  const relevantTokenAddresses = await getRelevantTokens(accountId);
 
   const balances: {
     [tokenAddress: string]: {
@@ -68,11 +89,10 @@ export default async function getWithdrawableBalances(accountId: AccountId) {
   } = Object.fromEntries(
     await Promise.all(
       relevantTokenAddresses.map(async (tokenAddress) => {
-        const [splittable, receivable, collectable] = await Promise.all([
-          drips.splittable(accountId, tokenAddress),
-          drips.receiveStreamsResult(accountId, tokenAddress, 10000),
-          drips.collectable(accountId, tokenAddress),
-        ]);
+        const { splittable, receivable, collectable } = await getTokenBalances(
+          accountId,
+          tokenAddress,
+        );
 
         return [tokenAddress, { splittable, receivable, collectable }];
       }),
