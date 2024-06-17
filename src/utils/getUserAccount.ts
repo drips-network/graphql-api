@@ -15,6 +15,7 @@ export default async function getUserAccount(
   const assetConfigsByChain = await getAssetConfigs(
     accountId,
     latestAccountMetadataByChain,
+    chains,
   );
 
   const response = {} as Record<

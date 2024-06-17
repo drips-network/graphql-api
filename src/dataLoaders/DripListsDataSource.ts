@@ -35,8 +35,8 @@ export default class DripListsDataSource {
   );
 
   public async getDripListById(
-    chains: SupportedChain[],
     id: DripListId,
+    chains: SupportedChain[],
   ): Promise<DripListDataValues> {
     return this._batchDripListsByIds.load({
       id,
@@ -51,16 +51,18 @@ export default class DripListsDataSource {
     return dripListsQueries.getByFilter(chains, where);
   }
 
-  public async getDripListsByIds(
+  public async getDripListsByIdsOnChain(
     ids: DripListId[],
-    chains: SupportedChain[],
+    chain: SupportedChain,
   ): Promise<DripListDataValues[]> {
-    return this._batchDripListsByIds.loadMany(
-      ids.map((id) => ({
-        id,
-        chains,
-      })),
-    ) as Promise<DripListDataValues[]>;
+    return (
+      await (this._batchDripListsByIds.loadMany(
+        ids.map((id) => ({
+          id,
+          chains: [chain],
+        })),
+      ) as Promise<DripListDataValues[]>)
+    ).filter((dripList) => dripList.chain === chain);
   }
 
   public async getMintedTokensCountByAccountId(

@@ -5,11 +5,7 @@ import type {
   ProjectId,
   ProjectMultiChainKey,
 } from '../common/types';
-import {
-  doesRepoExists,
-  toApiProject,
-  toFakeUnclaimedProjectFromUrl,
-} from '../project/projectUtils';
+import { toApiProject } from '../project/projectUtils';
 import type {
   ProjectSortInput,
   ProjectWhereInput,
@@ -19,6 +15,7 @@ import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import projectsQueries from './sqlQueries/projectsQueries';
 import givenEventsQueries from './sqlQueries/givenEventsQueries';
 import splitEventsQueries from './sqlQueries/splitEventsQueries';
+import shouldNeverHappen from '../utils/shouldNeverHappen';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
@@ -52,31 +49,57 @@ export default class ProjectsDataSource {
     },
   );
 
-  public async getProjectById(
+  public async getProjectByIdOnChain(
     id: ProjectId,
     chain: SupportedChain,
   ): Promise<ProjectDataValues | null> {
-    return toApiProject(
-      await this._batchProjectsByIds.load({
-        id,
-        chains: [chain],
-      }),
-    );
+    const dbProject = await this._batchProjectsByIds.load({
+      id,
+      chains: [chain],
+    });
+
+    return dbProject ?? null;
+  }
+
+  public async getProjectById(
+    id: ProjectId,
+    chains: SupportedChain[],
+  ): Promise<ProjectDataValues[] | null> {
+    const dbProjects = (
+      await this._batchProjectsByIds.loadMany([{ id, chains }])
+    ).filter(Boolean) as ProjectDataValues[];
+
+    if (!dbProjects?.length) {
+      return null;
+    }
+
+    if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
+      shouldNeverHappen(
+        'Found same project with different ids on different chains.',
+      );
+    }
+
+    return dbProjects;
   }
 
   public async getProjectByUrl(
     url: string,
-    chain: SupportedChain,
-  ): Promise<ProjectDataValues | null> {
-    const project = await projectsQueries.getByUrl(chain, url);
+    chains: SupportedChain[],
+  ): Promise<ProjectDataValues[] | null> {
+    // TODO: To Data Loader.
+    const dbProjects = await projectsQueries.getByUrl(chains, url);
 
-    if (project) {
-      return toApiProject(project);
+    if (!dbProjects?.length) {
+      return null;
     }
 
-    const exists = await doesRepoExists(url);
+    if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
+      shouldNeverHappen(
+        'Found same project with different ids on different chains.',
+      );
+    }
 
-    return exists ? toFakeUnclaimedProjectFromUrl(url) : null;
+    return dbProjects;
   }
 
   public async getProjectsByFilter(
@@ -97,16 +120,18 @@ export default class ProjectsDataSource {
     );
   }
 
-  public async getProjectsByIds(
+  public async getProjectsByIdsOnChain(
     ids: ProjectId[],
-    chains: SupportedChain[],
+    chain: SupportedChain,
   ): Promise<ProjectDataValues[]> {
-    return this._batchProjectsByIds.loadMany(
-      ids.map((id) => ({
-        id,
-        chains,
-      })),
-    ) as Promise<ProjectDataValues[]>;
+    return (
+      await (this._batchProjectsByIds.loadMany(
+        ids.map((id) => ({
+          id,
+          chains: [chain],
+        })),
+      ) as Promise<ProjectDataValues[]>)
+    ).filter((p) => p.chain === chain);
   }
 
   public async getEarnedFunds(

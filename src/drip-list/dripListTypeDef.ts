@@ -3,15 +3,11 @@ import gql from 'graphql-tag';
 const dripListTypeDef = gql`
   type DripList {
     account: NftDriverAccount!
-    chainData: [DripListChainData!]!
-  }
-
-  type DripListChainData {
-    chain: SupportedChain!
-    data: DripListData
+    chainData: [DripListData!]!
   }
 
   type DripListData {
+    chain: SupportedChain!
     name: String!
     creator: String!
     description: String

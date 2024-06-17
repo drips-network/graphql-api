@@ -73,10 +73,7 @@ export type StreamHistoryHashes = string & {
 };
 
 export type ResolverProject = Project & {
-  chainData: (
-    | ResolverClaimedProjectChainData
-    | ResolverUnClaimedProjectChainData
-  )[];
+  chainData: (ResolverClaimedProjectData | ResolverUnClaimedProjectData)[];
 };
 
 type ProjectDataParentProjectInfo = {
@@ -90,18 +87,8 @@ type ProjectDataParentProjectInfo = {
 export type ResolverClaimedProjectData = ClaimedProjectData &
   ProjectDataParentProjectInfo;
 
-export type ResolverClaimedProjectChainData = {
-  chain: SupportedChain;
-  data: ResolverClaimedProjectData;
-};
-
 export type ResolverUnClaimedProjectData = UnClaimedProjectData &
   ProjectDataParentProjectInfo;
-
-export type ResolverUnClaimedProjectChainData = {
-  chain: SupportedChain;
-  data: ResolverUnClaimedProjectData;
-};
 
 export interface MultiChainKey<T = AccountId> {
   id: T;
@@ -111,12 +98,7 @@ export type ProjectMultiChainKey = MultiChainKey<ProjectId>;
 export type DripListMultiChainKey = MultiChainKey<DripListId>;
 
 export type ResolverDripList = DripList & {
-  chainData: ResolverDripListChainData[];
-};
-
-export type ResolverDripListChainData = {
-  chain: SupportedChain;
-  data: ResolverDripListData | null;
+  chainData?: ResolverDripListData[];
 };
 
 type DripListDataParentDripListInfo = {
@@ -146,12 +128,7 @@ export type ResolverGiveChainData = {
 };
 
 export type ResolverUser = User & {
-  chainData: ResolverUserChainData[];
-};
-
-export type ResolverUserChainData = {
-  chain: SupportedChain;
-  data: ResolverUserData | null;
+  chainData: ResolverUserData[];
 };
 
 export type ResolverUserData = UserData & UserDataParentDripListInfo;

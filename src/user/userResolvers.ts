@@ -5,28 +5,32 @@ import type {
   Address,
   AddressDriverId,
   ResolverUser,
-  ResolverUserChainData,
   ResolverUserData,
   UserDataParentDripListInfo,
 } from '../common/types';
-import DripListModel from '../drip-list/DripListModel';
+import type DripListModel from '../drip-list/DripListModel';
 import type {
   SupportedChain,
   AddressDriverAccount,
   User,
 } from '../generated/graphql';
+import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, { isAddressDriverId } from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
 import getUserAddress from '../utils/getUserAddress';
 import queryableChains from '../common/queryableChains';
-import { toResolverProjects } from '../project/projectUtils';
-import { toResolverDripLists } from '../drip-list/dripListUtils';
+import { toResolverProject, toResolverProjects } from '../project/projectUtils';
+import {
+  toResolverDripList,
+  toResolverDripLists,
+} from '../drip-list/dripListUtils';
 import getLatestAccountMetadataByChain from '../utils/getLatestAccountMetadata';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import toResolverUser from './userUtils';
 import { getCrossChainAddressDriverAccountIdByAddress } from '../common/dripsContracts';
 import getWithdrawableBalances from '../utils/getWithdrawableBalances';
+import shouldNeverHappen from '../utils/shouldNeverHappen';
 
 const userResolvers = {
   Query: {
@@ -65,12 +69,7 @@ const userResolvers = {
   },
   User: {
     account: (user: ResolverUser): AddressDriverAccount => user.account,
-    chainData: (user: ResolverUser): ResolverUserChainData[] => user.chainData,
-  },
-  UserChainData: {
-    chain: (chainUserData: ResolverUserChainData): SupportedChain =>
-      chainUserData.chain,
-    data: (chainUserData: ResolverUserChainData) => chainUserData.data,
+    chainData: (user: ResolverUser): ResolverUserData[] => user.chainData,
   },
   UserData: {
     streams: async ({
@@ -97,16 +96,14 @@ const userResolvers = {
       const assetConfigs = await getAssetConfigs(
         accountId as AddressDriverId,
         metadata,
+        [userChain],
       );
 
-      return Object.entries(assetConfigs).map(([chain, chainAssetConfigs]) => ({
-        chain: chain as SupportedChain,
-
-        assetConfigs: chainAssetConfigs.map((ac) => ({
-          tokenAddress: ac.tokenAddress,
-          incoming: [],
-          outgoing: assetOutgoingBalanceTimeline(ac.history),
-        })),
+      return assetConfigs[userChain].map((assetConfig) => ({
+        chain: userChain,
+        tokenAddress: assetConfig.tokenAddress,
+        incoming: [],
+        outgoing: assetOutgoingBalanceTimeline(assetConfig.history),
       }));
     },
     projects: async (
@@ -140,28 +137,88 @@ const userResolvers = {
     support: async (
       { parentUserInfo: { accountId, userChain } }: ResolverUserData,
       _: {},
-      { dataSources: { projectAndDripListSupportDataSource } }: Context,
+      {
+        dataSources: {
+          projectsDataSource,
+          dripListsDataSource,
+          projectAndDripListSupportDataSource,
+        },
+      }: Context,
     ) => {
-      const projectAndDripListSupport =
-        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByAddressDriverId(
-          [userChain],
+      // `RepoDriverSplitReceiver`s that represent the Project as a receiver.
+      const dbAddressDriverSplitReceivers =
+        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByAddressDriverIdOnChain(
           accountId as AddressDriverId,
+          userChain,
         );
 
+      const projectsAndDripListsSupport = await Promise.all(
+        dbAddressDriverSplitReceivers.map(async (receiver) => {
+          const {
+            funderProjectId,
+            funderDripListId,
+            fundeeAccountId,
+            blockTimestamp,
+          } = receiver;
+
+          // Supported is a Project.
+          if (funderProjectId && !funderDripListId) {
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: fundeeAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              project: await toResolverProject(
+                [userChain],
+                (await projectsDataSource.getProjectByIdOnChain(
+                  funderProjectId,
+                  userChain,
+                )) || shouldNeverHappen(),
+              ),
+            };
+            // Supported is a DripList.
+          }
+          if (funderDripListId && !funderProjectId) {
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: fundeeAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              dripList: await toResolverDripList(
+                userChain,
+                (await dripListsDataSource.getDripListById(funderDripListId, [
+                  userChain,
+                ])) || shouldNeverHappen(),
+              ),
+            };
+          }
+
+          return shouldNeverHappen(
+            'Supported is neither a Project nor a DripList.',
+          );
+        }),
+      );
+
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountId(
-          [userChain],
+        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
           accountId as AccountId,
+          userChain,
         );
 
       const streamSupport =
-        await projectAndDripListSupportDataSource.getStreamSupportByAccountId(
-          [userChain],
+        await projectAndDripListSupportDataSource.getStreamSupportByAccountIdOnChain(
           accountId as AccountId,
+          userChain,
         );
 
       return [
-        ...projectAndDripListSupport,
+        ...projectsAndDripListsSupport,
         ...streamSupport,
         ...oneTimeDonationSupport,
       ];
@@ -205,7 +262,7 @@ const userResolvers = {
   },
   StreamReceiver: {
     __resolveType(parent: DripListModel | User) {
-      if (parent instanceof DripListModel) {
+      if ('account' in parent && parent.account.driver === Driver.NFT) {
         return 'DripList';
       }
 

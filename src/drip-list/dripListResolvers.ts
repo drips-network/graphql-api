@@ -3,18 +3,14 @@ import type {
   Address,
   DripListId,
   ResolverDripList,
-  ResolverDripListChainData,
   ResolverDripListData,
 } from '../common/types';
 import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
   AddressReceiver,
-  DripList,
   DripListWhereInput,
   NftDriverAccount,
-  Project,
-  SplitsReceiver,
 } from '../generated/graphql';
 import { SupportedChain, Driver } from '../generated/graphql';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
@@ -26,6 +22,7 @@ import { toResolverDripList, toResolverDripLists } from './dripListUtils';
 import verifyDripListsInput from './dripListValidators';
 import type { DripListDataValues } from './DripListModel';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
+import { toResolverProject } from '../project/projectUtils';
 
 const dripListResolvers = {
   Query: {
@@ -56,7 +53,7 @@ const dripListResolvers = {
       assert(isDripListId(id));
       assert(chain in SupportedChain);
 
-      const dbDripList = await dripListsDataSource.getDripListById([chain], id);
+      const dbDripList = await dripListsDataSource.getDripListById(id, [chain]);
 
       return dbDripList ? toResolverDripList(chain, dbDripList) : null;
     },
@@ -76,12 +73,6 @@ const dripListResolvers = {
   },
   DripList: {
     account: (dripList: ResolverDripList): NftDriverAccount => dripList.account,
-  },
-  DripListChainData: {
-    chain: (chainDripListData: ResolverDripListChainData): SupportedChain =>
-      chainDripListData.chain,
-    data: (chainDripListData: ResolverDripListChainData) =>
-      chainDripListData.data,
   },
   DripListData: {
     name: (dripListData: ResolverDripListData) =>
@@ -109,11 +100,11 @@ const dripListResolvers = {
           receiversOfTypeDripListDataSource,
         },
       }: Context,
-    ): Promise<SplitsReceiver[]> => {
+    ) => {
       const receiversOfTypeAddressModels =
-        await receiversOfTypeAddressDataSource.getReceiversOfTypeAddressByDripListId(
+        await receiversOfTypeAddressDataSource.getReceiversOfTypeAddressByDripListIdOnChain(
           dripListId,
-          [dripListChain],
+          dripListChain,
         );
 
       const addressSplits = receiversOfTypeAddressModels.map((receiver) => ({
@@ -128,56 +119,61 @@ const dripListResolvers = {
       })) as AddressReceiver[];
 
       const receiversOfTypeProjectModels =
-        await receiversOfTypeProjectDataSource.getReceiversOfTypeProjectByDripListId(
+        await receiversOfTypeProjectDataSource.getReceiversOfTypeProjectByDripListIdOnChain(
           dripListId,
-          [dripListChain],
+          dripListChain,
         );
 
       const splitsOfTypeProjectModels =
-        await projectsDataSource.getProjectsByIds(
+        await projectsDataSource.getProjectsByIdsOnChain(
           receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
-          [dripListChain],
+          dripListChain,
         );
 
-      const projectReceivers = receiversOfTypeProjectModels.map((receiver) => ({
-        driver: Driver.REPO,
-        weight: receiver.weight,
-        receiverType: receiver.type,
-        account: {
+      const projectReceivers = await Promise.all(
+        receiversOfTypeProjectModels.map(async (receiver) => ({
           driver: Driver.REPO,
-          accountId: receiver.fundeeProjectId,
-        },
-        project:
-          (splitsOfTypeProjectModels
-            .filter(
-              (p): p is ProjectDataValues => p && (p as any).id !== undefined,
-            )
-            .find(
-              (p) => (p as any).id === receiver.fundeeProjectId,
-            ) as unknown as Project) || shouldNeverHappen(),
-      }));
+          weight: receiver.weight,
+          receiverType: receiver.type,
+          account: {
+            driver: Driver.REPO,
+            accountId: receiver.fundeeProjectId,
+          },
+          project: await toResolverProject(
+            [dripListChain],
+            (splitsOfTypeProjectModels
+              .filter(
+                (p): p is ProjectDataValues => p && (p as any).id !== undefined,
+              )
+              .find(
+                (p) => (p as any).id === receiver.fundeeProjectId,
+              ) as unknown as ProjectDataValues) || shouldNeverHappen(),
+          ),
+        })),
+      );
 
       const receiversOfTypeDripListModels =
-        await receiversOfTypeDripListDataSource.getReceiversOfTypeDripListByDripListId(
+        await receiversOfTypeDripListDataSource.getReceiversOfTypeDripListByDripListIdOnChain(
           dripListId,
-          [dripListChain],
+          dripListChain,
         );
 
       const splitsOfTypeDripListModels =
-        await dripListsDataSource.getDripListsByIds(
+        await dripListsDataSource.getDripListsByIdsOnChain(
           receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
-          [dripListChain],
+          dripListChain,
         );
 
-      const dripListReceivers = receiversOfTypeDripListModels.map(
-        (receiver) => ({
+      const dripListReceivers = await Promise.all(
+        receiversOfTypeDripListModels.map(async (receiver) => ({
           driver: Driver.NFT,
           weight: receiver.weight,
           account: {
             driver: Driver.NFT,
             accountId: receiver.fundeeDripListId,
           },
-          dripList:
+          dripList: await toResolverDripList(
+            dripListChain,
             (splitsOfTypeDripListModels
               .filter(
                 (l): l is DripListDataValues =>
@@ -185,8 +181,9 @@ const dripListResolvers = {
               )
               .find(
                 (p) => (p as any).id === receiver.fundeeDripListId,
-              ) as unknown as DripList) || shouldNeverHappen(),
-        }),
+              ) as unknown as DripListDataValues) || shouldNeverHappen(),
+          ),
+        })),
       );
 
       return [...addressSplits, ...projectReceivers, ...dripListReceivers];
@@ -196,30 +193,91 @@ const dripListResolvers = {
         parentDripListInfo: { dripListId, dripListChain },
       }: ResolverDripListData,
       _: {},
-      { dataSources: { projectAndDripListSupportDataSource } }: Context,
+      {
+        dataSources: {
+          projectsDataSource,
+          dripListsDataSource,
+          projectAndDripListSupportDataSource,
+        },
+      }: Context,
     ) => {
-      const projectAndDripListSupport =
-        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByDripListId(
+      // All `RepoDriverSplitReceiver`s that represent the Drip List as a receiver.
+      const dbRepoDriverSplitReceivers =
+        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByDripListIdOnChain(
           dripListId,
-          [dripListChain],
+          dripListChain,
         );
 
+      const projectsAndDripListsSupport = await Promise.all(
+        dbRepoDriverSplitReceivers.map(async (receiver) => {
+          const {
+            funderProjectId,
+            funderDripListId,
+            fundeeDripListId,
+            blockTimestamp,
+          } = receiver;
+
+          // Supported is a Project.
+          if (funderProjectId && !funderDripListId) {
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: fundeeDripListId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              project: await toResolverProject(
+                [dripListChain],
+                (await projectsDataSource.getProjectByIdOnChain(
+                  funderProjectId,
+                  dripListChain,
+                )) || shouldNeverHappen(),
+              ),
+            };
+            // Supported is a DripList.
+          }
+          if (funderDripListId && !funderProjectId) {
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: fundeeDripListId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              dripList: await toResolverDripList(
+                dripListChain,
+                (await dripListsDataSource.getDripListById(funderDripListId, [
+                  dripListChain,
+                ])) || shouldNeverHappen(),
+              ),
+            };
+          }
+
+          return shouldNeverHappen(
+            'Supported is neither a Project nor a DripList.',
+          );
+        }),
+      );
+
+      // `GivenEventModelDataValues`s that represent one time donations to the Project.
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountId(
-          [dripListChain],
+        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
           dripListId,
+          dripListChain,
         );
 
       const streamSupport =
-        await projectAndDripListSupportDataSource.getStreamSupportByAccountId(
-          [dripListChain],
+        await projectAndDripListSupportDataSource.getStreamSupportByAccountIdOnChain(
           dripListId,
+          dripListChain,
         );
 
       return [
-        ...projectAndDripListSupport,
-        ...streamSupport,
+        ...projectsAndDripListsSupport,
         ...oneTimeDonationSupport,
+        ...streamSupport,
       ];
     },
     totalEarned: async (

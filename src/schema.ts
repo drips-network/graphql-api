@@ -13,8 +13,8 @@ const rootTypeDef = gql`
       where: ProjectWhereInput
       sort: ProjectSortInput
     ): [Project!]!
-    projectById(id: ID!, chain: SupportedChain!): Project
-    projectByUrl(url: String!, chain: SupportedChain!): Project
+    projectById(id: ID!, chains: [SupportedChain!]): Project
+    projectByUrl(url: String!, chains: [SupportedChain!]): Project
     earnedFunds(projectId: String!, chains: [SupportedChain!]): [ChainAmount!]!
     dripLists(
       chains: [SupportedChain!]
@@ -27,7 +27,10 @@ const rootTypeDef = gql`
     ): MintedTokens!
     userById(accountId: ID!, chains: [SupportedChain!]): User!
     userByAddress(address: String!, chains: [SupportedChain!]): User!
-    streams(where: StreamWhereInput): [Stream!]!
+    streams(
+      where: StreamWhereInput
+      chains: [SupportedChain!]
+    ): [StreamChainData!]!
   }
 `;
 

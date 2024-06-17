@@ -1,49 +1,52 @@
 import type {
   AddressDriverAccount,
   Amount,
+  DripList,
   NftDriverAccount,
+  Project,
   RepoDriverAccount,
+  SplitsReceiver,
   SupportedChain,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
-import type GivenEventModel from '../given-event/GivenEventModel';
-import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { AddressDriverId, DripListId, ProjectId } from './types';
 import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
-import { toResolverProjects } from '../project/projectUtils';
+import { toResolverProject } from '../project/projectUtils';
 import { toResolverDripLists } from '../drip-list/dripListUtils';
-import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
+import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
 import mergeAmounts from '../utils/mergeAmounts';
-import AddressDriverSplitReceiverModel, {
-  AddressDriverSplitReceiverType,
-} from '../models/AddressDriverSplitReceiverModel';
+import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
+import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
 import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
+import type projectResolvers from '../project/projectResolvers';
+import type dripListResolvers from '../drip-list/dripListResolvers';
+import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
+import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 
 async function resolveTotalSplit(
-  chains: SupportedChain[],
   parent:
-    | DripListSplitReceiverModel
-    | RepoDriverSplitReceiverModel
-    | AddressDriverSplitReceiverModel,
+    | DripListSplitReceiverModelDataValues
+    | RepoDriverSplitReceiverModelDataValues
+    | AddressDriverSplitReceiverModelDataValues,
 ) {
   let incomingAccountId: DripListId | ProjectId;
   let recipientAccountId: DripListId | ProjectId | AddressDriverId;
 
-  if (parent instanceof DripListSplitReceiverModel) {
+  if ('fundeeDripListId' in parent) {
     const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
     recipientAccountId = fundeeDripListId;
     incomingAccountId =
       funderDripListId || funderProjectId || shouldNeverHappen();
-  } else if (parent instanceof RepoDriverSplitReceiverModel) {
+  } else if ('fundeeProjectId' in parent) {
     const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
     recipientAccountId = fundeeProjectId;
     incomingAccountId =
       funderDripListId || funderProjectId || shouldNeverHappen();
-  } else if (parent instanceof AddressDriverSplitReceiverModel) {
+  } else if ('fundeeAccountId' in parent) {
     const { fundeeAccountId, funderDripListId, funderProjectId } = parent;
 
     recipientAccountId = fundeeAccountId;
@@ -52,9 +55,8 @@ async function resolveTotalSplit(
   } else {
     shouldNeverHappen('Invalid SupportItem type');
   }
-
   const splitEvents = await splitEventsQueries.getByAccountIdAndReceiver(
-    chains,
+    [parent.chain],
     incomingAccountId,
     recipientAccountId,
   );
@@ -72,16 +74,34 @@ async function resolveTotalSplit(
 }
 
 const commonResolvers = {
+  AddressReceiver: {
+    weight: async ({ weight }: { weight: number }) => weight,
+    driver: async ({ driver }: { driver: Driver }) => driver,
+    account: async ({ account }: { account: AddressDriverAccount }) => account,
+  },
+  DripListReceiver: {
+    weight: async ({ weight }: { weight: number }) => weight,
+    driver: async ({ driver }: { driver: Driver }) => driver,
+    dripList: async ({ dripList }: { dripList: DripList }) => dripList,
+    account: async ({ account }: { account: NftDriverAccount }) => account,
+  },
+  ProjectReceiver: {
+    weight: async ({ weight }: { weight: number }) => weight,
+    driver: async ({ driver }: { driver: Driver }) => driver,
+    project: async ({ project }: { project: Project }) => project,
+    account: async ({ account }: { account: RepoDriverAccount }) => account,
+  },
   SupportItem: {
     __resolveType(
       parent:
-        | DripListSplitReceiverModel
-        | RepoDriverSplitReceiverModel
-        | AddressDriverSplitReceiverModel
-        | GivenEventModel
-        | ProtoStream,
+        | Awaited<
+            ReturnType<typeof projectResolvers.ClaimedProjectData.support>
+          >[number]
+        | Awaited<
+            ReturnType<typeof dripListResolvers.DripListData.support>
+          >[number],
     ) {
-      if ('funderDripListId' in parent || 'funderProjectId' in parent) {
+      if ('dripList' in parent || 'project' in parent) {
         const { type } = parent as any;
 
         if (
@@ -102,11 +122,11 @@ const commonResolvers = {
         return shouldNeverHappen('Invalid SupportItem type');
       }
 
-      if ('receiver' in parent) {
-        return 'OneTimeDonationSupport';
+      if ('stream' in parent) {
+        return 'StreamSupport';
       }
 
-      return 'StreamSupport';
+      return 'OneTimeDonationSupport';
     },
   },
   ProjectSupport: {
@@ -124,10 +144,11 @@ const commonResolvers = {
 
       const { funderProjectId, chain } = parent;
 
-      const project = await projectsDataSource.getProjectById(
-        funderProjectId,
-        chain,
-      );
+      const project =
+        (await projectsDataSource.getProjectByIdOnChain(
+          funderProjectId,
+          chain,
+        )) || shouldNeverHappen();
 
       return {
         driver: Driver.REPO,
@@ -152,19 +173,17 @@ const commonResolvers = {
       const { funderProjectId, chain } = parent;
 
       const projectDataValues =
-        (await projectsDataSource.getProjectById(funderProjectId, chain)) ||
-        shouldNeverHappen();
+        (await projectsDataSource.getProjectByIdOnChain(
+          funderProjectId,
+          chain,
+        )) || shouldNeverHappen();
 
-      const resolverProjects = await toResolverProjects(
-        [chain],
-        [projectDataValues],
-      );
-
-      const [project] = resolverProjects;
+      const project = await toResolverProject([chain], projectDataValues);
 
       return project;
     },
-    totalSplit: resolveTotalSplit,
+    totalSplit: (parent: RepoDriverSplitReceiverModelDataValues) =>
+      resolveTotalSplit(parent),
   },
   DripListSupport: {
     account: async (
@@ -182,8 +201,8 @@ const commonResolvers = {
       const { funderDripListId, chain } = parent;
 
       const dripList = await dripListsDataSource.getDripListById(
-        [chain],
         funderDripListId,
+        [chain],
       );
 
       return {
@@ -205,10 +224,9 @@ const commonResolvers = {
       const { funderDripListId, chain } = parent;
 
       const dripListDataValues =
-        (await dripListsDataSource.getDripListById(
-          [chain],
-          funderDripListId,
-        )) || shouldNeverHappen();
+        (await dripListsDataSource.getDripListById(funderDripListId, [
+          chain,
+        ])) || shouldNeverHappen();
 
       const resolverDripLists = await toResolverDripLists(
         [chain],
@@ -219,15 +237,12 @@ const commonResolvers = {
 
       return dripLists;
     },
-    totalSplit: resolveTotalSplit,
+    totalSplit: (parent: DripListSplitReceiverModelDataValues) =>
+      resolveTotalSplit(parent),
   },
   OneTimeDonationSupport: {
     account: async (
-      parent: {
-        transactionHash: string;
-        logIndex: number;
-        chain: SupportedChain;
-      },
+      parent: GivenEventModelDataValues,
       _: any,
       context: Context,
     ): Promise<AddressDriverAccount> => {
@@ -249,11 +264,11 @@ const commonResolvers = {
         address: getUserAddress(givenEvent.accountId),
       };
     },
-    amount: (parent: GivenEventModel): Amount => ({
+    amount: (parent: GivenEventModelDataValues): Amount => ({
       tokenAddress: parent.erc20,
       amount: parent.amt,
     }),
-    date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
+    date: (parent: GivenEventModelDataValues): Date => parent.blockTimestamp,
   },
   StreamSupport: {
     account: async (parent: ProtoStream): Promise<AddressDriverAccount> =>
@@ -263,6 +278,23 @@ const commonResolvers = {
   },
   SupportGroup: {
     // TODO: implement.
+  },
+  SplitsReceiver: {
+    __resolveType(receiver: SplitsReceiver) {
+      if (receiver.driver === Driver.REPO) {
+        return 'ProjectReceiver';
+      }
+
+      if (receiver.driver === Driver.NFT) {
+        return 'DripListReceiver';
+      }
+
+      if (receiver.driver === Driver.ADDRESS) {
+        return 'AddressReceiver';
+      }
+
+      return shouldNeverHappen();
+    },
   },
 };
 

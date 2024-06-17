@@ -9,21 +9,19 @@ async function getAccountMetadataEmittedEventsByAccountId(
   chains: SupportedChain[],
   accountId: AddressDriverId,
 ) {
+  // TODO: Prevent SQL injection in all queries from schema input.
   const baseSQL = (schema: SupportedChain) =>
     `SELECT *,'${schema}' AS chain FROM "${schema}"."AccountMetadataEmittedEvents"`;
 
-  const conditions: string[] = ['"accountId" = :accountId'];
   const parameters: { [key: string]: any } = { accountId };
 
-  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
+  const whereClause = ` WHERE "accountId" = :accountId`;
 
   const orderClause = ' ORDER BY "blockNumber" DESC, "logIndex" DESC';
 
-  const queries = chains.map(
-    (chain) => baseSQL(chain) + whereClause + orderClause,
-  );
+  const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const fullQuery = `${queries.join(' UNION ')} LIMIT 1`;
+  const fullQuery = `${queries.join(' UNION ')}${orderClause} LIMIT 1`;
 
   return (
     await dbConnection.query(fullQuery, {

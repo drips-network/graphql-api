@@ -28,17 +28,13 @@ const projectTypeDef = gql`
   type Project {
     source: Source!
     account: RepoDriverAccount!
-    chainData: [ProjectChainData!]!
+    chainData: [ProjectData!]!
   }
 
-  union ProjectChainData = ClaimedProjectChainData | UnClaimedProjectChainData
-
-  type ClaimedProjectChainData {
-    chain: SupportedChain!
-    data: ClaimedProjectData!
-  }
+  union ProjectData = ClaimedProjectData | UnClaimedProjectData
 
   type ClaimedProjectData {
+    chain: SupportedChain!
     color: String!
     emoji: String! @deprecated(reason: "Use avatar instead")
     avatar: Avatar!
@@ -52,12 +48,8 @@ const projectTypeDef = gql`
     withdrawableBalances: [WithdrawableBalance!]!
   }
 
-  type UnClaimedProjectChainData {
-    chain: SupportedChain!
-    data: UnClaimedProjectData!
-  }
-
   type UnClaimedProjectData {
+    chain: SupportedChain!
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
     withdrawableBalances: [WithdrawableBalance!]!

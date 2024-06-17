@@ -40,14 +40,16 @@ export default class ReceiversOfTypeDripListDataSource {
     },
   );
 
-  public async getReceiversOfTypeDripListByProjectId(
+  public async getReceiversOfTypeDripListByProjectIdOnChain(
     id: ProjectId,
-    chains: SupportedChain[],
+    chain: SupportedChain,
   ): Promise<DripListSplitReceiverModelDataValues[]> {
-    return this._batchReceiversOfTypeDripListByProjectIds.load({
-      id,
-      chains,
-    });
+    return (
+      await this._batchReceiversOfTypeDripListByProjectIds.load({
+        id,
+        chains: [chain],
+      })
+    ).filter((receiver) => receiver.chain === chain);
   }
 
   private readonly _batchReceiversOfTypeDripListByDripListIds = new DataLoader(
@@ -79,13 +81,15 @@ export default class ReceiversOfTypeDripListDataSource {
     },
   );
 
-  public async getReceiversOfTypeDripListByDripListId(
+  public async getReceiversOfTypeDripListByDripListIdOnChain(
     id: DripListId,
-    chains: SupportedChain[],
+    chain: SupportedChain,
   ): Promise<DripListSplitReceiverModelDataValues[]> {
-    return this._batchReceiversOfTypeDripListByDripListIds.load({
-      id,
-      chains,
-    });
+    return (
+      await this._batchReceiversOfTypeDripListByDripListIds.load({
+        id,
+        chains: [chain],
+      })
+    ).filter((receiver) => receiver.chain === chain);
   }
 }

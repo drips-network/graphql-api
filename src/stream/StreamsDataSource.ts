@@ -34,7 +34,10 @@ export default class StreamsDataSource {
     chains: SupportedChain[],
     where: StreamWhereInput,
   ) {
-    const streams = {} as Record<SupportedChain, ProtoStream[]>;
+    const streams = chains.reduce(
+      (acc, chain) => ({ ...acc, [chain]: [] }),
+      {} as Record<SupportedChain, ProtoStream[]>,
+    );
 
     if (!where.senderId && !where.receiverId) {
       throw new Error(

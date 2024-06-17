@@ -10,9 +10,9 @@ import ProjectModel from '../../project/ProjectModel';
 import type { ProjectId } from '../../common/types';
 
 async function getProjectByUrl(
-  chain: SupportedChain,
+  chains: SupportedChain[],
   url: string,
-): Promise<ProjectDataValues | null> {
+): Promise<ProjectDataValues[]> {
   const baseSQL = (schema: SupportedChain) => `
     SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."GitProjects"
@@ -23,40 +23,12 @@ async function getProjectByUrl(
 
   const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
-  const query = `${baseSQL(chain) + whereClause} LIMIT 1`;
+  const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const dbProject = (
-    await dbConnection.query(query, {
-      type: QueryTypes.SELECT,
-      replacements: parameters,
-      mapToModel: true,
-      model: ProjectModel,
-    })
-  ).map((p) => p.dataValues as ProjectDataValues)[0];
-
-  return dbProject || null;
-}
-
-async function getProjectsByIds(
-  chains: SupportedChain[],
-  projectIds: ProjectId[],
-): Promise<ProjectDataValues[]> {
-  // Define base SQL to query from multiple chains (schemas).
-  const baseSQL = (schema: SupportedChain) => `
-  SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
-  FROM "${schema}"."GitProjects"
-`;
-
-  const parameters: { [key: string]: any } = { projectIds };
-
-  const whereClause = ` WHERE "id" IN (:projectIds) AND "isValid" = true`;
-
-  const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
-
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const fullQuery = `${queries.join(' UNION ')}`;
 
   return (
-    await dbConnection.query(multiChainQuery, {
+    await dbConnection.query(fullQuery, {
       type: QueryTypes.SELECT,
       replacements: parameters,
       mapToModel: true,
@@ -101,11 +73,36 @@ async function getProjectsByFilter(
     ? ` ORDER BY "${sort.field}" ${sort.direction || 'DESC'}`
     : '';
 
-  const queries = chains.map(
-    (chain) => baseSQL(chain) + whereClause + orderClause,
-  );
+  const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${queries.join(' UNION ')} LIMIT 1000`;
+  const multiChainQuery = `${queries.join(' UNION ')}${orderClause} LIMIT 1000`;
+
+  return (
+    await dbConnection.query(multiChainQuery, {
+      type: QueryTypes.SELECT,
+      replacements: parameters,
+      mapToModel: true,
+      model: ProjectModel,
+    })
+  ).map((p) => p.dataValues as ProjectDataValues);
+}
+
+async function getProjectsByIds(
+  chains: SupportedChain[],
+  projectIds: ProjectId[],
+): Promise<ProjectDataValues[]> {
+  const baseSQL = (schema: SupportedChain) => `
+  SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
+  FROM "${schema}"."GitProjects"
+`;
+
+  const parameters: { [key: string]: any } = { projectIds };
+
+  const whereClause = ` WHERE "id" IN (:projectIds) AND "isValid" = true`;
+
+  const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
+
+  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
 
   return (
     await dbConnection.query(multiChainQuery, {

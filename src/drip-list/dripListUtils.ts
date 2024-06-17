@@ -1,7 +1,4 @@
-import type {
-  ResolverDripList,
-  ResolverDripListChainData,
-} from '../common/types';
+import type { ResolverDripList, ResolverDripListData } from '../common/types';
 import { Driver, type SupportedChain } from '../generated/graphql';
 import type { DripListDataValues } from './DripListModel';
 
@@ -18,39 +15,33 @@ export async function toResolverDripLists(
 ): Promise<ResolverDripList[]> {
   return Promise.all(
     dripLists.map(async (dripList) => {
-      const chainData = await Promise.all(
-        chains.map(async (chain) => {
-          if (dripList.chain === chain) {
-            return {
-              chain,
-              data: {
-                parentDripListInfo: {
-                  dripListId: dripList.id,
-                  dripListChain: chain,
-                  queriedChains: chains,
-                },
-                name: dripList.name,
-                creator: dripList.creator,
-                description: dripList.description,
-                owner: {
-                  driver: Driver.ADDRESS,
-                  accountId: dripList.ownerAccountId,
-                  address: dripList.ownerAddress as string,
-                },
-                previousOwnerAddress: dripList.previousOwnerAddress,
-                support: [], // Will be populated by the resolver.
-                splits: [], // Will be populated by the resolver.
-                latestVotingRoundId: dripList.latestVotingRoundId,
-                totalEarned: [], // Will be populated by the resolver.
-              },
-            } as ResolverDripListChainData;
-          }
+      const relevantChains = chains.filter((chain) => dripList.chain === chain);
 
-          return {
-            chain,
-            data: null,
-          };
-        }),
+      const chainData = await Promise.all(
+        relevantChains.map(
+          async (chain) =>
+            ({
+              chain,
+              parentDripListInfo: {
+                dripListId: dripList.id,
+                dripListChain: chain,
+                queriedChains: chains,
+              },
+              name: dripList.name,
+              creator: dripList.creator,
+              description: dripList.description,
+              owner: {
+                driver: Driver.ADDRESS,
+                accountId: dripList.ownerAccountId,
+                address: dripList.ownerAddress as string,
+              },
+              previousOwnerAddress: dripList.previousOwnerAddress,
+              support: [], // Will be populated by the resolver.
+              splits: [], // Will be populated by the resolver.
+              latestVotingRoundId: dripList.latestVotingRoundId,
+              totalEarned: [], // Will be populated by the resolver.
+            }) as ResolverDripListData,
+        ),
       );
 
       return {

@@ -40,6 +40,11 @@ const streamTypeDef = gql`
     endsAt: Date
   }
 
+  type StreamChainData {
+    chain: SupportedChain!
+    data: [Stream!]!
+  }
+
   input StreamWhereInput {
     senderId: ID
     receiverId: ID

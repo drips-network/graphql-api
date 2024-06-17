@@ -50,14 +50,16 @@ async function getAddressDriverSplitReceiversProjectDependenciesByFunders(
   `;
 
   const conditions: string[] = [
-    `"funderDripListId" IN (:funderProjectIds)`,
+    `"funderProjectId" IN (:funderProjectIds)`,
     `type IN ('${AddressDriverSplitReceiverType.ProjectMaintainer}', '${AddressDriverSplitReceiverType.ProjectDependency}')`,
   ];
   const parameters: { [key: string]: any } = {
     funderProjectIds,
   };
 
-  const whereClause = ` WHERE ${conditions.join(' AND ')}`;
+  const whereClause = funderProjectIds?.length
+    ? ` WHERE ${conditions.join(' AND ')}`
+    : '';
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
@@ -78,7 +80,7 @@ async function getAddressDriverSplitReceiversByFundeeAccountIds(
   fundeeAccountIds: AccountId[],
 ) {
   const baseSQL = (schema: SupportedChain) => `
-    SELECT "id", "fundeeAccountId", "fundeeAccountAddress", "funderProjectId", "funderDripListId","weight", "type"::TEXT, "createdAt", "updatedAt", '${schema}' AS chain
+    SELECT "id", "fundeeAccountId", "fundeeAccountAddress", "funderProjectId", "funderDripListId","weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."AddressDriverSplitReceivers"
   `;
 

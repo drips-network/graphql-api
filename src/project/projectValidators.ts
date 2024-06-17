@@ -40,7 +40,7 @@ export default function validateProjectsInput(
     throw new Error('Invalid sort field.');
   }
 
-  if (sort?.direction && sort.direction in SortDirection) {
+  if (sort?.direction && sort.direction in Object.values(SortDirection)) {
     throw new Error('Invalid sort direction.');
   }
 

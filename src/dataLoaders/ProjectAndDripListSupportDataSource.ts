@@ -174,53 +174,63 @@ export default class ProjectAndDripListSupportDataSource {
     },
   );
 
-  public async getProjectAndDripListSupportByDripListId(
+  public async getProjectAndDripListSupportByDripListIdOnChain(
     id: DripListId,
-    chains: SupportedChain[],
+    chain: SupportedChain,
   ): Promise<DripListSplitReceiverModelDataValues[]> {
-    return this._batchProjectAndDripListSupportByDripListIds.load({
-      id,
-      chains,
-    });
+    return (
+      await this._batchProjectAndDripListSupportByDripListIds.load({
+        id,
+        chains: [chain],
+      })
+    ).filter((receiver) => receiver.chain === chain);
   }
 
-  public async getProjectAndDripListSupportByProjectId(
+  public async getProjectAndDripListSupportByProjectIdOnChain(
     id: ProjectId,
-    chains: SupportedChain[],
+    chain: SupportedChain,
   ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
-    return this._batchProjectAndDripListSupportByProjectIds.load({
-      id,
-      chains,
-    });
+    return (
+      await this._batchProjectAndDripListSupportByProjectIds.load({
+        id,
+        chains: [chain],
+      })
+    ).filter((receiver) => receiver.chain === chain);
   }
 
-  public async getProjectAndDripListSupportByAddressDriverId(
-    chains: SupportedChain[],
+  public async getProjectAndDripListSupportByAddressDriverIdOnChain(
     id: AddressDriverId,
+    chain: SupportedChain,
   ): Promise<AddressDriverSplitReceiverModelDataValues[]> {
-    return this._batchProjectAndDripListSupportByAddressDriverIds.load({
-      id,
-      chains,
-    });
+    return (
+      await this._batchProjectAndDripListSupportByAddressDriverIds.load({
+        id,
+        chains: [chain],
+      })
+    ).filter((receiver) => receiver.chain === chain);
   }
 
-  public async getOneTimeDonationSupportByAccountId(
-    chains: SupportedChain[],
+  public async getOneTimeDonationSupportByAccountIdOnChain(
     id: AccountId,
+    chain: SupportedChain,
   ): Promise<GivenEventModelDataValues[]> {
-    return this._batchOneTimeDonationSupportByAccountIds.load({
-      id,
-      chains,
-    });
+    return (
+      await this._batchOneTimeDonationSupportByAccountIds.load({
+        id,
+        chains: [chain],
+      })
+    ).filter((support) => support.chain === chain);
   }
 
-  public async getStreamSupportByAccountId(
-    chains: SupportedChain[],
+  public async getStreamSupportByAccountIdOnChain(
     id: AccountId,
+    chain: SupportedChain,
   ) {
-    return this._batchStreamSupportByAccountIds.load({
-      id,
-      chains,
-    });
+    return (
+      await this._batchStreamSupportByAccountIds.load({
+        id,
+        chains: [chain],
+      })
+    ).filter((s) => s.chain === chain);
   }
 }

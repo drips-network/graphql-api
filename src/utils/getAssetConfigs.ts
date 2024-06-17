@@ -1,8 +1,8 @@
 import type { AddressDriverId } from '../common/types';
+import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
 import type { SupportedChain } from '../generated/graphql';
 import buildAssetConfigs from './buildAssetConfigs';
 import type getLatestAccountMetadataByChain from './getLatestAccountMetadata';
-import getStreamsSetEventsWithReceivers from './getStreamsSetEventsWithReceivers';
 import groupBy from './linq';
 
 export default async function getAssetConfigs(
@@ -10,15 +10,13 @@ export default async function getAssetConfigs(
   accountMetadata: NonNullable<
     Awaited<ReturnType<typeof getLatestAccountMetadataByChain>>
   >,
+  chains: SupportedChain[],
 ): Promise<Record<SupportedChain, ReturnType<typeof buildAssetConfigs>>> {
-  const chainsToQuery = Object.keys(accountMetadata) as SupportedChain[];
-
-  if (!chainsToQuery.length) {
-    return {} as Record<SupportedChain, ReturnType<typeof buildAssetConfigs>>;
-  }
-
   const accountStreamsSetEventsWithReceivers =
-    await getStreamsSetEventsWithReceivers(chainsToQuery, accountId);
+    await streamsSetEventsQueries.getStreamsSetEventsWithReceivers(
+      chains,
+      accountId,
+    );
 
   const accountStreamsSetEventsWithReceiversByErc20 = groupBy(
     accountStreamsSetEventsWithReceivers,
@@ -30,7 +28,7 @@ export default async function getAssetConfigs(
     ReturnType<typeof buildAssetConfigs>
   >;
 
-  chainsToQuery.forEach((chain) => {
+  chains.forEach((chain) => {
     response[chain] = buildAssetConfigs(
       accountId,
       accountMetadata[chain]?.metadata,
