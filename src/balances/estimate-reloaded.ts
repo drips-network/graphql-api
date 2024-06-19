@@ -71,7 +71,7 @@ export async function assetIncomingBalanceTimeline(
 
       const diffBetweenCurrAndPrevDelta =
         BigInt(timelineItem.deltaPerSecond.amount) -
-        BigInt(previousStreamTimelineItem.deltaPerSecond.amount);
+        BigInt(previousStreamTimelineItem?.deltaPerSecond.amount ?? 0n);
       if (diffBetweenCurrAndPrevDelta === 0n) continue;
 
       const lastIncomingTimelineItem = timeline[timeline.length - 1];
