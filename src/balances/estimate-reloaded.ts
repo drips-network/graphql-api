@@ -28,15 +28,16 @@ export async function assetIncomingBalanceTimeline(
 
   const timeline: UserBalanceTimelineItem[] = [];
 
-  const incomingStreamsAmountsAtCycleStart = incomingStreams
-    .filter(
-      (stream) =>
-        stream.config.amountPerSecond.tokenAddress.toLowerCase() ===
-        tokenAddress.toLowerCase(),
-    )
-    .map((stream) =>
+  const incomingStreamsForToken = incomingStreams.filter(
+    (stream) =>
+      stream.config.amountPerSecond.tokenAddress.toLowerCase() ===
+      tokenAddress.toLowerCase(),
+  );
+
+  const incomingStreamsAmountsAtCycleStart = incomingStreamsForToken.map(
+    (stream) =>
       currentAmounts(stream.timeline, tokenAddress, currentCycleStartDate),
-    );
+  );
 
   timeline.push({
     timestamp: currentCycleStartDate,
@@ -56,7 +57,7 @@ export async function assetIncomingBalanceTimeline(
   });
 
   const streamTimelinesByStreamId: { [streamId: string]: TimelineItem[] } =
-    incomingStreams.reduce((acc, stream) => {
+    incomingStreamsForToken.reduce((acc, stream) => {
       acc[stream.id] = stream.timeline;
       return acc;
     }, {});
@@ -104,6 +105,17 @@ export async function assetIncomingBalanceTimeline(
       });
     }
   }
+
+  if (
+    tokenAddress.toLowerCase() ===
+    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'.toLowerCase()
+  )
+    console.log(
+      JSON.stringify(timeline, (key, value) => {
+        if (typeof value === 'bigint') return value.toString();
+        return value;
+      }),
+    );
 
   return timeline;
 }
