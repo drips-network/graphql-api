@@ -1,9 +1,8 @@
-import type { MultiChainKey } from '../common/types';
-import type { SupportedChain } from '../generated/graphql';
+import type { DbSchema, MultiChainKey } from '../common/types';
 
 type ExtractedValues<T> = {
   ids: (T extends { id: infer ID } ? ID : never)[];
-  chains: SupportedChain[];
+  chains: DbSchema[];
 };
 
 export default function parseMultiChainKeys<T extends MultiChainKey>(

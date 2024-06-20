@@ -4,9 +4,9 @@ import type {
   DripListId,
   ProjectId,
   DripListMultiChainKey,
+  DbSchema,
 } from '../common/types';
 import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
-import type { SupportedChain } from '../generated/graphql';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import dripListSplitReceiversQueries from './sqlQueries/dripListSplitReceiversQueries';
 
@@ -42,7 +42,7 @@ export default class ReceiversOfTypeDripListDataSource {
 
   public async getReceiversOfTypeDripListByProjectIdOnChain(
     id: ProjectId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<DripListSplitReceiverModelDataValues[]> {
     return (
       await this._batchReceiversOfTypeDripListByProjectIds.load({
@@ -83,7 +83,7 @@ export default class ReceiversOfTypeDripListDataSource {
 
   public async getReceiversOfTypeDripListByDripListIdOnChain(
     id: DripListId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<DripListSplitReceiverModelDataValues[]> {
     return (
       await this._batchReceiversOfTypeDripListByDripListIds.load({

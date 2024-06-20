@@ -1,15 +1,14 @@
 import { QueryTypes } from 'sequelize';
-import type { AccountId } from '../../common/types';
+import type { AccountId, DbSchema } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { SupportedChain } from '../../generated/graphql';
 import type { SplitEventModelDataValues } from '../../models/SplitEventModel';
 import SplitEventModel from '../../models/SplitEventModel';
 
 async function getDistinctErc20ByReceiver(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   receiver: AccountId,
 ) {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
 
   const whereClause = ` WHERE "accountId" = :receiver`;
@@ -29,11 +28,11 @@ async function getDistinctErc20ByReceiver(
 }
 
 async function getSplitEventsByAccountIdAndReceiver(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountId: AccountId,
   receiver: AccountId,
 ): Promise<SplitEventModelDataValues[]> {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT *, '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
 
   const conditions: string[] = [
@@ -62,10 +61,10 @@ async function getSplitEventsByAccountIdAndReceiver(
 }
 
 async function getSplitEventsByReceiver(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   receiver: AccountId,
 ): Promise<SplitEventModelDataValues[]> {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT *, '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
 
   const conditions: string[] = ['"receiver" = :receiver'];
@@ -88,10 +87,10 @@ async function getSplitEventsByReceiver(
 }
 
 async function getSplitEventsByProjectReceivers(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountIds: AccountId[],
 ): Promise<SplitEventModelDataValues[]> {
-  const baseSplitEventsSQL = (schema: SupportedChain) =>
+  const baseSplitEventsSQL = (schema: DbSchema) =>
     `SELECT "accountId", "receiver", "erc20", "amt", "transactionHash", "logIndex", "blockTimestamp", "blockNumber", "createdAt", "updatedAt", '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
 
   const conditions: string[] = [`"receiver" IN (:receivers)`];

@@ -23,6 +23,7 @@ import verifyDripListsInput from './dripListValidators';
 import type { DripListDataValues } from './DripListModel';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { toResolverProject } from '../project/projectUtils';
+import { chainToDbSchema } from '../utils/chainSchemaMappings';
 
 const dripListResolvers = {
   Query: {
@@ -36,14 +37,16 @@ const dripListResolvers = {
     ): Promise<ResolverDripList[]> => {
       verifyDripListsInput({ chains, where });
 
-      const chainsToQuery = chains?.length ? chains : queryableChains;
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
 
       const dbDripLists = await dripListsDataSource.getDripListsByFilter(
-        chainsToQuery,
+        dbSchemasToQuery,
         where,
       );
 
-      return toResolverDripLists(chainsToQuery, dbDripLists);
+      return toResolverDripLists(dbSchemasToQuery, dbDripLists);
     },
     dripList: async (
       _: undefined,
@@ -53,9 +56,15 @@ const dripListResolvers = {
       assert(isDripListId(id));
       assert(chain in SupportedChain);
 
-      const dbDripList = await dripListsDataSource.getDripListById(id, [chain]);
+      const dbSchemaToQuery = chainToDbSchema[chain];
 
-      return dbDripList ? toResolverDripList(chain, dbDripList) : null;
+      const dbDripList = await dripListsDataSource.getDripListById(id, [
+        dbSchemaToQuery,
+      ]);
+
+      return dbDripList
+        ? toResolverDripList(dbSchemaToQuery, dbDripList)
+        : null;
     },
     mintedTokensCountByOwnerAddress: async (
       _: undefined,
@@ -65,8 +74,10 @@ const dripListResolvers = {
       assert(isAddress(ownerAddress));
       assert(chain in SupportedChain);
 
+      const dbSchemaToQuery = chainToDbSchema[chain];
+
       return dripListsDataSource.getMintedTokensCountByAccountId(
-        chain,
+        dbSchemaToQuery,
         ownerAddress,
       );
     },

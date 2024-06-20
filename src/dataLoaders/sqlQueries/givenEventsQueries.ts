@@ -1,15 +1,15 @@
 import { QueryTypes } from 'sequelize';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { GiveWhereInput, SupportedChain } from '../../generated/graphql';
-import type { AccountId } from '../../common/types';
+import type { GiveWhereInput } from '../../generated/graphql';
+import type { AccountId, DbSchema } from '../../common/types';
 import type { GivenEventModelDataValues } from '../../given-event/GivenEventModel';
 import GivenEventModel from '../../given-event/GivenEventModel';
 
 async function getDistinctErc20ByReceiver(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   receiver: AccountId,
 ) {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
 
   const whereClause = ` WHERE "accountId" = :receiver`;
@@ -29,10 +29,10 @@ async function getDistinctErc20ByReceiver(
 }
 
 async function getGivenEventsByFilter(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   where: GiveWhereInput,
 ) {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
 
   const conditions: string[] = [];
@@ -69,10 +69,10 @@ async function getGivenEventsByFilter(
 }
 
 async function getGivenEventsByReceivers(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   receivers: AccountId[],
 ) {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
 
   const parameters: { [key: string]: any } = { receivers };
@@ -94,11 +94,11 @@ async function getGivenEventsByReceivers(
 }
 
 async function getGivenEventsByTxHashesAndLogIndex(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   transactionHashes: string[],
   logIndexes: number[],
 ) {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
 
   const conditions: string[] = [
@@ -127,10 +127,10 @@ async function getGivenEventsByTxHashesAndLogIndex(
 }
 
 async function getGivenEventsByReceiver(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   receiver: AccountId,
 ) {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
 
   const parameters: { [receiver: string]: any } = { receiver };

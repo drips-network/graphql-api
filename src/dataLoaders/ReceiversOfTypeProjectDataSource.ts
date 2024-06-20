@@ -4,9 +4,9 @@ import type {
   DripListId,
   ProjectId,
   ProjectMultiChainKey,
+  DbSchema,
 } from '../common/types';
 import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
-import type { SupportedChain } from '../generated/graphql';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import repoDriverSplitReceiversQueries from './sqlQueries/repoDriverSplitReceiversQueries';
 
@@ -42,7 +42,7 @@ export default class ReceiversOfTypeProjectDataSource {
 
   public async getReceiversOfTypeProjectByProjectIdOnChain(
     id: ProjectId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
     return (
       await this._batchReceiversOfTypeProjectByProjectIds.load({
@@ -83,7 +83,7 @@ export default class ReceiversOfTypeProjectDataSource {
 
   public async getReceiversOfTypeProjectByDripListIdOnChain(
     id: DripListId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
     return (
       await this._batchReceiversOfTypeProjectByDripListIds.load({

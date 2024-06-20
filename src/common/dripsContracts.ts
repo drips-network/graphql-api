@@ -25,22 +25,22 @@ const chainConfigs: Record<
     repoDriverAddress: string;
   }
 > = {
-  mainnet: {
+  MAINNET: {
     dripsAddress: '0xd0Dd053392db676D57317CD4fe96Fc2cCf42D0b4',
     addressDriverAddress: '0x1455d9bD6B98f95dd8FEB2b3D60ed825fcef0610',
     repoDriverAddress: '0x770023d55D09A9C110694827F1a6B32D5c2b373E',
   },
-  sepolia: {
+  SEPOLIA: {
     dripsAddress: '0x74A32a38D945b9527524900429b083547DeB9bF4',
     addressDriverAddress: '0x70E1E1437AeFe8024B6780C94490662b45C3B567',
     repoDriverAddress: '0xa71bdf410D48d4AA9aE1517A69D7E1Ef0c179b2B',
   },
-  optimism_sepolia: {
+  OPTIMISM_SEPOLIA: {
     dripsAddress: '0x74A32a38D945b9527524900429b083547DeB9bF4',
     addressDriverAddress: '0x70E1E1437AeFe8024B6780C94490662b45C3B567',
     repoDriverAddress: '0xa71bdf410D48d4AA9aE1517A69D7E1Ef0c179b2B',
   },
-  polygon_amoy: {
+  POLYGON_AMOY: {
     dripsAddress: '0xeebCd570e50fa31bcf6eF10f989429C87C3A6981',
     addressDriverAddress: '0x004310a6d47893Dd6e443cbE471c24aDA1e6c619',
     repoDriverAddress: '0x54372850Db72915Fd9C5EC745683EB607b4a8642',

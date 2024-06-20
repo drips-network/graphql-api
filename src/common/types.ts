@@ -5,13 +5,12 @@ import type {
   DripListData,
   Give,
   Project,
-  SupportedChain,
   UnClaimedProjectData,
   User,
   UserData,
 } from '../generated/graphql';
 import type StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import type { FORGES_MAP } from './constants';
+import type { DB_SCHEMAS, FORGES_MAP } from './constants';
 import type { addressDriverAccountMetadataParser } from '../schemas';
 import type StreamsSetEventModel from '../models/StreamsSetEventModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
@@ -33,7 +32,6 @@ export type Address = string & { __brand: 'Address' };
 export type BigIntString = string & { __brand: 'BigIntString' };
 
 export type Forge = ValuesOf<typeof FORGES_MAP>;
-export type DbSchema = SupportedChain;
 
 export enum DependencyType {
   ProjectDependency = 'ProjectDependency',
@@ -79,8 +77,8 @@ export type ResolverProject = Project & {
 type ProjectDataParentProjectInfo = {
   parentProjectInfo: {
     projectId: ProjectId;
-    projectChain: SupportedChain;
-    queriedChains: SupportedChain[];
+    projectChain: DbSchema;
+    queriedChains: DbSchema[];
   };
 };
 
@@ -92,7 +90,7 @@ export type ResolverUnClaimedProjectData = UnClaimedProjectData &
 
 export interface MultiChainKey<T = AccountId> {
   id: T;
-  chains: SupportedChain[];
+  chains: DbSchema[];
 }
 export type ProjectMultiChainKey = MultiChainKey<ProjectId>;
 export type DripListMultiChainKey = MultiChainKey<DripListId>;
@@ -104,8 +102,8 @@ export type ResolverDripList = DripList & {
 type DripListDataParentDripListInfo = {
   parentDripListInfo: {
     dripListId: DripListId;
-    dripListChain: SupportedChain;
-    queriedChains: SupportedChain[];
+    dripListChain: DbSchema;
+    queriedChains: DbSchema[];
   };
 };
 
@@ -115,7 +113,7 @@ export type ResolverDripListData = DripListData &
 export type CommonDataValues = {
   createdAt: Date;
   updatedAt: Date;
-  chain: SupportedChain;
+  chain: DbSchema;
 };
 
 export type ResolverGive = Give & {
@@ -123,7 +121,7 @@ export type ResolverGive = Give & {
 };
 
 export type ResolverGiveChainData = {
-  chain: SupportedChain;
+  chain: DbSchema;
   data: GivenEventModelDataValues | null;
 };
 
@@ -136,7 +134,9 @@ export type ResolverUserData = UserData & UserDataParentDripListInfo;
 export type UserDataParentDripListInfo = {
   parentUserInfo: {
     accountId: AccountId;
-    userChain: SupportedChain;
-    queriedChains: SupportedChain[];
+    userChain: DbSchema;
+    queriedChains: DbSchema[];
   };
 };
+
+export type DbSchema = (typeof DB_SCHEMAS)[number];

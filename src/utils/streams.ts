@@ -3,16 +3,15 @@ import getUserAccount from './getUserAccount';
 import type {
   AddressDriverAccount,
   NftDriverAccount,
-  SupportedChain,
 } from '../generated/graphql';
 
-import type { AccountId } from '../common/types';
+import type { AccountId, DbSchema } from '../common/types';
 import type { ProtoStream } from './buildAssetConfigs';
 import streamReceiverSeenEventQueries from '../dataLoaders/sqlQueries/streamReceiverSeenEventQueries';
 import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
 
 async function getUserIncomingStreams(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountId: AccountId,
 ) {
   const streamReceiverSeenEventModelDataValuesForUser =
@@ -36,7 +35,7 @@ async function getUserIncomingStreams(
     }),
   );
 
-  const response = {} as Record<SupportedChain, ProtoStream[]>;
+  const response = {} as Record<DbSchema, ProtoStream[]>;
 
   chains.forEach((chain) => {
     response[chain] = accountsStreamingToUser.reduce<ProtoStream[]>(

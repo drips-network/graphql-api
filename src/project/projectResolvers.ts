@@ -34,6 +34,7 @@ import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import getWithdrawableBalances from '../utils/getWithdrawableBalances';
 import { toResolverDripList } from '../drip-list/dripListUtils';
+import { chainToDbSchema } from '../utils/chainSchemaMappings';
 
 const projectResolvers = {
   Query: {
@@ -50,15 +51,17 @@ const projectResolvers = {
 
       const { chains, where, sort } = args;
 
-      const chainsToQuery = chains?.length ? chains : queryableChains;
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
 
       const dbProjects = await projectsDataSource.getProjectsByFilter(
-        chainsToQuery,
+        dbSchemasToQuery,
         where,
         sort,
       );
 
-      return toResolverProjects(chainsToQuery, dbProjects);
+      return toResolverProjects(dbSchemasToQuery, dbProjects);
     },
     projectById: async (
       _: undefined,
@@ -70,14 +73,16 @@ const projectResolvers = {
         validateChainsQueryArg(chains);
       }
 
-      const chainsToQuery = chains?.length ? chains : queryableChains;
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
 
       const dbProjects = await projectsDataSource.getProjectById(
         id,
-        chainsToQuery,
+        dbSchemasToQuery,
       );
 
-      return dbProjects ? mergeProjects(dbProjects, chainsToQuery) : null;
+      return dbProjects ? mergeProjects(dbProjects, dbSchemasToQuery) : null;
     },
     projectByUrl: async (
       _: undefined,
@@ -89,14 +94,16 @@ const projectResolvers = {
         validateChainsQueryArg(chains);
       }
 
-      const chainsToQuery = chains?.length ? chains : queryableChains;
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
 
       const dbProjects = await projectsDataSource.getProjectByUrl(
         url,
-        chainsToQuery,
+        dbSchemasToQuery,
       );
 
-      return dbProjects ? mergeProjects(dbProjects, chainsToQuery) : null;
+      return dbProjects ? mergeProjects(dbProjects, dbSchemasToQuery) : null;
     },
     earnedFunds: async (
       _: undefined,
@@ -117,9 +124,11 @@ const projectResolvers = {
         validateChainsQueryArg(chains);
       }
 
-      const chainsToQuery = chains?.length ? chains : queryableChains;
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
 
-      return projectsDataSource.getEarnedFunds(projectId, chainsToQuery);
+      return projectsDataSource.getEarnedFunds(projectId, dbSchemasToQuery);
     },
   },
   Project: {

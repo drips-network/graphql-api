@@ -1,16 +1,15 @@
 import { QueryTypes } from 'sequelize';
-import type { AddressDriverId } from '../../common/types';
+import type { AddressDriverId, DbSchema } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { SupportedChain } from '../../generated/graphql';
 import type { AccountMetadataEmittedEventModelDataValues } from '../../models/AccountMetadataEmittedEventModel';
 import AccountMetadataEmittedEventModel from '../../models/AccountMetadataEmittedEventModel';
 
 async function getAccountMetadataEmittedEventsByAccountId(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountId: AddressDriverId,
 ) {
   // TODO: Prevent SQL injection in all queries from schema input.
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT *,'${schema}' AS chain FROM "${schema}"."AccountMetadataEmittedEvents"`;
 
   const parameters: { [key: string]: any } = { accountId };

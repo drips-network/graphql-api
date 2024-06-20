@@ -31,6 +31,7 @@ import toResolverUser from './userUtils';
 import { getCrossChainAddressDriverAccountIdByAddress } from '../common/dripsContracts';
 import getWithdrawableBalances from '../utils/getWithdrawableBalances';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
+import { chainToDbSchema } from '../utils/chainSchemaMappings';
 
 const userResolvers = {
   Query: {
@@ -46,9 +47,11 @@ const userResolvers = {
         validateChainsQueryArg(chains);
       }
 
-      const chainsToQuery = chains?.length ? chains : queryableChains;
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
 
-      return toResolverUser(chainsToQuery, accountId);
+      return toResolverUser(dbSchemasToQuery, accountId);
     },
     userByAddress: async (
       _: undefined,
@@ -59,12 +62,14 @@ const userResolvers = {
         validateChainsQueryArg(chains);
       }
 
-      const chainsToQuery = chains?.length ? chains : queryableChains;
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
 
       const accountId =
         await getCrossChainAddressDriverAccountIdByAddress(address);
 
-      return toResolverUser(chainsToQuery, accountId);
+      return toResolverUser(dbSchemasToQuery, accountId);
     },
   },
   User: {
@@ -245,7 +250,7 @@ const userResolvers = {
 
       return (
         await streamsDataSource.getUserOutgoingStreams([userChain], accountId)
-      )[userChain as SupportedChain];
+      )[userChain];
     },
     incoming: async (
       { parentUserInfo }: UserDataParentDripListInfo,
@@ -257,7 +262,7 @@ const userResolvers = {
 
       return (
         await streamsDataSource.getUserIncomingStreams([userChain], accountId)
-      )[userChain as SupportedChain];
+      )[userChain];
     },
   },
   StreamReceiver: {

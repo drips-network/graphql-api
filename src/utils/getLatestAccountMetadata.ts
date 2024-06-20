@@ -1,9 +1,8 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
 import { ethers } from 'ethers';
 import { addressDriverAccountMetadataParser } from '../schemas';
-import type { AddressDriverId, IpfsHash } from '../common/types';
+import type { AddressDriverId, DbSchema, IpfsHash } from '../common/types';
 import appSettings from '../common/appSettings';
-import type { SupportedChain } from '../generated/graphql';
 import accountMetadataEmittedEventsQueries from '../dataLoaders/sqlQueries/accountMetadataEmittedEventsQueries';
 
 function toIpfsHash(str: string): IpfsHash {
@@ -23,14 +22,14 @@ async function getIpfsFile(hash: IpfsHash): Promise<Response> {
 }
 
 export default async function getLatestAccountMetadataByChain(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountId: AddressDriverId,
 ) {
   const accountMetadataEmittedEventModelDataValues =
     await accountMetadataEmittedEventsQueries.getByAccountId(chains, accountId);
 
   const response: {
-    [chain in SupportedChain]?: {
+    [chain in DbSchema]?: {
       metadata: AnyVersion<typeof addressDriverAccountMetadataParser>;
       ipfsHash: IpfsHash;
     } | null;
@@ -38,7 +37,7 @@ export default async function getLatestAccountMetadataByChain(
 
   for (const metadataDataValues of accountMetadataEmittedEventModelDataValues) {
     if (!accountMetadataEmittedEventModelDataValues.length) {
-      response[metadataDataValues.chain as SupportedChain] = null;
+      response[metadataDataValues.chain as DbSchema] = null;
     } else {
       const ipfsHash = toIpfsHash(
         accountMetadataEmittedEventModelDataValues[0].value,
@@ -47,7 +46,7 @@ export default async function getLatestAccountMetadataByChain(
       const ipfsFile = await (await getIpfsFile(ipfsHash)).json();
       const metadata = addressDriverAccountMetadataParser.parseAny(ipfsFile);
 
-      response[metadataDataValues.chain as SupportedChain] = {
+      response[metadataDataValues.chain as DbSchema] = {
         metadata,
         ipfsHash,
       };

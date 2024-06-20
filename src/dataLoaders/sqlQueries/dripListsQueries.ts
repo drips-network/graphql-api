@@ -1,18 +1,15 @@
 import { QueryTypes } from 'sequelize';
-import type { DripListId } from '../../common/types';
+import type { DbSchema, DripListId } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
 import type { DripListDataValues } from '../../drip-list/DripListModel';
 import DripListModel from '../../drip-list/DripListModel';
-import type {
-  DripListWhereInput,
-  SupportedChain,
-} from '../../generated/graphql';
+import type { DripListWhereInput } from '../../generated/graphql';
 
 async function getDripListsByFilter(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   where?: DripListWhereInput,
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "isValid", "name", "creator", "description", "ownerAddress", "ownerAccountId", "latestVotingRoundId", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."DripLists"
   `;
@@ -46,10 +43,10 @@ async function getDripListsByFilter(
 }
 
 async function getDripListsByIds(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   dripListIds: DripListId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "isValid", "ownerAddress", "ownerAccountId", "name", "latestVotingRoundId", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."DripLists"
   `;

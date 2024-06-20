@@ -1,4 +1,5 @@
 import type {
+  DbSchema,
   Forge,
   ResolverClaimedProjectData,
   ResolverProject,
@@ -11,12 +12,9 @@ import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
 import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
 import { Driver } from '../generated/graphql';
-import type {
-  Forge as GraphQlForge,
-  SupportedChain,
-  Splits,
-} from '../generated/graphql';
+import type { Forge as GraphQlForge, Splits } from '../generated/graphql';
 import { singleOrDefault } from '../utils/linq';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
 export function splitProjectName(projectName: string): {
   ownerName: string;
@@ -125,7 +123,7 @@ export async function toFakeUnclaimedProject(
 }
 
 export async function toResolverProject(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   project: ProjectDataValues,
 ) {
   const resolverProjects = await toResolverProjects(chains, [project]);
@@ -135,11 +133,11 @@ export async function toResolverProject(
 
 function mapClaimedProjectChainData(
   project: ProjectDataValues,
-  projectChain: SupportedChain,
-  queriedChains: SupportedChain[],
+  projectChain: DbSchema,
+  queriedChains: DbSchema[],
 ) {
   return {
-    chain: projectChain,
+    chain: dbSchemaToChain[projectChain],
     parentProjectInfo: {
       projectId: project.id,
       queriedChains,
@@ -171,11 +169,11 @@ function mapClaimedProjectChainData(
 
 function mapUnClaimedProjectChainData(
   fakeUnclaimedProject: ProjectDataValues,
-  projectChain: SupportedChain,
-  queriedChains: SupportedChain[],
+  projectChain: DbSchema,
+  queriedChains: DbSchema[],
 ) {
   return {
-    chain: projectChain,
+    chain: dbSchemaToChain[projectChain],
     parentProjectInfo: {
       queriedChains,
       projectId: fakeUnclaimedProject.id,
@@ -189,7 +187,7 @@ function mapUnClaimedProjectChainData(
 }
 
 export async function toResolverProjects(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   projects: ProjectDataValues[],
 ): Promise<ResolverProject[]> {
   const projectsMap = new Map<string, ProjectDataValues>();
@@ -252,7 +250,7 @@ export async function toResolverProjects(
 
 export async function mergeProjects(
   projects: ProjectDataValues[],
-  chains: SupportedChain[],
+  chains: DbSchema[],
 ) {
   if (projects.some((p) => p.id !== projects[0].id)) {
     throw new Error('All projects should have the same id when merging.');

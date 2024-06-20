@@ -29,3 +29,10 @@ export const FORGES_MAP = {
 } as const;
 
 export const AMT_PER_SEC_MULTIPLIER = 1_000_000_000;
+
+export const DB_SCHEMAS = [
+  'mainnet',
+  'sepolia',
+  'optimism_sepolia',
+  'polygon_amoy',
+] as const;

@@ -1,4 +1,5 @@
 import type {
+  DbSchema,
   DripListId,
   ProjectId,
   ResolverDripListData,
@@ -9,11 +10,10 @@ import mergeAmounts from '../utils/mergeAmounts';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { SupportedChain } from '../generated/graphql';
 import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
 
 export async function resolveTotalSplit(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   parent: DripListSplitReceiverModel | RepoDriverSplitReceiverModel,
 ) {
   let incomingAccountId: DripListId | ProjectId;
@@ -57,7 +57,7 @@ export async function resolveTotalEarned(
   context: Context,
 ) {
   let accountId: ProjectId | DripListId;
-  let chain: SupportedChain;
+  let chain: DbSchema;
   if ('parentProjectInfo' in projectOrDripListData) {
     accountId = projectOrDripListData.parentProjectInfo.projectId;
     chain = projectOrDripListData.parentProjectInfo.projectChain;

@@ -1,9 +1,13 @@
-import type { ResolverGive, ResolverGiveChainData } from '../common/types';
-import { type SupportedChain } from '../generated/graphql';
+import type {
+  DbSchema,
+  ResolverGive,
+  ResolverGiveChainData,
+} from '../common/types';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 import type { GivenEventModelDataValues } from './GivenEventModel';
 
 export default async function toResolverGives(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   givenEventsDataValues: GivenEventModelDataValues[],
 ): Promise<ResolverGive[]> {
   return Promise.all(
@@ -20,7 +24,7 @@ export default async function toResolverGives(
           }
 
           return {
-            chain,
+            chain: dbSchemaToChain[chain],
             data: null,
           };
         }),

@@ -8,12 +8,12 @@ import buildStreamReceiver, {
 import type {
   AddressDriverAccount,
   NftDriverAccount,
-  SupportedChain,
 } from '../generated/graphql';
 import getUserAddress from './getUserAddress';
 import type {
   AccountMetadata,
   AddressDriverId,
+  DbSchema,
   StreamsSetEventWithReceivers,
 } from '../common/types';
 import { AMT_PER_SEC_MULTIPLIER } from '../common/constants';
@@ -28,7 +28,7 @@ export interface AssetConfig {
 }
 
 export interface AssetConfigHistoryItem {
-  chain: SupportedChain;
+  chain: DbSchema;
   timestamp: Date;
   balance: {
     tokenAddress: string;
@@ -41,7 +41,7 @@ export interface AssetConfigHistoryItem {
 }
 
 export interface ProtoStream {
-  chain: SupportedChain;
+  chain: DbSchema;
   streamId: string;
   config:
     | {
@@ -66,7 +66,7 @@ export default function buildAssetConfigs(
   accountId: AddressDriverId,
   accountMetadata: AccountMetadata | undefined,
   accountStreamsSetEvents: Map<Erc20, StreamsSetEventWithReceivers[]>,
-  chain: SupportedChain,
+  chain: DbSchema,
 ) {
   const firstAppearanceMap = new Map<string, Date>();
 

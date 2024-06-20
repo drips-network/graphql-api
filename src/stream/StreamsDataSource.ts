@@ -1,5 +1,5 @@
-import type { AddressDriverId } from '../common/types';
-import type { StreamWhereInput, SupportedChain } from '../generated/graphql';
+import type { AddressDriverId, DbSchema } from '../common/types';
+import type { StreamWhereInput } from '../generated/graphql';
 import assert, { isAddressDriverId } from '../utils/assert';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import getUserAccount from '../utils/getUserAccount';
@@ -7,12 +7,12 @@ import streamsUtils from '../utils/streams';
 
 export default class StreamsDataSource {
   public async getUserOutgoingStreams(
-    chains: SupportedChain[],
+    chains: DbSchema[],
     accountId: AddressDriverId,
   ) {
     const userAccount = await getUserAccount(chains, accountId);
 
-    const response = {} as Record<SupportedChain, ProtoStream[]>;
+    const response = {} as Record<DbSchema, ProtoStream[]>;
 
     chains.forEach((chain) => {
       response[chain] = userAccount[chain].assetConfigs.flatMap(
@@ -24,19 +24,16 @@ export default class StreamsDataSource {
   }
 
   public async getUserIncomingStreams(
-    chains: SupportedChain[],
+    chains: DbSchema[],
     accountId: AddressDriverId,
   ) {
     return streamsUtils.getUserIncomingStreams(chains, accountId);
   }
 
-  public async getStreamsByFilter(
-    chains: SupportedChain[],
-    where: StreamWhereInput,
-  ) {
+  public async getStreamsByFilter(chains: DbSchema[], where: StreamWhereInput) {
     const streams = chains.reduce(
       (acc, chain) => ({ ...acc, [chain]: [] }),
-      {} as Record<SupportedChain, ProtoStream[]>,
+      {} as Record<DbSchema, ProtoStream[]>,
     );
 
     if (!where.senderId && !where.receiverId) {
@@ -54,7 +51,7 @@ export default class StreamsDataSource {
       );
 
       Object.entries(senderOutgoingStreams).forEach(([chain, chainStreams]) => {
-        streams[chain as SupportedChain].push(...chainStreams);
+        streams[chain as DbSchema].push(...chainStreams);
       });
     }
 
@@ -68,7 +65,7 @@ export default class StreamsDataSource {
 
       Object.entries(receiverIncomingStreams).forEach(
         ([chain, chainStreams]) => {
-          streams[chain as SupportedChain].push(...chainStreams);
+          streams[chain as DbSchema].push(...chainStreams);
         },
       );
     }

@@ -1,16 +1,15 @@
 import { QueryTypes } from 'sequelize';
 import { DependencyType } from '../../common/types';
-import type { DripListId, ProjectId } from '../../common/types';
+import type { DbSchema, DripListId, ProjectId } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { SupportedChain } from '../../generated/graphql';
 import type { RepoDriverSplitReceiverModelDataValues } from '../../models/RepoDriverSplitReceiverModel';
 import RepoDriverSplitReceiverModel from '../../models/RepoDriverSplitReceiverModel';
 
 async function getRepoDriverSplitReceiversByFundeeProjectIds(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   fundeeProjectIds: ProjectId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeProjectId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."RepoDriverSplitReceivers"
 `;
@@ -37,10 +36,10 @@ async function getRepoDriverSplitReceiversByFundeeProjectIds(
 }
 
 async function getRepoDriverSplitReceiversByFunderProjectIds(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   funderProjectIds: ProjectId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeProjectId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt",'${schema}' AS chain
     FROM "${schema}"."RepoDriverSplitReceivers"
   `;
@@ -71,10 +70,10 @@ async function getRepoDriverSplitReceiversByFunderProjectIds(
 }
 
 async function getRepoDriverSplitReceiversByFunderDripListIds(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   funderDripListIds: DripListId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeProjectId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt",'${schema}' AS chain
     FROM "${schema}"."RepoDriverSplitReceivers"
   `;

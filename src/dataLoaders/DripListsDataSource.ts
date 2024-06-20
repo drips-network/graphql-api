@@ -1,6 +1,7 @@
 import DataLoader from 'dataloader';
 import type {
   Address,
+  DbSchema,
   DripListId,
   DripListMultiChainKey,
 } from '../common/types';
@@ -9,6 +10,7 @@ import type { DripListDataValues } from '../drip-list/DripListModel';
 import TransferEventModel from '../drip-list/TransferEventModel';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import dripListsQueries from './sqlQueries/dripListsQueries';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
 export default class DripListsDataSource {
   private readonly _batchDripListsByIds = new DataLoader(
@@ -36,7 +38,7 @@ export default class DripListsDataSource {
 
   public async getDripListById(
     id: DripListId,
-    chains: SupportedChain[],
+    chains: DbSchema[],
   ): Promise<DripListDataValues> {
     return this._batchDripListsByIds.load({
       id,
@@ -45,7 +47,7 @@ export default class DripListsDataSource {
   }
 
   public async getDripListsByFilter(
-    chains: SupportedChain[],
+    chains: DbSchema[],
     where?: DripListWhereInput,
   ): Promise<DripListDataValues[]> {
     return dripListsQueries.getByFilter(chains, where);
@@ -53,7 +55,7 @@ export default class DripListsDataSource {
 
   public async getDripListsByIdsOnChain(
     ids: DripListId[],
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<DripListDataValues[]> {
     return (
       await (this._batchDripListsByIds.loadMany(
@@ -66,7 +68,7 @@ export default class DripListsDataSource {
   }
 
   public async getMintedTokensCountByAccountId(
-    chain: SupportedChain,
+    chain: DbSchema,
     ownerAddress: Address,
   ): Promise<{
     chain: SupportedChain;
@@ -80,7 +82,7 @@ export default class DripListsDataSource {
     });
 
     return {
-      chain,
+      chain: dbSchemaToChain[chain],
       total,
     };
   }

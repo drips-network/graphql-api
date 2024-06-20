@@ -1,14 +1,14 @@
-import type { AccountId } from '../common/types';
-import type { SupportedChain } from '../generated/graphql';
+import type { AccountId, DbSchema } from '../common/types';
 import dripsContracts from '../common/dripsContracts';
 import streamReceiverSeenEventQueries from '../dataLoaders/sqlQueries/streamReceiverSeenEventQueries';
 import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
 import givenEventsQueries from '../dataLoaders/sqlQueries/givenEventsQueries';
 import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
+import { dbSchemaToChain } from './chainSchemaMappings';
 
 export default async function getWithdrawableBalances(
   accountId: AccountId,
-  chain: SupportedChain,
+  chain: DbSchema,
 ) {
   const streamReceiverSeenEventsForUser =
     await streamReceiverSeenEventQueries.getByAccountId([chain], accountId);
@@ -47,7 +47,7 @@ export default async function getWithdrawableBalances(
   } = Object.fromEntries(
     await Promise.all(
       relevantTokenAddresses.map(async (tokenAddress) => {
-        const { drips } = dripsContracts[chain]!;
+        const { drips } = dripsContracts[dbSchemaToChain[chain]]!;
 
         const [splittable, receivable, collectable] = await Promise.all([
           drips.splittable(accountId, tokenAddress),

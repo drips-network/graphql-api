@@ -1,15 +1,16 @@
 import dotenv from 'dotenv';
+import type { SupportedChain } from '../generated/graphql';
 
 dotenv.config({ path: `.env.${process.env.ENV}` });
 
 export default {
   port: (process.env.PORT || 8080) as number,
   rpcUrls: {
-    mainnet: process.env.RPC_URL_MAINNET,
-    sepolia: process.env.RPC_URL_SEPOLIA,
-    optimism_sepolia: process.env.RPC_URL_OPTIMISM_SEPOLIA,
-    polygon_amoy: process.env.RPC_URL_POLYGON_AMOY,
-  },
+    MAINNET: process.env.RPC_URL_MAINNET,
+    SEPOLIA: process.env.RPC_URL_SEPOLIA,
+    OPTIMISM_SEPOLIA: process.env.RPC_URL_OPTIMISM_SEPOLIA,
+    POLYGON_AMOY: process.env.RPC_URL_POLYGON_AMOY,
+  } as Record<SupportedChain, string | undefined>,
   publicApiKeys: process.env.PUBLIC_API_KEYS?.split(',') || [],
   dripsApiKey: process.env.DRIPS_API_KEY,
   postgresConnectionString: process.env.POSTGRES_CONNECTION_STRING,

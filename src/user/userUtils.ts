@@ -1,9 +1,10 @@
-import type { AddressDriverId, ResolverUser } from '../common/types';
-import { Driver, type SupportedChain } from '../generated/graphql';
+import type { AddressDriverId, DbSchema, ResolverUser } from '../common/types';
+import { Driver } from '../generated/graphql';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 import getUserAddress from '../utils/getUserAddress';
 
 export default function toResolverUser(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountId: AddressDriverId,
 ): ResolverUser {
   return {
@@ -13,7 +14,7 @@ export default function toResolverUser(
       driver: Driver.ADDRESS,
     },
     chainData: chains.map((chain) => ({
-      chain,
+      chain: dbSchemaToChain[chain],
       parentUserInfo: {
         accountId,
         queriedChains: chains,

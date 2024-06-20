@@ -1,12 +1,12 @@
 import DataLoader from 'dataloader';
 import type {
+  DbSchema,
   DripListId,
   DripListMultiChainKey,
   ProjectId,
   ProjectMultiChainKey,
 } from '../common/types';
 import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
-import type { SupportedChain } from '../generated/graphql';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import addressDriverSplitReceiversQueries from './sqlQueries/addressDriverSplitReceiversQueries';
 
@@ -42,7 +42,7 @@ export default class ReceiversOfTypeAddressDataSource {
 
   public async getReceiversOfTypeAddressByProjectIdOnChain(
     id: ProjectId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<AddressDriverSplitReceiverModelDataValues[]> {
     return (
       await this._batchReceiversOfTypeAddressByProjectIds.load({
@@ -83,7 +83,7 @@ export default class ReceiversOfTypeAddressDataSource {
 
   public async getReceiversOfTypeAddressByDripListIdOnChain(
     id: DripListId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<AddressDriverSplitReceiverModelDataValues[]> {
     return (
       await this._batchReceiversOfTypeAddressByDripListIds.load({

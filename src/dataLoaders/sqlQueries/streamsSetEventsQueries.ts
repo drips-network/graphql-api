@@ -2,10 +2,10 @@ import { QueryTypes } from 'sequelize';
 import type {
   AccountId,
   AddressDriverId,
+  DbSchema,
   StreamsSetEventWithReceivers,
 } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { SupportedChain } from '../../generated/graphql';
 import type { StreamsSetEventModelDataValues } from '../../models/StreamsSetEventModel';
 import StreamsSetEventModel from '../../models/StreamsSetEventModel';
 import type { StreamReceiverSeenEventModelDataValues } from '../../models/StreamReceiverSeenEventModel';
@@ -13,14 +13,14 @@ import StreamReceiverSeenEventModel from '../../models/StreamReceiverSeenEventMo
 
 // TODO: Investigate queries and add DataLoader if needed.
 async function getDistinctErc20ByReceiversHashes(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   receiversHashes: string[],
 ) {
   if (!receiversHashes?.length) {
     return [];
   }
 
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
 
   const whereClause = ` WHERE "receiversHash" IN (:receiversHashes)`;
@@ -40,10 +40,10 @@ async function getDistinctErc20ByReceiversHashes(
 }
 
 async function getSortedStreamsSetEventsByAccountId(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountId: AccountId,
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT *, '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
 
   const parameters: { [key: string]: any } = { accountId };
@@ -67,14 +67,14 @@ async function getSortedStreamsSetEventsByAccountId(
 }
 
 async function getSortedStreamsSetEventsByReceiversHashes(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   receiversHashes: string[],
 ) {
   if (!receiversHashes?.length) {
     return [];
   }
 
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT *, '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
 
   const whereClause = ` WHERE "receiversHash" IN (:receiversHashes)`;
@@ -96,7 +96,7 @@ async function getSortedStreamsSetEventsByReceiversHashes(
 }
 
 async function getStreamsSetEventsWithReceivers(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountId: AddressDriverId,
 ): Promise<StreamsSetEventWithReceivers[]> {
   const sortedAccountStreamSetEventModelDataValues =
@@ -110,7 +110,7 @@ async function getStreamsSetEventsWithReceivers(
     ),
   ];
 
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT *, '${schema}' AS chain FROM "${schema}"."StreamReceiverSeenEvents"`;
 
   const conditions: string[] = ['"receiversHash" IN (:uniqueReceiversHashes)'];

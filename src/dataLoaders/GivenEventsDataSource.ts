@@ -1,9 +1,10 @@
 /* eslint-disable no-param-reassign */
 
 import DataLoader from 'dataloader';
-import type { GiveWhereInput, SupportedChain } from '../generated/graphql';
+import type { GiveWhereInput } from '../generated/graphql';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import givenEventsQueries from './sqlQueries/givenEventsQueries';
+import type { DbSchema } from '../common/types';
 
 type TransactionHash = string;
 type LogIndex = number;
@@ -13,7 +14,7 @@ export default class GivenEventsDataSource {
   private readonly _batchGivenEventsByIds = new DataLoader(
     async (
       keys: readonly {
-        chains: SupportedChain[];
+        chains: DbSchema[];
         key: CompositePrimaryKey;
       }[],
     ): Promise<GivenEventModelDataValues[]> => {
@@ -46,7 +47,7 @@ export default class GivenEventsDataSource {
   );
 
   public async getGivenEventById(
-    chains: SupportedChain[],
+    chains: DbSchema[],
     transactionHash: TransactionHash,
     logIndex: LogIndex,
   ): Promise<GivenEventModelDataValues> {
@@ -57,7 +58,7 @@ export default class GivenEventsDataSource {
   }
 
   public async getGivenEventsByFilter(
-    chains: SupportedChain[],
+    chains: DbSchema[],
     where: GiveWhereInput,
   ): Promise<GivenEventModelDataValues[]> {
     return givenEventsQueries.getByFilter(chains, where);

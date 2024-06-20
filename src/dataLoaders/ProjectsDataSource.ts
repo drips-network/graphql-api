@@ -2,6 +2,7 @@ import DataLoader from 'dataloader';
 import type { ProjectDataValues } from '../project/ProjectModel';
 import type {
   AccountId,
+  DbSchema,
   ProjectId,
   ProjectMultiChainKey,
 } from '../common/types';
@@ -16,6 +17,7 @@ import projectsQueries from './sqlQueries/projectsQueries';
 import givenEventsQueries from './sqlQueries/givenEventsQueries';
 import splitEventsQueries from './sqlQueries/splitEventsQueries';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
@@ -51,7 +53,7 @@ export default class ProjectsDataSource {
 
   public async getProjectByIdOnChain(
     id: ProjectId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<ProjectDataValues | null> {
     const dbProject = await this._batchProjectsByIds.load({
       id,
@@ -63,7 +65,7 @@ export default class ProjectsDataSource {
 
   public async getProjectById(
     id: ProjectId,
-    chains: SupportedChain[],
+    chains: DbSchema[],
   ): Promise<ProjectDataValues[] | null> {
     const dbProjects = (
       await this._batchProjectsByIds.loadMany([{ id, chains }])
@@ -84,7 +86,7 @@ export default class ProjectsDataSource {
 
   public async getProjectByUrl(
     url: string,
-    chains: SupportedChain[],
+    chains: DbSchema[],
   ): Promise<ProjectDataValues[] | null> {
     // TODO: To Data Loader.
     const dbProjects = await projectsQueries.getByUrl(chains, url);
@@ -103,7 +105,7 @@ export default class ProjectsDataSource {
   }
 
   public async getProjectsByFilter(
-    chains: SupportedChain[],
+    chains: DbSchema[],
     where?: ProjectWhereInput,
     sort?: ProjectSortInput,
   ): Promise<ProjectDataValues[]> {
@@ -122,7 +124,7 @@ export default class ProjectsDataSource {
 
   public async getProjectsByIdsOnChain(
     ids: ProjectId[],
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<ProjectDataValues[]> {
     return (
       await (this._batchProjectsByIds.loadMany(
@@ -136,7 +138,7 @@ export default class ProjectsDataSource {
 
   public async getEarnedFunds(
     projectId: ProjectId,
-    chains: SupportedChain[],
+    chains: DbSchema[],
   ): Promise<
     {
       tokenAddress: string;
@@ -154,7 +156,7 @@ export default class ProjectsDataSource {
 
   private async _getIncomingSplitTotal(
     accountId: AccountId,
-    chains: SupportedChain[],
+    chains: DbSchema[],
   ) {
     const incomingSplitEventModelDataValues =
       await splitEventsQueries.getByReceiver(chains, accountId);
@@ -163,7 +165,7 @@ export default class ProjectsDataSource {
       {
         tokenAddress: string;
         amount: bigint;
-        chain: SupportedChain;
+        chain: DbSchema;
       }[]
     >((acc, curr) => {
       const existing = acc.find((e) => e.tokenAddress === curr.erc20);
@@ -186,7 +188,7 @@ export default class ProjectsDataSource {
 
   private async _getIncomingGivesTotal(
     accountId: AccountId,
-    chains: SupportedChain[],
+    chains: DbSchema[],
   ) {
     const incomingGivenEventModelDataValues =
       await givenEventsQueries.getByReceiver(chains, accountId);
@@ -195,7 +197,7 @@ export default class ProjectsDataSource {
       {
         tokenAddress: string;
         amount: bigint;
-        chain: SupportedChain;
+        chain: DbSchema;
       }[]
     >((acc, curr) => {
       const existing = acc.find((e) => e.tokenAddress === curr.erc20);
@@ -219,7 +221,7 @@ export default class ProjectsDataSource {
     ...args: {
       tokenAddress: string;
       amount: bigint;
-      chain: SupportedChain;
+      chain: DbSchema;
     }[][]
   ) {
     const amounts = new Map<
@@ -238,10 +240,14 @@ export default class ProjectsDataSource {
         if (existingAmount) {
           amounts.set(key, {
             ...existingAmount,
+            chain: dbSchemaToChain[amount.chain],
             amount: existingAmount.amount + amount.amount,
           });
         } else {
-          amounts.set(key, amount);
+          amounts.set(key, {
+            ...amount,
+            chain: dbSchemaToChain[amount.chain],
+          });
         }
       });
     });

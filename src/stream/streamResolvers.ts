@@ -6,6 +6,7 @@ import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
 import toResolverUser from '../user/userUtils';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
+import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import verifyStreamsInput from './streamValidators';
 
@@ -18,10 +19,12 @@ const streamResolvers = {
     ) => {
       verifyStreamsInput({ where, chains });
 
-      const chainsToQuery = chains?.length ? chains : queryableChains;
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
 
       const streamsByChain = await streamsDataSource.getStreamsByFilter(
-        chainsToQuery,
+        dbSchemasToQuery,
         where,
       );
 

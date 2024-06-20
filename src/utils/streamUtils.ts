@@ -7,13 +7,13 @@ import type {
   AddressDriverId,
   AssetConfigMetadata,
   BigIntString,
+  DbSchema,
 } from '../common/types';
 import { Driver } from '../generated/graphql';
 import type {
   NftDriverAccount,
   AddressDriverAccount,
   StreamConfig,
-  SupportedChain,
 } from '../generated/graphql';
 import getContractNameByAccountId from './getContractNameByAccountId';
 import getUserAddress from './getUserAddress';
@@ -115,7 +115,7 @@ export default function buildStreamReceiver(
 }
 
 export function mapReceiverToStream(
-  chain: SupportedChain,
+  chain: DbSchema,
   receiver: ProtoStream,
   senderAccountId: string,
   tokenAddress: string,

@@ -1,19 +1,15 @@
 import { QueryTypes } from 'sequelize';
-import {
-  DependencyType,
-  type DripListId,
-  type ProjectId,
-} from '../../common/types';
+import { DependencyType } from '../../common/types';
+import type { DbSchema, DripListId, ProjectId } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { SupportedChain } from '../../generated/graphql';
 import type { DripListSplitReceiverModelDataValues } from '../../models/DripListSplitReceiverModel';
 import DripListSplitReceiverModel from '../../models/DripListSplitReceiverModel';
 
 async function getDripListSplitReceiversByFundeeDripListIds(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   fundeeDripListIds: DripListId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeDripListId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."DripListSplitReceivers"
   `;
@@ -41,10 +37,10 @@ async function getDripListSplitReceiversByFundeeDripListIds(
 }
 
 async function getDripListSplitReceiversByFunderProjectIds(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   funderProjectIds: ProjectId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeDripListId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt",'${schema}' AS chain
     FROM "${schema}"."DripListSplitReceivers"
   `;
@@ -74,10 +70,10 @@ async function getDripListSplitReceiversByFunderProjectIds(
 }
 
 async function getDripListSplitReceiversByFunderDripListIds(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   funderDripListIds: DripListId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeDripListId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt",'${schema}' AS chain
     FROM "${schema}"."DripListSplitReceivers"
   `;

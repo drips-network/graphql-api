@@ -3,17 +3,16 @@ import { dbConnection } from '../../database/connectToDatabase';
 import type {
   ProjectSortInput,
   ProjectWhereInput,
-  SupportedChain,
 } from '../../generated/graphql';
 import type { ProjectDataValues } from '../../project/ProjectModel';
 import ProjectModel from '../../project/ProjectModel';
-import type { ProjectId } from '../../common/types';
+import type { DbSchema, ProjectId } from '../../common/types';
 
 async function getProjectByUrl(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   url: string,
 ): Promise<ProjectDataValues[]> {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."GitProjects"
   `;
@@ -38,11 +37,11 @@ async function getProjectByUrl(
 }
 
 async function getProjectsByFilter(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   where?: ProjectWhereInput,
   sort?: ProjectSortInput,
 ): Promise<ProjectDataValues[]> {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT 
       "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain 
      FROM "${schema}"."GitProjects" `;
@@ -88,10 +87,10 @@ async function getProjectsByFilter(
 }
 
 async function getProjectsByIds(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   projectIds: ProjectId[],
 ): Promise<ProjectDataValues[]> {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
   SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
   FROM "${schema}"."GitProjects"
 `;

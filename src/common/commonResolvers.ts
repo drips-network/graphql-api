@@ -6,12 +6,11 @@ import type {
   Project,
   RepoDriverAccount,
   SplitsReceiver,
-  SupportedChain,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { AddressDriverId, DripListId, ProjectId } from './types';
+import type { AddressDriverId, DbSchema, DripListId, ProjectId } from './types';
 import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
@@ -23,9 +22,9 @@ import type { AddressDriverSplitReceiverModelDataValues } from '../models/Addres
 import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
 import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
 import type projectResolvers from '../project/projectResolvers';
-import type dripListResolvers from '../drip-list/dripListResolvers';
 import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
+import type dripListResolvers from '../drip-list/dripListResolvers';
 
 async function resolveTotalSplit(
   parent:
@@ -133,7 +132,7 @@ const commonResolvers = {
     account: async (
       parent: {
         funderProjectId: ProjectId;
-        chain: SupportedChain;
+        chain: DbSchema;
       },
       _: any,
       context: Context,
@@ -160,8 +159,8 @@ const commonResolvers = {
     project: async (
       parent: {
         funderProjectId: ProjectId;
-        chain: SupportedChain;
-        queriedChains: SupportedChain[];
+        chain: DbSchema;
+        queriedChains: DbSchema[];
       },
       _: any,
       context: Context,
@@ -189,7 +188,7 @@ const commonResolvers = {
     account: async (
       parent: {
         funderDripListId: DripListId;
-        chain: SupportedChain;
+        chain: DbSchema;
       },
       _: any,
       context: Context,
@@ -213,7 +212,7 @@ const commonResolvers = {
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
     dripList: async (
-      parent: { funderDripListId: DripListId; chain: SupportedChain },
+      parent: { funderDripListId: DripListId; chain: DbSchema },
       _: any,
       context: Context,
     ) => {

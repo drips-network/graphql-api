@@ -1,6 +1,5 @@
-import type { AddressDriverId } from '../common/types';
+import type { AddressDriverId, DbSchema } from '../common/types';
 import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
-import type { SupportedChain } from '../generated/graphql';
 import buildAssetConfigs from './buildAssetConfigs';
 import type getLatestAccountMetadataByChain from './getLatestAccountMetadata';
 import groupBy from './linq';
@@ -10,8 +9,8 @@ export default async function getAssetConfigs(
   accountMetadata: NonNullable<
     Awaited<ReturnType<typeof getLatestAccountMetadataByChain>>
   >,
-  chains: SupportedChain[],
-): Promise<Record<SupportedChain, ReturnType<typeof buildAssetConfigs>>> {
+  chains: DbSchema[],
+): Promise<Record<DbSchema, ReturnType<typeof buildAssetConfigs>>> {
   const accountStreamsSetEventsWithReceivers =
     await streamsSetEventsQueries.getStreamsSetEventsWithReceivers(
       chains,
@@ -23,10 +22,7 @@ export default async function getAssetConfigs(
     (event) => event.erc20,
   );
 
-  const response = {} as Record<
-    SupportedChain,
-    ReturnType<typeof buildAssetConfigs>
-  >;
+  const response = {} as Record<DbSchema, ReturnType<typeof buildAssetConfigs>>;
 
   chains.forEach((chain) => {
     response[chain] = buildAssetConfigs(

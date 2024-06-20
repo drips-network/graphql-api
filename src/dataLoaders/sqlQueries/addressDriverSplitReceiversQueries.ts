@@ -1,17 +1,17 @@
 import { QueryTypes } from 'sequelize';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { SupportedChain } from '../../generated/graphql';
-import type { AccountId, DripListId } from '../../common/types';
+
+import type { AccountId, DbSchema, DripListId } from '../../common/types';
 import type { AddressDriverSplitReceiverModelDataValues } from '../../models/AddressDriverSplitReceiverModel';
 import AddressDriverSplitReceiverModel, {
   AddressDriverSplitReceiverType,
 } from '../../models/AddressDriverSplitReceiverModel';
 
 async function getAddressDriverSplitReceiversDripListDependenciesByFunders(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   funderDripListIds: DripListId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
   SELECT "id", "fundeeAccountId", "fundeeAccountAddress", "funderProjectId", "funderDripListId","weight", "type"::TEXT, "createdAt", "updatedAt", '${schema}' AS chain
   FROM "${schema}"."AddressDriverSplitReceivers"
 `;
@@ -41,10 +41,10 @@ async function getAddressDriverSplitReceiversDripListDependenciesByFunders(
 }
 
 async function getAddressDriverSplitReceiversProjectDependenciesByFunders(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   funderProjectIds: AccountId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeAccountId", "fundeeAccountAddress", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "createdAt", "updatedAt",'${schema}' AS chain
     FROM "${schema}"."AddressDriverSplitReceivers"
   `;
@@ -76,10 +76,10 @@ async function getAddressDriverSplitReceiversProjectDependenciesByFunders(
 }
 
 async function getAddressDriverSplitReceiversByFundeeAccountIds(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   fundeeAccountIds: AccountId[],
 ) {
-  const baseSQL = (schema: SupportedChain) => `
+  const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeAccountId", "fundeeAccountAddress", "funderProjectId", "funderDripListId","weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."AddressDriverSplitReceivers"
   `;

@@ -2,13 +2,13 @@
 import DataLoader from 'dataloader';
 import type {
   AccountId,
+  DbSchema,
   DripListId,
   DripListMultiChainKey,
   ProjectId,
   ProjectMultiChainKey,
 } from '../common/types';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
-import type { SupportedChain } from '../generated/graphql';
 import type { SplitEventModelDataValues } from '../models/SplitEventModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import { isDripListId, isProjectId } from '../utils/assert';
@@ -62,7 +62,7 @@ export default class TotalEarnedDataSource {
 
   public async getTotalEarnedByProjectIds(
     id: DripListId | ProjectId,
-    chains: SupportedChain[],
+    chains: DbSchema[],
   ): Promise<{
     splitEventsForDripListDataValues: SplitEventModelDataValues[];
     givenEventsForDripListDataValues: GivenEventModelDataValues[];

@@ -1,4 +1,4 @@
-import type { SupportedChain } from '../generated/graphql';
+import type { DbSchema } from '../common/types';
 
 type Amount = {
   amount: bigint;
@@ -11,7 +11,7 @@ type Amount = {
  * @param args The arrays of amounts to add together.
  */
 export default function mergeAmounts(
-  ...args: (Amount & { chain: SupportedChain })[][]
+  ...args: (Amount & { chain: DbSchema })[][]
 ) {
   const amounts = new Map<string, Amount>();
 

@@ -1,16 +1,21 @@
-import type { ResolverDripList, ResolverDripListData } from '../common/types';
-import { Driver, type SupportedChain } from '../generated/graphql';
+import type {
+  DbSchema,
+  ResolverDripList,
+  ResolverDripListData,
+} from '../common/types';
+import { Driver } from '../generated/graphql';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 import type { DripListDataValues } from './DripListModel';
 
 export async function toResolverDripList(
-  chain: SupportedChain,
+  chain: DbSchema,
   dripList: DripListDataValues,
 ): Promise<ResolverDripList> {
   return (await toResolverDripLists([chain], [dripList]))[0];
 }
 
 export async function toResolverDripLists(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   dripLists: DripListDataValues[],
 ): Promise<ResolverDripList[]> {
   return Promise.all(
@@ -21,7 +26,7 @@ export async function toResolverDripLists(
         relevantChains.map(
           async (chain) =>
             ({
-              chain,
+              chain: dbSchemaToChain[chain],
               parentDripListInfo: {
                 dripListId: dripList.id,
                 dripListChain: chain,

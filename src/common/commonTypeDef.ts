@@ -132,10 +132,10 @@ const commonTypeDef = gql`
   }
 
   enum SupportedChain {
-    mainnet
-    sepolia
-    optimism_sepolia
-    polygon_amoy
+    MAINNET
+    SEPOLIA
+    OPTIMISM_SEPOLIA
+    POLYGON_AMOY
   }
 
   type WithdrawableBalance {

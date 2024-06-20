@@ -3,6 +3,7 @@ import type { DripListSplitReceiverModelDataValues } from '../models/DripListSpl
 import type {
   AccountId,
   AddressDriverId,
+  DbSchema,
   DripListId,
   DripListMultiChainKey,
   MultiChainKey,
@@ -14,7 +15,6 @@ import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDrive
 import streams from '../utils/streams';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
-import type { SupportedChain } from '../generated/graphql';
 import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
 import addressDriverSplitReceiversQueries from './sqlQueries/addressDriverSplitReceiversQueries';
 import givenEventsQueries from './sqlQueries/givenEventsQueries';
@@ -125,7 +125,7 @@ export default class ProjectAndDripListSupportDataSource {
           Object.entries(s).map(([chain, protoStreamsForChain]) =>
             protoStreamsForChain.map((protoStream) => ({
               ...protoStream,
-              chain: chain as SupportedChain,
+              chain: chain as DbSchema,
             })),
           ),
         )
@@ -142,7 +142,7 @@ export default class ProjectAndDripListSupportDataSource {
           ],
         }),
         {},
-      ) as Record<AccountId, (ProtoStream & { chain: SupportedChain })[]>;
+      ) as Record<AccountId, (ProtoStream & { chain: DbSchema })[]>;
 
       return accountIds.map((id) => streamSupportToAccountMapping[id] || []);
     },
@@ -176,7 +176,7 @@ export default class ProjectAndDripListSupportDataSource {
 
   public async getProjectAndDripListSupportByDripListIdOnChain(
     id: DripListId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<DripListSplitReceiverModelDataValues[]> {
     return (
       await this._batchProjectAndDripListSupportByDripListIds.load({
@@ -188,7 +188,7 @@ export default class ProjectAndDripListSupportDataSource {
 
   public async getProjectAndDripListSupportByProjectIdOnChain(
     id: ProjectId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
     return (
       await this._batchProjectAndDripListSupportByProjectIds.load({
@@ -200,7 +200,7 @@ export default class ProjectAndDripListSupportDataSource {
 
   public async getProjectAndDripListSupportByAddressDriverIdOnChain(
     id: AddressDriverId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<AddressDriverSplitReceiverModelDataValues[]> {
     return (
       await this._batchProjectAndDripListSupportByAddressDriverIds.load({
@@ -212,7 +212,7 @@ export default class ProjectAndDripListSupportDataSource {
 
   public async getOneTimeDonationSupportByAccountIdOnChain(
     id: AccountId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ): Promise<GivenEventModelDataValues[]> {
     return (
       await this._batchOneTimeDonationSupportByAccountIds.load({
@@ -224,7 +224,7 @@ export default class ProjectAndDripListSupportDataSource {
 
   public async getStreamSupportByAccountIdOnChain(
     id: AccountId,
-    chain: SupportedChain,
+    chain: DbSchema,
   ) {
     return (
       await this._batchStreamSupportByAccountIds.load({

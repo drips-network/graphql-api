@@ -1,12 +1,11 @@
-import type { AddressDriverId } from '../common/types';
-import type { SupportedChain } from '../generated/graphql';
+import type { AddressDriverId, DbSchema } from '../common/types';
 import { Driver } from '../generated/graphql';
 import getUserAddress from './getUserAddress';
 import getAssetConfigs from './getAssetConfigs';
 import getLatestAccountMetadataByChain from './getLatestAccountMetadata';
 
 export default async function getUserAccount(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountId: AddressDriverId,
 ) {
   const latestAccountMetadataByChain =
@@ -19,7 +18,7 @@ export default async function getUserAccount(
   );
 
   const response = {} as Record<
-    SupportedChain,
+    DbSchema,
     {
       user: {
         accountId: AddressDriverId;
@@ -29,7 +28,7 @@ export default async function getUserAccount(
       name: string | undefined;
       description: string | undefined;
       emoji: string | undefined;
-      assetConfigs: Awaited<ReturnType<typeof getAssetConfigs>>[SupportedChain];
+      assetConfigs: Awaited<ReturnType<typeof getAssetConfigs>>[DbSchema];
       lastUpdated: Date | undefined;
       lastUpdatedByAddress: string | undefined;
       lastIpfsHash: string | undefined;
@@ -37,12 +36,10 @@ export default async function getUserAccount(
   >;
 
   Object.entries(assetConfigsByChain).forEach(([chain, assetConfigs]) => {
-    const metadata =
-      latestAccountMetadataByChain[chain as SupportedChain]?.metadata;
-    const ipfsHash =
-      latestAccountMetadataByChain[chain as SupportedChain]?.ipfsHash;
+    const metadata = latestAccountMetadataByChain[chain as DbSchema]?.metadata;
+    const ipfsHash = latestAccountMetadataByChain[chain as DbSchema]?.ipfsHash;
 
-    response[chain as SupportedChain] = {
+    response[chain as DbSchema] = {
       user: {
         accountId,
         driver: Driver.ADDRESS,

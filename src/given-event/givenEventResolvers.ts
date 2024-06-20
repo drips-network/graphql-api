@@ -6,6 +6,7 @@ import assert, { isAccountId } from '../utils/assert';
 import queryableChains from '../common/queryableChains';
 import type { GivenEventModelDataValues } from './GivenEventModel';
 import type { ResolverGive } from '../common/types';
+import { chainToDbSchema } from '../utils/chainSchemaMappings';
 
 const givenEventResolvers = {
   Query: {
@@ -32,10 +33,12 @@ const givenEventResolvers = {
         });
       }
 
-      const chainsToQuery = chains?.length ? chains : queryableChains;
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
 
       return dataSources.givenEventsDataSource.getGivenEventsByFilter(
-        chainsToQuery,
+        dbSchemasToQuery,
         where,
       );
     },

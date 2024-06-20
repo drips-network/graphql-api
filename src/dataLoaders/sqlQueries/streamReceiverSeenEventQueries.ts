@@ -1,15 +1,14 @@
 import { QueryTypes } from 'sequelize';
-import type { AccountId } from '../../common/types';
+import type { AccountId, DbSchema } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { SupportedChain } from '../../generated/graphql';
 import type { StreamReceiverSeenEventModelDataValues } from '../../models/StreamReceiverSeenEventModel';
 import StreamReceiverSeenEventModel from '../../models/StreamReceiverSeenEventModel';
 
 async function getStreamReceiverSeenEventsByAccountId(
-  chains: SupportedChain[],
+  chains: DbSchema[],
   accountId: AccountId,
 ) {
-  const baseSQL = (schema: SupportedChain) =>
+  const baseSQL = (schema: DbSchema) =>
     `SELECT *, '${schema}' AS chain FROM "${schema}"."StreamReceiverSeenEvents" WHERE "accountId" = :accountId`;
 
   const fullQuery = `${chains
