@@ -106,17 +106,6 @@ export async function assetIncomingBalanceTimeline(
     }
   }
 
-  if (
-    tokenAddress.toLowerCase() ===
-    '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'.toLowerCase()
-  )
-    console.log(
-      JSON.stringify(timeline, (key, value) => {
-        if (typeof value === 'bigint') return value.toString();
-        return value;
-      }),
-    );
-
   return timeline;
 }
 
