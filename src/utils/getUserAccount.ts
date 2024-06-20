@@ -2,14 +2,14 @@ import type { AddressDriverId, DbSchema } from '../common/types';
 import { Driver } from '../generated/graphql';
 import getUserAddress from './getUserAddress';
 import getAssetConfigs from './getAssetConfigs';
-import getLatestAccountMetadataByChain from './getLatestAccountMetadata';
+import getLatestAccountMetadataOnChain from './getLatestAccountMetadata';
 
 export default async function getUserAccount(
   chains: DbSchema[],
   accountId: AddressDriverId,
 ) {
   const latestAccountMetadataByChain =
-    (await getLatestAccountMetadataByChain(chains, accountId)) ?? {};
+    (await getLatestAccountMetadataOnChain(chains, accountId)) ?? {};
 
   const assetConfigsByChain = await getAssetConfigs(
     accountId,

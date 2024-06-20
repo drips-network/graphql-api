@@ -1,5 +1,8 @@
 import { isAddress } from 'ethers';
-import { assetOutgoingBalanceTimeline } from '../balances/estimate-reloaded';
+import {
+  assetIncomingBalanceTimeline,
+  assetOutgoingBalanceTimeline,
+} from '../balances/estimate-reloaded';
 import type {
   AccountId,
   Address,
@@ -25,13 +28,15 @@ import {
   toResolverDripList,
   toResolverDripLists,
 } from '../drip-list/dripListUtils';
-import getLatestAccountMetadataByChain from '../utils/getLatestAccountMetadata';
+import getLatestAccountMetadataOnChain from '../utils/getLatestAccountMetadata';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import toResolverUser from './userUtils';
 import { getCrossChainAddressDriverAccountIdByAddress } from '../common/dripsContracts';
-import getWithdrawableBalances from '../utils/getWithdrawableBalances';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
+import getWithdrawableBalancesOnChain, {
+  getRelevantTokens,
+} from '../utils/getWithdrawableBalances';
 
 const userResolvers = {
   Query: {
@@ -87,29 +92,59 @@ const userResolvers = {
     }),
     withdrawableBalances: async ({
       parentUserInfo: { accountId, userChain },
-    }: ResolverUserData) => getWithdrawableBalances(accountId, userChain),
-    balances: async ({
-      parentUserInfo: { accountId, userChain },
-    }: ResolverUserData) => {
-      const chainMetadata = await getLatestAccountMetadataByChain(
+    }: ResolverUserData) =>
+      getWithdrawableBalancesOnChain(accountId, userChain),
+    balances: async (
+      { parentUserInfo: { accountId, userChain } }: ResolverUserData,
+      _: any,
+      { dataSources: { streamsDataSource } }: Context,
+    ) => {
+      const chainMetadata = await getLatestAccountMetadataOnChain(
         [userChain],
         accountId as AddressDriverId,
       );
 
       const metadata = chainMetadata[userChain]?.metadata ?? {};
 
-      const assetConfigs = await getAssetConfigs(
-        accountId as AddressDriverId,
-        metadata,
-        [userChain],
+      const [assetConfigs, incomingStreams, relevantTokensForIncomingBalance] =
+        await Promise.all([
+          await getAssetConfigs(accountId as AddressDriverId, metadata, [
+            userChain,
+          ]),
+          streamsDataSource.getUserIncomingStreams(
+            [userChain],
+            accountId as AddressDriverId,
+          ),
+          getRelevantTokens(accountId as AccountId, userChain),
+        ]);
+
+      const allTokens = Array.from(
+        new Set([
+          ...assetConfigs[userChain].map((ac) => ac.tokenAddress),
+          ...relevantTokensForIncomingBalance,
+        ]),
       );
 
-      return assetConfigs[userChain].map((assetConfig) => ({
-        chain: userChain,
-        tokenAddress: assetConfig.tokenAddress,
-        incoming: [],
-        outgoing: assetOutgoingBalanceTimeline(assetConfig.history),
-      }));
+      return Promise.all(
+        allTokens.map(async (tokenAddress) => {
+          const outgoingAssetConfig = assetConfigs[userChain].find(
+            (ac) => ac.tokenAddress === tokenAddress,
+          );
+
+          return {
+            tokenAddress,
+            incoming: await assetIncomingBalanceTimeline(
+              accountId as AccountId,
+              tokenAddress,
+              incomingStreams[userChain],
+              userChain,
+            ),
+            outgoing: outgoingAssetConfig
+              ? assetOutgoingBalanceTimeline(outgoingAssetConfig.history)
+              : [],
+          };
+        }),
+      );
     },
     projects: async (
       { parentUserInfo: { accountId, userChain } }: ResolverUserData,
@@ -231,7 +266,7 @@ const userResolvers = {
     latestMetadataIpfsHash: async ({
       parentUserInfo: { accountId, userChain },
     }: ResolverUserData) => {
-      const chainMetadata = await getLatestAccountMetadataByChain(
+      const chainMetadata = await getLatestAccountMetadataOnChain(
         [userChain],
         accountId as AddressDriverId,
       );

@@ -46,6 +46,7 @@ const projectTypeDef = gql`
     claimedAt: Date!
     totalEarned: [Amount!]!
     withdrawableBalances: [WithdrawableBalance!]!
+    latestMetadataIpfsHash: String!
   }
 
   type UnClaimedProjectData {

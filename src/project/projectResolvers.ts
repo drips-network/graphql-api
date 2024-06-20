@@ -32,9 +32,10 @@ import type { DripListDataValues } from '../drip-list/DripListModel';
 import assert, { isGitHubUrl, isProjectId } from '../utils/assert';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
-import getWithdrawableBalances from '../utils/getWithdrawableBalances';
 import { toResolverDripList } from '../drip-list/dripListUtils';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
+import { getLatestMetadataHash } from '../utils/getLatestAccountMetadata';
+import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 
 const projectResolvers = {
   Query: {
@@ -369,7 +370,11 @@ const projectResolvers = {
     withdrawableBalances: async ({
       parentProjectInfo: { projectId, projectChain },
     }: ResolverUnClaimedProjectData) =>
-      getWithdrawableBalances(projectId, projectChain),
+      getWithdrawableBalancesOnChain(projectId, projectChain),
+    latestMetadataIpfsHash: async ({
+      parentProjectInfo: { projectId, projectChain },
+    }: ResolverUnClaimedProjectData) =>
+      getLatestMetadataHash(projectId, [projectChain]),
   },
   UnClaimedProjectData: {
     verificationStatus: (projectData: ResolverUnClaimedProjectData) =>
@@ -459,7 +464,7 @@ const projectResolvers = {
     withdrawableBalances: async ({
       parentProjectInfo: { projectId, projectChain },
     }: ResolverUnClaimedProjectData) =>
-      getWithdrawableBalances(projectId, projectChain),
+      getWithdrawableBalancesOnChain(projectId, projectChain),
   },
   Avatar: {
     __resolveType(parent: { cid: string } | { emoji: string }) {

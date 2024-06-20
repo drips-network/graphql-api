@@ -39,7 +39,7 @@ export function makeStreamId(
     throw new Error('Invalid values');
   }
 
-  return `${senderAccountId}-${tokenAddress}-${dripId}`;
+  return `${senderAccountId}-${tokenAddress.toLowerCase()}-${dripId}`;
 }
 
 export const fromUint256 = (streamConfig: bigint | string) => {

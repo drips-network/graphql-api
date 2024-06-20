@@ -1,7 +1,12 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
 import { ethers } from 'ethers';
 import { addressDriverAccountMetadataParser } from '../schemas';
-import type { AddressDriverId, DbSchema, IpfsHash } from '../common/types';
+import type {
+  AccountId,
+  AddressDriverId,
+  DbSchema,
+  IpfsHash,
+} from '../common/types';
 import appSettings from '../common/appSettings';
 import accountMetadataEmittedEventsQueries from '../dataLoaders/sqlQueries/accountMetadataEmittedEventsQueries';
 
@@ -21,7 +26,7 @@ async function getIpfsFile(hash: IpfsHash): Promise<Response> {
   return fetch(`${appSettings.ipfsGatewayUrl}/ipfs/${hash}`);
 }
 
-export default async function getLatestAccountMetadataByChain(
+export default async function getLatestAccountMetadataOnChain(
   chains: DbSchema[],
   accountId: AddressDriverId,
 ) {
@@ -54,4 +59,18 @@ export default async function getLatestAccountMetadataByChain(
   }
 
   return response;
+}
+
+export async function getLatestMetadataHash(
+  accountId: AccountId,
+  chains: DbSchema[],
+): Promise<IpfsHash | undefined> {
+  const latestAccountMetadataEmittedEvent =
+    await accountMetadataEmittedEventsQueries.getByAccountId(chains, accountId);
+
+  if (!latestAccountMetadataEmittedEvent.length) {
+    return undefined;
+  }
+
+  return toIpfsHash(latestAccountMetadataEmittedEvent[0].value);
 }

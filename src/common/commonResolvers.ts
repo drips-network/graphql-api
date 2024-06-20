@@ -121,7 +121,7 @@ const commonResolvers = {
         return shouldNeverHappen('Invalid SupportItem type');
       }
 
-      if ('stream' in parent) {
+      if ('timeline' in parent) {
         return 'StreamSupport';
       }
 

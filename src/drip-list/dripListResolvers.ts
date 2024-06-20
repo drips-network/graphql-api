@@ -5,7 +5,6 @@ import type {
   ResolverDripList,
   ResolverDripListData,
 } from '../common/types';
-import type DripListModel from './DripListModel';
 import type {
   AddressDriverAccount,
   AddressReceiver,
@@ -24,6 +23,7 @@ import type { DripListDataValues } from './DripListModel';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { toResolverProject } from '../project/projectUtils';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
+import { getLatestMetadataHash } from '../utils/getLatestAccountMetadata';
 
 const dripListResolvers = {
   Query: {
@@ -93,8 +93,6 @@ const dripListResolvers = {
       dripListData.description,
     previousOwnerAddress: (dripListData: ResolverDripListData) =>
       dripListData.previousOwnerAddress,
-    latestVotingRoundId: (dripList: DripListModel) =>
-      dripList.latestVotingRoundId,
     owner: (dripListData: ResolverDripListData): AddressDriverAccount =>
       dripListData.owner,
     splits: async (
@@ -296,6 +294,10 @@ const dripListResolvers = {
       _: {},
       context: Context,
     ) => resolveTotalEarned(dripListData, context),
+    latestMetadataIpfsHash: async ({
+      parentDripListInfo: { dripListChain, dripListId },
+    }: ResolverDripListData) =>
+      getLatestMetadataHash(dripListId, [dripListChain]),
   },
 };
 

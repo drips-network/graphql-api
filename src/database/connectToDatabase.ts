@@ -15,7 +15,7 @@ import SqueezedStreamsEventModel from '../models/SqueezedStreamsEventModel';
 
 export const dbConnection = new Sequelize(
   `${appSettings.postgresConnectionString}`,
-  {},
+  { logging: false },
 );
 
 export async function connectToDatabase() {

@@ -1,13 +1,13 @@
 import type { AddressDriverId, DbSchema } from '../common/types';
 import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
 import buildAssetConfigs from './buildAssetConfigs';
-import type getLatestAccountMetadataByChain from './getLatestAccountMetadata';
+import type getLatestAccountMetadataOnChain from './getLatestAccountMetadata';
 import groupBy from './linq';
 
 export default async function getAssetConfigs(
   accountId: AddressDriverId,
   accountMetadata: NonNullable<
-    Awaited<ReturnType<typeof getLatestAccountMetadataByChain>>
+    Awaited<ReturnType<typeof getLatestAccountMetadataOnChain>>
   >,
   chains: DbSchema[],
 ): Promise<Record<DbSchema, ReturnType<typeof buildAssetConfigs>>> {

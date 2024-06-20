@@ -1,13 +1,114 @@
 /* eslint-disable no-continue */
 
+import { AMT_PER_SEC_MULTIPLIER } from '../common/constants';
+import type { AccountId, DbSchema } from '../common/types';
 import {
   TimelineItemType,
   type UserBalanceTimelineItem,
   type Scalars,
   type TimelineItem,
 } from '../generated/graphql';
+import { currentAmounts } from '../utils/balance-timelines';
 import type { AssetConfigHistoryItem } from '../utils/buildAssetConfigs';
+import getCycleInfo from '../utils/cycle';
+import { getTokenBalancesOnChain } from '../utils/getWithdrawableBalances';
 import minMax from '../utils/minMax';
+
+export async function assetIncomingBalanceTimeline(
+  accountId: AccountId,
+  tokenAddress: string,
+  incomingStreams: any[],
+  chain: DbSchema,
+): Promise<UserBalanceTimelineItem[]> {
+  const { currentCycleStartDate } = getCycleInfo();
+
+  const { receivable, splittable, collectable } = await getTokenBalancesOnChain(
+    accountId,
+    tokenAddress,
+    chain,
+  );
+
+  const timeline: UserBalanceTimelineItem[] = [];
+
+  const incomingStreamsAmountsAtCycleStart = incomingStreams
+    .filter(
+      (stream) =>
+        stream.config.amountPerSecond.tokenAddress.toLowerCase() ===
+        tokenAddress.toLowerCase(),
+    )
+    .map((stream) =>
+      currentAmounts(stream.timeline, tokenAddress, currentCycleStartDate),
+    );
+
+  timeline.push({
+    timestamp: currentCycleStartDate,
+    currentAmount: {
+      tokenAddress,
+      amount: (
+        (receivable + splittable + collectable) *
+        BigInt(AMT_PER_SEC_MULTIPLIER)
+      ).toString(),
+    },
+    deltaPerSecond: {
+      tokenAddress,
+      amount: incomingStreamsAmountsAtCycleStart
+        .reduce((acc, amt) => acc + amt.currentDeltaPerSecond.amount, 0n)
+        .toString(),
+    },
+  });
+
+  const streamTimelinesByStreamId: { [streamId: string]: TimelineItem[] } =
+    incomingStreams.reduce((acc, stream) => {
+      acc[stream.id] = stream.timeline;
+      return acc;
+    }, {});
+
+  for (const streamTimeline of Object.values(streamTimelinesByStreamId)) {
+    for (const timelineItem of streamTimeline) {
+      if (timelineItem.timestamp.getTime() < currentCycleStartDate.getTime())
+        continue;
+
+      const previousStreamTimelineItem =
+        streamTimeline[streamTimeline.indexOf(timelineItem) - 1];
+
+      const diffBetweenCurrAndPrevDelta =
+        BigInt(timelineItem.deltaPerSecond.amount) -
+        BigInt(previousStreamTimelineItem?.deltaPerSecond.amount ?? 0n);
+      if (diffBetweenCurrAndPrevDelta === 0n) continue;
+
+      const lastIncomingTimelineItem = timeline[timeline.length - 1];
+      const timeSinceLastIncomingTimelineItem = Math.floor(
+        (timelineItem.timestamp.getTime() -
+          lastIncomingTimelineItem.timestamp.getTime()) /
+          1000,
+      );
+
+      const receivedSinceLastTimelineItem =
+        BigInt(lastIncomingTimelineItem.deltaPerSecond.amount) *
+        BigInt(timeSinceLastIncomingTimelineItem);
+
+      timeline.push({
+        timestamp: timelineItem.timestamp,
+        currentAmount: {
+          tokenAddress,
+          amount: (
+            BigInt(lastIncomingTimelineItem.currentAmount.amount) +
+            receivedSinceLastTimelineItem
+          ).toString(),
+        },
+        deltaPerSecond: {
+          tokenAddress,
+          amount: (
+            BigInt(timeline[timeline.length - 1].deltaPerSecond.amount) +
+            BigInt(diffBetweenCurrAndPrevDelta)
+          ).toString(),
+        },
+      });
+    }
+  }
+
+  return timeline;
+}
 
 export function assetOutgoingBalanceTimeline(
   historyItems: AssetConfigHistoryItem[],

@@ -6,10 +6,7 @@ import givenEventsQueries from '../dataLoaders/sqlQueries/givenEventsQueries';
 import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
 import { dbSchemaToChain } from './chainSchemaMappings';
 
-export default async function getWithdrawableBalances(
-  accountId: AccountId,
-  chain: DbSchema,
-) {
+export async function getRelevantTokens(accountId: AccountId, chain: DbSchema) {
   const streamReceiverSeenEventsForUser =
     await streamReceiverSeenEventQueries.getByAccountId([chain], accountId);
 
@@ -26,7 +23,7 @@ export default async function getWithdrawableBalances(
     splitEventsQueries.getDistinctErc20ByReceiver([chain], accountId),
   ]);
 
-  const relevantTokenAddresses = [
+  return [
     ...incomingStreamTokenAddresses,
     ...incomingGivesTokenAddresses,
     ...incomingSplitEventsTokenAddresses,
@@ -37,6 +34,33 @@ export default async function getWithdrawableBalances(
 
     return acc;
   }, []);
+}
+
+export async function getTokenBalancesOnChain(
+  accountId: AccountId,
+  tokenAddress: string,
+  chain: DbSchema,
+) {
+  const { drips } = dripsContracts[dbSchemaToChain[chain]]!;
+
+  const [splittable, receivable, collectable] = await Promise.all([
+    drips.splittable(accountId, tokenAddress),
+    drips.receiveStreamsResult(accountId, tokenAddress, 10000),
+    drips.collectable(accountId, tokenAddress),
+  ]);
+
+  return {
+    splittable,
+    receivable,
+    collectable,
+  };
+}
+
+export default async function getWithdrawableBalancesOnChain(
+  accountId: AccountId,
+  chain: DbSchema,
+) {
+  const relevantTokenAddresses = await getRelevantTokens(accountId, chain);
 
   const balances: {
     [tokenAddress: string]: {
@@ -47,13 +71,8 @@ export default async function getWithdrawableBalances(
   } = Object.fromEntries(
     await Promise.all(
       relevantTokenAddresses.map(async (tokenAddress) => {
-        const { drips } = dripsContracts[dbSchemaToChain[chain]]!;
-
-        const [splittable, receivable, collectable] = await Promise.all([
-          drips.splittable(accountId, tokenAddress),
-          drips.receiveStreamsResult(accountId, tokenAddress, 10000),
-          drips.collectable(accountId, tokenAddress),
-        ]);
+        const { splittable, receivable, collectable } =
+          await getTokenBalancesOnChain(accountId, tokenAddress, chain);
 
         return [tokenAddress, { splittable, receivable, collectable }];
       }),
