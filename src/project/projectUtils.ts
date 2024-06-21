@@ -164,6 +164,7 @@ function mapClaimedProjectChainData(
     claimedAt: project.claimedAt,
     totalEarned: [], // Will be populated by the resolver.
     withdrawableBalances: [], // Will be populated by the resolver.
+    latestMetadataIpfsHash: '', // Will be populated by the resolver.
   } as ResolverClaimedProjectData;
 }
 

@@ -97,7 +97,7 @@ const commonResolvers = {
             ReturnType<typeof projectResolvers.ClaimedProjectData.support>
           >[number]
         | Awaited<
-            ReturnType<typeof dripListResolvers.DripListData.support>
+            ReturnType<typeof dripListResolvers.DripList.support>
           >[number],
     ) {
       if ('dripList' in parent || 'project' in parent) {

@@ -1,10 +1,7 @@
-import type {
-  DbSchema,
-  ResolverDripList,
-  ResolverDripListData,
-} from '../common/types';
+import type { DbSchema, ResolverDripList } from '../common/types';
 import { Driver } from '../generated/graphql';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
+import { singleOrDefault } from '../utils/linq';
 import type { DripListDataValues } from './DripListModel';
 
 export async function toResolverDripList(
@@ -18,44 +15,43 @@ export async function toResolverDripLists(
   chains: DbSchema[],
   dripLists: DripListDataValues[],
 ): Promise<ResolverDripList[]> {
-  return Promise.all(
-    dripLists.map(async (dripList) => {
-      const relevantChains = chains.filter((chain) => dripList.chain === chain);
+  return (
+    await Promise.all(
+      dripLists.map(async (dripList) => {
+        const dripListChain = singleOrDefault(
+          chains.filter((chain) => dripList.chain === chain),
+        );
 
-      const chainData = await Promise.all(
-        relevantChains.map(
-          async (chain) =>
-            ({
-              chain: dbSchemaToChain[chain],
-              parentDripListInfo: {
-                dripListId: dripList.id,
-                dripListChain: chain,
-                queriedChains: chains,
-              },
-              name: dripList.name,
-              creator: dripList.creator,
-              description: dripList.description,
-              owner: {
-                driver: Driver.ADDRESS,
-                accountId: dripList.ownerAccountId,
-                address: dripList.ownerAddress as string,
-              },
-              previousOwnerAddress: dripList.previousOwnerAddress,
-              support: [], // Will be populated by the resolver.
-              splits: [], // Will be populated by the resolver.
-              latestVotingRoundId: dripList.latestVotingRoundId,
-              totalEarned: [], // Will be populated by the resolver.
-            }) as ResolverDripListData,
-        ),
-      );
+        if (!dripListChain) {
+          return null;
+        }
 
-      return {
-        account: {
-          accountId: dripList.id,
-          driver: Driver.NFT,
-        },
-        chainData,
-      } as ResolverDripList;
-    }),
-  );
+        return {
+          account: {
+            accountId: dripList.id,
+            driver: Driver.NFT,
+          },
+          chain: dbSchemaToChain[dripListChain],
+          parentDripListInfo: {
+            dripListId: dripList.id,
+            dripListChain,
+            queriedChains: chains,
+          },
+          name: dripList.name,
+          creator: dripList.creator,
+          description: dripList.description,
+          owner: {
+            driver: Driver.ADDRESS,
+            accountId: dripList.ownerAccountId,
+            address: dripList.ownerAddress as string,
+          },
+          previousOwnerAddress: dripList.previousOwnerAddress,
+          support: [], // Will be populated by the resolver.
+          splits: [], // Will be populated by the resolver.
+          latestVotingRoundId: dripList.latestVotingRoundId,
+          totalEarned: [], // Will be populated by the resolver.
+        } as ResolverDripList;
+      }),
+    )
+  ).filter(Boolean) as ResolverDripList[];
 }

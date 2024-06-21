@@ -19,7 +19,6 @@ const resolvers = {
   UnClaimedProjectData: projectResolvers.UnClaimedProjectData,
   DripList: dripListResolvers.DripList,
   DripListReceiver: commonResolvers.DripListReceiver,
-  DripListData: dripListResolvers.DripListData,
   SplitsReceiver: commonResolvers.SplitsReceiver,
   SupportItem: commonResolvers.SupportItem,
   Avatar: projectResolvers.Avatar,

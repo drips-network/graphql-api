@@ -2,7 +2,6 @@ import type { AnyVersion } from '@efstajas/versioned-parser';
 import type {
   ClaimedProjectData,
   DripList,
-  DripListData,
   Give,
   Project,
   UnClaimedProjectData,
@@ -103,12 +102,11 @@ type DripListDataParentDripListInfo = {
   parentDripListInfo: {
     dripListId: DripListId;
     dripListChain: DbSchema;
-    queriedChains: DbSchema[];
+    queriedChain: DbSchema;
   };
 };
 
-export type ResolverDripListData = DripListData &
-  DripListDataParentDripListInfo;
+export type ResolverDripListData = DripList & DripListDataParentDripListInfo;
 
 export type CommonDataValues = {
   createdAt: Date;

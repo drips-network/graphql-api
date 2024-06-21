@@ -84,8 +84,6 @@ const dripListResolvers = {
   },
   DripList: {
     account: (dripList: ResolverDripList): NftDriverAccount => dripList.account,
-  },
-  DripListData: {
     name: (dripListData: ResolverDripListData) =>
       dripListData.name ?? 'Unnamed Drip List',
     creator: (dripListData: ResolverDripListData) => dripListData.creator,
