@@ -46,10 +46,10 @@ const streamResolvers = {
 
       if (receiver.driver === Driver.NFT) {
         const dbDripList =
-          await dataSources.dripListsDataSource.getDripListById(
+          (await dataSources.dripListsDataSource.getDripListById(
             receiver.accountId as DripListId,
             [chain],
-          );
+          )) || shouldNeverHappen('Expected Drip List to exist.');
 
         return toResolverDripList(chain, dbDripList);
       }

@@ -17,7 +17,7 @@ export default class GivenEventsDataSource {
         chains: DbSchema[];
         key: CompositePrimaryKey;
       }[],
-    ): Promise<GivenEventModelDataValues[]> => {
+    ): Promise<(GivenEventModelDataValues | null)[]> => {
       const chains = [...new Set(keys.flatMap((key) => key.chains))];
       const givenEventIds = keys.map(({ key }) => key);
       const transactionHashes = givenEventIds.map(
@@ -42,17 +42,19 @@ export default class GivenEventsDataSource {
         return mapping;
       }, {});
 
-      return givenEventIds.map((id) => idToEventMap[`${id[0]}-${id[1]}`]);
+      return givenEventIds.map(
+        (id) => idToEventMap[`${id[0]}-${id[1]}`] || null,
+      );
     },
   );
 
-  public async getGivenEventById(
-    chains: DbSchema[],
+  public async getGivenEventByIdOnChain(
+    chain: DbSchema,
     transactionHash: TransactionHash,
     logIndex: LogIndex,
-  ): Promise<GivenEventModelDataValues> {
+  ): Promise<GivenEventModelDataValues | null> {
     return this._batchGivenEventsByIds.load({
-      chains,
+      chains: [chain],
       key: [transactionHash, logIndex],
     });
   }

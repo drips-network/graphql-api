@@ -31,11 +31,11 @@ export default class ProjectsDataSource {
         projectIds,
       );
 
-      const projectsDataValuesWithApi = await Promise.all(
+      const apiProjectsDataValues = await Promise.all(
         projectsDataValues.map(toApiProject),
       );
 
-      const filteredProjectsDataValues = projectsDataValuesWithApi.filter(
+      const filteredProjectsDataValues = apiProjectsDataValues.filter(
         Boolean,
       ) as ProjectDataValues[];
 

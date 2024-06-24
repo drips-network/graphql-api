@@ -16,7 +16,7 @@ export default class DripListsDataSource {
   private readonly _batchDripListsByIds = new DataLoader(
     async (
       dripListKeys: readonly DripListMultiChainKey[],
-    ): Promise<DripListDataValues[]> => {
+    ): Promise<(DripListDataValues | null)[]> => {
       const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
 
       const dripListDataValues = await dripListsQueries.getByIds(
@@ -32,14 +32,14 @@ export default class DripListsDataSource {
         return mapping;
       }, {});
 
-      return dripListIds.map((id) => dripListIdToDripListMap[id]);
+      return dripListKeys.map(({ id }) => dripListIdToDripListMap[id] || null);
     },
   );
 
   public async getDripListById(
     id: DripListId,
     chains: DbSchema[],
-  ): Promise<DripListDataValues> {
+  ): Promise<DripListDataValues | null> {
     return this._batchDripListsByIds.load({
       id,
       chains,

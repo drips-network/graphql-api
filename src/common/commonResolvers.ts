@@ -251,11 +251,12 @@ const commonResolvers = {
 
       const { transactionHash, logIndex, chain } = parent;
 
-      const givenEvent = await givenEventsDataSource.getGivenEventById(
-        [chain],
-        transactionHash,
-        logIndex,
-      );
+      const givenEvent =
+        (await givenEventsDataSource.getGivenEventByIdOnChain(
+          chain,
+          transactionHash,
+          logIndex,
+        )) || shouldNeverHappen("Expected 'GivenEvent' to exist.");
 
       return {
         driver: Driver.ADDRESS,
