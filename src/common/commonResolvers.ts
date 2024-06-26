@@ -203,9 +203,6 @@ const commonResolvers = {
     stream: (parent: ProtoStream) => parent,
     date: (parent: ProtoStream) => parent.createdAt,
   },
-  SupportGroup: {
-    // TODO: implement.
-  },
 };
 
 export default commonResolvers;

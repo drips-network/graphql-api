@@ -103,15 +103,10 @@ const commonTypeDef = gql`
     amount: String!
   }
 
-  type SupportGroup {
-    items: [Support!]
-  }
-
   union SupportItem =
       DripListSupport
     | ProjectSupport
     | OneTimeDonationSupport
-    | SupportGroup
     | StreamSupport
 
   union Support =
