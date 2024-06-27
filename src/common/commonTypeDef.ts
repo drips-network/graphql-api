@@ -117,7 +117,6 @@ const commonTypeDef = gql`
       DripListSupport
     | ProjectSupport
     | OneTimeDonationSupport
-    | SupportGroup
     | StreamSupport
 
   union Support =

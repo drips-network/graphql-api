@@ -276,9 +276,6 @@ const commonResolvers = {
     stream: (parent: ProtoStream) => parent,
     date: (parent: ProtoStream) => parent.createdAt,
   },
-  SupportGroup: {
-    // TODO: implement.
-  },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {
       if (receiver.driver === Driver.REPO) {

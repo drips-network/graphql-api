@@ -30,15 +30,16 @@ export async function assetIncomingBalanceTimeline(
 
   const timeline: UserBalanceTimelineItem[] = [];
 
-  const incomingStreamsAmountsAtCycleStart = incomingStreams
-    .filter(
-      (stream) =>
-        stream.config.amountPerSecond.tokenAddress.toLowerCase() ===
-        tokenAddress.toLowerCase(),
-    )
-    .map((stream) =>
+  const incomingStreamsForToken = incomingStreams.filter(
+    (stream) =>
+      stream.config.amountPerSecond.tokenAddress.toLowerCase() ===
+      tokenAddress.toLowerCase(),
+  );
+
+  const incomingStreamsAmountsAtCycleStart = incomingStreamsForToken.map(
+    (stream) =>
       currentAmounts(stream.timeline, tokenAddress, currentCycleStartDate),
-    );
+  );
 
   timeline.push({
     timestamp: currentCycleStartDate,
@@ -58,7 +59,7 @@ export async function assetIncomingBalanceTimeline(
   });
 
   const streamTimelinesByStreamId: { [streamId: string]: TimelineItem[] } =
-    incomingStreams.reduce((acc, stream) => {
+    incomingStreamsForToken.reduce((acc, stream) => {
       acc[stream.id] = stream.timeline;
       return acc;
     }, {});
