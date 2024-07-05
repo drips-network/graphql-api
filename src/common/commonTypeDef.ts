@@ -114,13 +114,13 @@ const commonTypeDef = gql`
   }
 
   union SupportItem =
-      DripListSupport
+    | DripListSupport
     | ProjectSupport
     | OneTimeDonationSupport
     | StreamSupport
 
   union Support =
-      DripListSupport
+    | DripListSupport
     | ProjectSupport
     | OneTimeDonationSupport
     | StreamSupport
@@ -135,6 +135,7 @@ const commonTypeDef = gql`
     SEPOLIA
     OPTIMISM_SEPOLIA
     POLYGON_AMOY
+    BASE_SEPOLIA
   }
 
   type WithdrawableBalance {

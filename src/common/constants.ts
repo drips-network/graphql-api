@@ -35,4 +35,5 @@ export const DB_SCHEMAS = [
   'sepolia',
   'optimism_sepolia',
   'polygon_amoy',
+  'base_sepolia',
 ] as const;

@@ -45,6 +45,11 @@ const chainConfigs: Record<
     addressDriverAddress: '0x004310a6d47893Dd6e443cbE471c24aDA1e6c619',
     repoDriverAddress: '0x54372850Db72915Fd9C5EC745683EB607b4a8642',
   },
+  BASE_SEPOLIA: {
+    dripsAddress: '0xeebCd570e50fa31bcf6eF10f989429C87C3A6981',
+    addressDriverAddress: '0x004310a6d47893Dd6e443cbE471c24aDA1e6c619',
+    repoDriverAddress: '0x54372850Db72915Fd9C5EC745683EB607b4a8642',
+  },
 };
 
 const { rpcUrls } = appSettings;
@@ -60,8 +65,8 @@ Object.values(SupportedChain).forEach((network) => {
     const provider = rpcUrl.startsWith('http')
       ? new JsonRpcProvider(rpcUrl)
       : rpcUrl.startsWith('wss')
-      ? new WebSocketProvider(rpcUrl)
-      : shouldNeverHappen(`Invalid RPC URL: ${rpcUrl}`);
+        ? new WebSocketProvider(rpcUrl)
+        : shouldNeverHappen(`Invalid RPC URL: ${rpcUrl}`);
     providers[network] = provider;
   }
 });
