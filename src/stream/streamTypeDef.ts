@@ -38,11 +38,7 @@ const streamTypeDef = gql`
     timeline: [TimelineItem!]!
     createdAt: Date!
     endsAt: Date
-  }
-
-  type StreamChainData {
     chain: SupportedChain!
-    data: [Stream!]!
   }
 
   input StreamWhereInput {
