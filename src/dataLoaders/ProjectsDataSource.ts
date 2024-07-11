@@ -6,7 +6,10 @@ import type {
   ProjectId,
   ProjectMultiChainKey,
 } from '../common/types';
-import { toApiProject } from '../project/projectUtils';
+import {
+  toApiProject,
+  toFakeUnclaimedProjectFromUrl,
+} from '../project/projectUtils';
 import type {
   ProjectSortInput,
   ProjectWhereInput,
@@ -92,7 +95,7 @@ export default class ProjectsDataSource {
     const dbProjects = await projectsQueries.getByUrl(chains, url);
 
     if (!dbProjects?.length) {
-      return null;
+      return [await toFakeUnclaimedProjectFromUrl(url)];
     }
 
     if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
