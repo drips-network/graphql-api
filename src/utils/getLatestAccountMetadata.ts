@@ -61,12 +61,16 @@ export default async function getLatestAccountMetadataOnChain(
   return response;
 }
 
-export async function getLatestMetadataHash(
+export async function getLatestMetadataHashOnChain(
   accountId: AccountId,
-  chains: DbSchema[],
+  chain: DbSchema,
 ): Promise<IpfsHash | undefined> {
+  // Ordered by blockNumber and logIndex.
   const latestAccountMetadataEmittedEvent =
-    await accountMetadataEmittedEventsQueries.getByAccountId(chains, accountId);
+    await accountMetadataEmittedEventsQueries.getByAccountId(
+      [chain],
+      accountId,
+    );
 
   if (!latestAccountMetadataEmittedEvent.length) {
     return undefined;

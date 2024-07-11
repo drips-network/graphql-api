@@ -19,7 +19,7 @@ import type {
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
-import assert, { isAddressDriverId } from '../utils/assert';
+import assert, { isAccountId, isAddressDriverId } from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
 import getUserAddress from '../utils/getUserAddress';
 import queryableChains from '../common/queryableChains';
@@ -28,7 +28,9 @@ import {
   toResolverDripList,
   toResolverDripLists,
 } from '../drip-list/dripListUtils';
-import getLatestAccountMetadataOnChain from '../utils/getLatestAccountMetadata';
+import getLatestAccountMetadataOnChain, {
+  getLatestMetadataHashOnChain,
+} from '../utils/getLatestAccountMetadata';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import toResolverUser from './userUtils';
 import { getCrossChainAddressDriverAccountIdByAddress } from '../common/dripsContracts';
@@ -47,7 +49,7 @@ const userResolvers = {
         chains,
       }: { accountId: AddressDriverId; chains?: SupportedChain[] },
     ): ResolverUser => {
-      assert(isAddressDriverId(accountId));
+      assert(isAccountId(accountId));
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -265,14 +267,7 @@ const userResolvers = {
     },
     latestMetadataIpfsHash: async ({
       parentUserInfo: { accountId, userChain },
-    }: ResolverUserData) => {
-      const chainMetadata = await getLatestAccountMetadataOnChain(
-        [userChain],
-        accountId as AddressDriverId,
-      );
-
-      return chainMetadata[userChain]?.ipfsHash;
-    },
+    }: ResolverUserData) => getLatestMetadataHashOnChain(accountId, userChain),
   },
   UserStreams: {
     outgoing: async (

@@ -23,7 +23,7 @@ import type { DripListDataValues } from './DripListModel';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { toResolverProject } from '../project/projectUtils';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
-import { getLatestMetadataHash } from '../utils/getLatestAccountMetadata';
+import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
 
 const dripListResolvers = {
   Query: {
@@ -295,7 +295,7 @@ const dripListResolvers = {
     latestMetadataIpfsHash: async ({
       parentDripListInfo: { dripListChain, dripListId },
     }: ResolverDripListData) =>
-      getLatestMetadataHash(dripListId, [dripListChain]),
+      getLatestMetadataHashOnChain(dripListId, dripListChain),
   },
 };
 

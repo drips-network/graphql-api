@@ -34,7 +34,7 @@ import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import { toResolverDripList } from '../drip-list/dripListUtils';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
-import { getLatestMetadataHash } from '../utils/getLatestAccountMetadata';
+import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 
 const projectResolvers = {
@@ -378,7 +378,7 @@ const projectResolvers = {
     latestMetadataIpfsHash: async ({
       parentProjectInfo: { projectId, projectChain },
     }: ResolverUnClaimedProjectData) =>
-      getLatestMetadataHash(projectId, [projectChain]),
+      getLatestMetadataHashOnChain(projectId, projectChain),
   },
   UnClaimedProjectData: {
     verificationStatus: (projectData: ResolverUnClaimedProjectData) =>
