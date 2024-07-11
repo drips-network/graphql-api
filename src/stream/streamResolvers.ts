@@ -32,11 +32,11 @@ const streamResolvers = {
         .flat()
         .map((s) => ({
           ...s,
-          chain: dbSchemaToChain[s.chain],
         }));
     },
   },
   Stream: {
+    chain: ({ chain }: ProtoStream) => dbSchemaToChain[chain],
     receiver: async (
       { chain, receiver }: ProtoStream,
       _: {},

@@ -10,7 +10,7 @@ import {
   toResolverProjects,
 } from './projectUtils';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import { Driver } from '../generated/graphql';
+import { Driver, ProjectVerificationStatus } from '../generated/graphql';
 import type {
   Source,
   RepoDriverAccount,
@@ -139,7 +139,11 @@ const projectResolvers = {
   },
   ProjectData: {
     __resolveType(parent: ProjectData) {
-      if ('claimedAt' in parent && !!parent.claimedAt) {
+      if (
+        'claimedAt' in parent &&
+        !!parent.claimedAt &&
+        parent.verificationStatus === ProjectVerificationStatus.Claimed
+      ) {
         return 'ClaimedProjectData';
       }
 
