@@ -7,7 +7,7 @@ import type {
 import type ProjectModel from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
 import { splitProjectName } from './projectUtils';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
+import unreachableError from '../utils/unreachableError';
 import { Driver } from '../generated/graphql';
 import type {
   SplitsReceiver,
@@ -115,7 +115,7 @@ const projectResolvers = {
   },
   ClaimedProject: {
     color: (project: ProjectModel): string =>
-      project.color || shouldNeverHappen(),
+      project.color || unreachableError(),
     description: (project: ProjectModel): string | null => project.description,
     emoji: (project: ProjectModel): string => project.emoji || '💧',
     avatar: (project: ProjectModel): any => {
@@ -131,24 +131,23 @@ const projectResolvers = {
     },
     owner: (project: ProjectModel): AddressDriverAccount => ({
       driver: Driver.ADDRESS,
-      accountId: project.ownerAccountId || shouldNeverHappen(),
-      address: (project.ownerAddress as string) || shouldNeverHappen(),
+      accountId: project.ownerAccountId || unreachableError(),
+      address: (project.ownerAddress as string) || unreachableError(),
     }),
     account: (project: ProjectModel): RepoDriverAccount => ({
       driver: Driver.REPO,
       accountId: project.id,
     }),
     source: (project: ProjectModel): Source => ({
-      url: project.url || shouldNeverHappen(),
-      repoName: splitProjectName(project.name || shouldNeverHappen()).repoName,
-      ownerName: splitProjectName(project.name || shouldNeverHappen())
-        .ownerName,
-      forge: (project.forge as Forge) || shouldNeverHappen(),
+      url: project.url || unreachableError(),
+      repoName: splitProjectName(project.name || unreachableError()).repoName,
+      ownerName: splitProjectName(project.name || unreachableError()).ownerName,
+      forge: (project.forge as Forge) || unreachableError(),
     }),
     verificationStatus: (project: ProjectModel): ProjectVerificationStatus =>
       project.verificationStatus === ProjectVerificationStatus.Claimed
         ? project.verificationStatus
-        : shouldNeverHappen(),
+        : unreachableError(),
     splits: async (
       project: ProjectModel,
       _: any,
@@ -218,7 +217,7 @@ const projectResolvers = {
               )
               .find(
                 (p) => (p as any).id === receiver.fundeeProjectId,
-              ) as unknown as Project) || shouldNeverHappen(),
+              ) as unknown as Project) || unreachableError(),
         }),
       );
 
@@ -246,7 +245,7 @@ const projectResolvers = {
               )
               .find(
                 (p) => (p as any).id === receiver.fundeeDripListId,
-              ) as unknown as DripList) || shouldNeverHappen(),
+              ) as unknown as DripList) || unreachableError(),
         }),
       );
 
@@ -321,7 +320,7 @@ const projectResolvers = {
         return 'AddressReceiver';
       }
 
-      return shouldNeverHappen();
+      return unreachableError();
     },
   },
   UnclaimedProject: {
@@ -333,12 +332,11 @@ const projectResolvers = {
     },
     source(project: ProjectModel): Source {
       return {
-        url: project.url || shouldNeverHappen(),
-        repoName: splitProjectName(project.name || shouldNeverHappen())
-          .repoName,
-        ownerName: splitProjectName(project.name || shouldNeverHappen())
+        url: project.url || unreachableError(),
+        repoName: splitProjectName(project.name || unreachableError()).repoName,
+        ownerName: splitProjectName(project.name || unreachableError())
           .ownerName,
-        forge: (project.forge as Forge) || shouldNeverHappen(),
+        forge: (project.forge as Forge) || unreachableError(),
       };
     },
     verificationStatus(project: ProjectModel): ProjectVerificationStatus {

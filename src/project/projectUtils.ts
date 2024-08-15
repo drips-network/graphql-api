@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
 import type { FakeUnclaimedProject, Forge, ProjectId } from '../common/types';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
+import unreachableError from '../utils/unreachableError';
 import type ProjectModel from './ProjectModel';
 import { ProjectVerificationStatus } from './ProjectModel';
 import { RepoDriver__factory } from '../generated/contracts';
@@ -50,7 +50,7 @@ function toContractForge(forge: Forge): 0 | 1 {
     case `GitLab`:
       return 1;
     default:
-      return shouldNeverHappen(`Forge ${forge} not supported.`);
+      return unreachableError(`Forge ${forge} not supported.`);
   }
 }
 
@@ -90,7 +90,7 @@ function toForge(forge: string): Forge {
     case 'gitlab':
       return `GitLab`;
     default:
-      return shouldNeverHappen(`Forge ${forge} not supported.`);
+      return unreachableError(`Forge ${forge} not supported.`);
   }
 }
 
