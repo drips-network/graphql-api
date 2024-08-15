@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
+import shouldNeverHappen from '../utils/shouldNeverHappen';
 
-dotenv.config({ path: `.env.${process.env.ENV}` });
+dotenv.config();
 
 function missingEnvVar(name: string): never {
   throw new Error(`Missing ${name} in .env file.`);
@@ -11,7 +12,9 @@ export default {
   network: process.env.NETWORK,
   environment: process.env.ENV ?? 'local',
   infuraApiKey: process.env.INFURA_API_KEY,
-  publicApiKeys: process.env.PUBLIC_API_KEYS?.split(',') || [],
+  publicApiKeys:
+    process.env.PUBLIC_API_KEYS?.split(',') ||
+    shouldNeverHappen('PUBLIC_API_KEYS is not set.'),
   dripsApiKey: process.env.DRIPS_API_KEY,
   postgresConnectionString: process.env.POSTGRES_CONNECTION_STRING,
   rpcUrl:
@@ -39,4 +42,5 @@ export default {
     process.env.ADDRESS_DRIVER_ADDRESS ||
     missingEnvVar('ADDRESS_DRIVER_ADDRESS'),
   ipfsGatewayUrl: process.env.IPFS_GATEWAY_URL,
-};
+  glifToken: process.env.GLIF_TOKEN,
+} as const;

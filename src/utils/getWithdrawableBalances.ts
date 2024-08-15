@@ -6,9 +6,9 @@ import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel
 import StreamsSetEventModel from '../models/StreamsSetEventModel';
 import appSettings from '../common/appSettings';
 import { Drips__factory } from '../generated/contracts';
-import provider from '../common/provider';
+import getProvider from '../common/getProvider';
 
-const drips = Drips__factory.connect(appSettings.dripsAddress, provider);
+const drips = Drips__factory.connect(appSettings.dripsAddress, getProvider());
 
 export async function getRelevantTokens(accountId: AccountId) {
   const streamReceiverSeenEventsForUser =
