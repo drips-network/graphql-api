@@ -1,30 +1,32 @@
 import dotenv from 'dotenv';
-import unreachableError from '../utils/unreachableError';
 
 dotenv.config();
 
-function missingEnvVar(name: string): never {
+function missingEnvVarError(name: string): never {
   throw new Error(`Missing ${name} in .env file.`);
 }
 
 export default {
   port: (process.env.PORT || 8080) as number,
-  network: process.env.NETWORK,
-  environment: process.env.ENV ?? 'local',
-  infuraApiKey: process.env.INFURA_API_KEY,
+  network: process.env.NETWORK || missingEnvVarError('NETWORK'),
   publicApiKeys:
     process.env.PUBLIC_API_KEYS?.split(',') ||
-    unreachableError('PUBLIC_API_KEYS is not set.'),
+    missingEnvVarError('PUBLIC_API_KEYS'),
   dripsApiKey: process.env.DRIPS_API_KEY,
-  postgresConnectionString: process.env.POSTGRES_CONNECTION_STRING,
-  rpcUrl:
-    process.env.RPC_URL ??
-    `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
-  repoDriverAddress:
-    process.env.REPO_DRIVER_ADDRESS ??
-    '0x770023d55D09A9C110694827F1a6B32D5c2b373E',
+  postgresConnectionString:
+    process.env.POSTGRES_CONNECTION_STRING ||
+    missingEnvVarError('POSTGRES_CONNECTION_STRING'),
+  addressDriverAddress:
+    process.env.ADDRESS_DRIVER_ADDRESS ||
+    missingEnvVarError('ADDRESS_DRIVER_ADDRESS'),
   dripsAddress:
-    process.env.DRIPS_ADDRESS ?? '0xd0Dd053392db676D57317CD4fe96Fc2cCf42D0b4',
+    process.env.DRIPS_ADDRESS || missingEnvVarError('DRIPS_ADDRESS'),
+  repoDriverAddress:
+    process.env.REPO_DRIVER_ADDRESS ||
+    missingEnvVarError('REPO_DRIVER_ADDRESS'),
+
+  rpcUrl: process.env.RPC_URL || missingEnvVarError('RPC_URL'),
+  rpcAccessToken: process.env.RPC_ACCESS_TOKEN,
   pretendAllReposExist:
     (process.env.PRETEND_ALL_REPOS_EXIST as unknown as string) === 'true',
   rateLimitWindowInMinutes: parseInt(
@@ -38,9 +40,6 @@ export default {
   maxQueryDepth: parseInt(process.env.MAX_QUERY_DEPTH ?? '10', 10),
   timeoutInSeconds: parseInt(process.env.TIMEOUT_IN_SECONDS ?? '20', 10),
   // TODO: Refactor when we switch to multi-chain API.
-  addressDriverAddress:
-    process.env.ADDRESS_DRIVER_ADDRESS ||
-    missingEnvVar('ADDRESS_DRIVER_ADDRESS'),
-  ipfsGatewayUrl: process.env.IPFS_GATEWAY_URL,
-  glifToken: process.env.GLIF_TOKEN,
+  ipfsGatewayUrl:
+    process.env.IPFS_GATEWAY_URL || 'https://drips.mypinata.cloud',
 } as const;
