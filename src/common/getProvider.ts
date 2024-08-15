@@ -7,18 +7,12 @@ let providerInstance: Provider | null = null;
 
 export default function getProvider(): Provider {
   if (!providerInstance) {
-    const { rpcUrl, glifToken } = appSettings;
+    const { rpcUrl, rpcAccessToken } = appSettings;
 
-    if (rpcUrl.includes('node.glif.io')) {
-      const fetchRequest = new FetchRequest(rpcUrl);
-
-      fetchRequest.method = 'POST';
-      fetchRequest.setHeader('Content-Type', 'application/json');
-      fetchRequest.setHeader('Authorization', `Bearer ${glifToken}`);
-
-      providerInstance = new JsonRpcProvider(fetchRequest, undefined, {});
-    } else if (rpcUrl.startsWith('http')) {
-      providerInstance = new JsonRpcProvider(rpcUrl, undefined, {});
+    if (rpcUrl.startsWith('http')) {
+      providerInstance = rpcAccessToken
+        ? new JsonRpcProvider(createAuthFetchRequest(rpcUrl, rpcAccessToken))
+        : new JsonRpcProvider(rpcUrl);
     } else if (rpcUrl.startsWith('wss')) {
       providerInstance = new WebSocketProvider(rpcUrl);
     } else {
@@ -27,4 +21,12 @@ export default function getProvider(): Provider {
   }
 
   return providerInstance;
+}
+
+function createAuthFetchRequest(rpcUrl: string, token: string): FetchRequest {
+  const fetchRequest = new FetchRequest(rpcUrl);
+  fetchRequest.method = 'POST';
+  fetchRequest.setHeader('Content-Type', 'application/json');
+  fetchRequest.setHeader('Authorization', `Bearer ${token}`);
+  return fetchRequest;
 }
