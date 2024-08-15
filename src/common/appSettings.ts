@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
+import unreachableError from '../utils/unreachableError';
 
 dotenv.config();
 
@@ -14,7 +14,7 @@ export default {
   infuraApiKey: process.env.INFURA_API_KEY,
   publicApiKeys:
     process.env.PUBLIC_API_KEYS?.split(',') ||
-    shouldNeverHappen('PUBLIC_API_KEYS is not set.'),
+    unreachableError('PUBLIC_API_KEYS is not set.'),
   dripsApiKey: process.env.DRIPS_API_KEY,
   postgresConnectionString: process.env.POSTGRES_CONNECTION_STRING,
   rpcUrl:

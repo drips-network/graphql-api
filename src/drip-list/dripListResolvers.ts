@@ -11,7 +11,7 @@ import type {
   SplitsReceiver,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
+import unreachableError from '../utils/unreachableError';
 import type { Context } from '../server';
 import type GitProjectModel from '../project/ProjectModel';
 import assert, { isDripListId } from '../utils/assert';
@@ -65,8 +65,8 @@ const dripListResolvers = {
       dripList.previousOwnerAddress,
     owner: (dripList: DripListModel): AddressDriverAccount => ({
       driver: Driver.ADDRESS,
-      accountId: dripList.ownerAccountId || shouldNeverHappen(),
-      address: (dripList.ownerAddress as string) || shouldNeverHappen(),
+      accountId: dripList.ownerAccountId || unreachableError(),
+      address: (dripList.ownerAddress as string) || unreachableError(),
     }),
     account: (dripList: DripListModel): NftDriverAccount => ({
       driver: Driver.NFT,
@@ -126,7 +126,7 @@ const dripListResolvers = {
             )
             .find(
               (p) => (p as any).id === receiver.fundeeProjectId,
-            ) as unknown as Project) || shouldNeverHappen(),
+            ) as unknown as Project) || unreachableError(),
       }));
 
       const receiversOfTypeDripListModels =
@@ -153,7 +153,7 @@ const dripListResolvers = {
               )
               .find(
                 (p) => (p as any).id === receiver.fundeeDripListId,
-              ) as unknown as DripList) || shouldNeverHappen(),
+              ) as unknown as DripList) || unreachableError(),
         }),
       );
 

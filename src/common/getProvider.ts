@@ -1,6 +1,6 @@
 import type { Provider } from 'ethers';
 import { FetchRequest, JsonRpcProvider, WebSocketProvider } from 'ethers';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
+import unreachableError from '../utils/unreachableError';
 import appSettings from './appSettings';
 
 let providerInstance: Provider | null = null;
@@ -22,7 +22,7 @@ export default function getProvider(): Provider {
     } else if (rpcUrl.startsWith('wss')) {
       providerInstance = new WebSocketProvider(rpcUrl);
     } else {
-      shouldNeverHappen(`Invalid RPC URL: ${rpcUrl}`);
+      unreachableError(`Invalid RPC URL: ${rpcUrl}`);
     }
   }
 

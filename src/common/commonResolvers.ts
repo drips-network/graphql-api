@@ -8,7 +8,7 @@ import { Driver } from '../generated/graphql';
 import GivenEventModel from '../given-event/GivenEventModel';
 import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
 import type { Context } from '../server';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
+import unreachableError from '../utils/unreachableError';
 import type { AddressDriverId, DripListId, ProjectId } from './types';
 import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
@@ -33,20 +33,20 @@ async function resolveTotalSplit(
     const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
     recipientAccountId = fundeeDripListId;
     incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
+      funderDripListId || funderProjectId || unreachableError();
   } else if (parent instanceof RepoDriverSplitReceiverModel) {
     const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
     recipientAccountId = fundeeProjectId;
     incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
+      funderDripListId || funderProjectId || unreachableError();
   } else if (parent instanceof AddressDriverSplitReceiverModel) {
     const { fundeeAccountId, funderDripListId, funderProjectId } = parent;
 
     recipientAccountId = fundeeAccountId;
     incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
+      funderDripListId || funderProjectId || unreachableError();
   } else {
-    shouldNeverHappen('Invalid SupportItem type');
+    unreachableError('Invalid SupportItem type');
   }
 
   const splitEvents = await SplitEventModel.findAll({
@@ -91,7 +91,7 @@ const commonResolvers = {
           case AddressDriverSplitReceiverType.DripListDependency:
             return 'DripListSupport';
           default:
-            return shouldNeverHappen('Invalid SupportItem type');
+            return unreachableError('Invalid SupportItem type');
         }
       }
 
@@ -116,7 +116,7 @@ const commonResolvers = {
 
       return {
         driver: Driver.REPO,
-        accountId: project ? project.id : shouldNeverHappen(),
+        accountId: project ? project.id : unreachableError(),
       };
     },
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
@@ -150,7 +150,7 @@ const commonResolvers = {
 
       return {
         driver: Driver.NFT,
-        accountId: dripList ? dripList.id : shouldNeverHappen(),
+        accountId: dripList ? dripList.id : unreachableError(),
       };
     },
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
