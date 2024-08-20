@@ -1,16 +1,37 @@
 import dotenv from 'dotenv';
 import type { SupportedChain } from '../generated/graphql';
 
-dotenv.config({ path: `.env.${process.env.ENV}` });
+dotenv.config();
+
+type RpcConfig = {
+  url: string;
+  accessToken?: string;
+};
 
 export default {
   port: (process.env.PORT || 8080) as number,
-  rpcUrls: {
-    MAINNET: process.env.RPC_URL_MAINNET,
-    SEPOLIA: process.env.RPC_URL_SEPOLIA,
-    OPTIMISM_SEPOLIA: process.env.RPC_URL_OPTIMISM_SEPOLIA,
-    POLYGON_AMOY: process.env.RPC_URL_POLYGON_AMOY,
-  } as Record<SupportedChain, string | undefined>,
+  rpcConfigs: {
+    MAINNET: {
+      url: process.env.RPC_URL_MAINNET,
+      accessToken: process.env.RPC_ACCESS_TOKEN_MAINNET,
+    },
+    SEPOLIA: {
+      url: process.env.RPC_URL_SEPOLIA,
+      accessToken: process.env.RPC_ACCESS_TOKEN_SEPOLIA,
+    },
+    OPTIMISM_SEPOLIA: {
+      url: process.env.RPC_URL_OPTIMISM_SEPOLIA,
+      accessToken: process.env.RPC_ACCESS_TOKEN_OPTIMISM_SEPOLIA,
+    },
+    POLYGON_AMOY: {
+      url: process.env.RPC_URL_POLYGON_AMOY,
+      accessToken: process.env.RPC_ACCESS_TOKEN_POLYGON_AMOY,
+    },
+    FILECOIN: {
+      url: process.env.RPC_URL_FILECOIN,
+      accessToken: process.env.RPC_ACCESS_TOKEN_FILECOIN,
+    },
+  } as Record<SupportedChain, RpcConfig | undefined>,
   publicApiKeys: process.env.PUBLIC_API_KEYS?.split(',') || [],
   dripsApiKey: process.env.DRIPS_API_KEY,
   postgresConnectionString: process.env.POSTGRES_CONNECTION_STRING,

@@ -136,6 +136,7 @@ const commonTypeDef = gql`
     OPTIMISM_SEPOLIA
     POLYGON_AMOY
     BASE_SEPOLIA
+    FILECOIN
   }
 
   type WithdrawableBalance {

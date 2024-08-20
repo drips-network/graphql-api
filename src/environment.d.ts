@@ -4,10 +4,22 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       PORT: string;
-      RPC_URL_MAINNET: string;
-      RPC_URL_SEPOLIA: string;
-      RPC_URL_OPTIMISM_SEPOLIA: string;
-      RPC_URL_POLYGON_AMOY: string;
+
+      RPC_URL_MAINNET: string | undefined;
+      RPC_ACCESS_TOKEN_MAINNET: string | undefined;
+
+      RPC_URL_SEPOLIA: string | undefined;
+      RPC_ACCESS_TOKEN_SEPOLIA: string | undefined;
+
+      RPC_URL_OPTIMISM_SEPOLIA: string | undefined;
+      RPC_ACCESS_TOKEN_OPTIMISM_SEPOLIA: string | undefined;
+
+      RPC_URL_POLYGON_AMOY: string | undefined;
+      RPC_ACCESS_TOKEN_POLYGON_AMOY: string | undefined;
+
+      RPC_URL_FILECOIN: string | undefined;
+      RPC_ACCESS_TOKEN_FILECOIN: string | undefined;
+
       PUBLIC_API_KEYS: string;
       DRIPS_API_KEY: string;
       NODE_ENV: 'development' | 'production';

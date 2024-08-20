@@ -1,4 +1,9 @@
-import { JsonRpcProvider, WebSocketProvider, ethers } from 'ethers';
+import {
+  FetchRequest,
+  JsonRpcProvider,
+  WebSocketProvider,
+  ethers,
+} from 'ethers';
 import appSettings from './appSettings';
 import type { AddressDriver, Drips, RepoDriver } from '../generated/contracts';
 import {
@@ -50,23 +55,45 @@ const chainConfigs: Record<
     addressDriverAddress: '0x004310a6d47893Dd6e443cbE471c24aDA1e6c619',
     repoDriverAddress: '0x54372850Db72915Fd9C5EC745683EB607b4a8642',
   },
+  FILECOIN: {
+    dripsAddress: '0x29252acF5a3dA105CB3aC245B7758F6e50281ba7',
+    addressDriverAddress: '0xE13A4f3671ee451F81Df3aa1AEb6653e4c33D5e0',
+    repoDriverAddress: '0x249e35aC49ccC4B1F0688Bc4c0bFA866a1b1E3fE',
+  },
 };
 
-const { rpcUrls } = appSettings;
+const { rpcConfigs } = appSettings;
 
 const providers: {
   [network in SupportedChain]?: JsonRpcProvider | WebSocketProvider;
 } = {};
 
+function createAuthFetchRequest(rpcUrl: string, token: string): FetchRequest {
+  const fetchRequest = new FetchRequest(rpcUrl);
+  fetchRequest.method = 'POST';
+  fetchRequest.setHeader('Content-Type', 'application/json');
+  fetchRequest.setHeader('Authorization', `Bearer ${token}`);
+  return fetchRequest;
+}
+
 Object.values(SupportedChain).forEach((network) => {
-  const rpcUrl = rpcUrls[network];
-  if (rpcUrl) {
-    // eslint-disable-next-line no-nested-ternary
-    const provider = rpcUrl.startsWith('http')
-      ? new JsonRpcProvider(rpcUrl)
-      : rpcUrl.startsWith('wss')
-        ? new WebSocketProvider(rpcUrl)
-        : shouldNeverHappen(`Invalid RPC URL: ${rpcUrl}`);
+  const rpcConfig = rpcConfigs[network];
+
+  if (rpcConfig?.url) {
+    const rpcUrl = rpcConfig.url;
+
+    let provider: JsonRpcProvider | WebSocketProvider | null = null;
+
+    if (rpcUrl.startsWith('http')) {
+      provider = rpcConfig?.url
+        ? new JsonRpcProvider(createAuthFetchRequest(rpcUrl, rpcConfig?.url))
+        : new JsonRpcProvider(rpcUrl);
+    } else if (rpcUrl.startsWith('wss')) {
+      provider = new WebSocketProvider(rpcUrl);
+    } else {
+      shouldNeverHappen(`Invalid RPC URL: ${rpcUrl}`);
+    }
+
     providers[network] = provider;
   }
 });
