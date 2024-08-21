@@ -85,8 +85,10 @@ Object.values(SupportedChain).forEach((network) => {
     let provider: JsonRpcProvider | WebSocketProvider | null = null;
 
     if (rpcUrl.startsWith('http')) {
-      provider = rpcConfig?.url
-        ? new JsonRpcProvider(createAuthFetchRequest(rpcUrl, rpcConfig?.url))
+      provider = rpcConfig?.accessToken
+        ? new JsonRpcProvider(
+            createAuthFetchRequest(rpcUrl, rpcConfig.accessToken),
+          )
         : new JsonRpcProvider(rpcUrl);
     } else if (rpcUrl.startsWith('wss')) {
       provider = new WebSocketProvider(rpcUrl);
