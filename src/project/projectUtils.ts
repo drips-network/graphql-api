@@ -55,7 +55,7 @@ export function toApiProject(project: ProjectDataValues) {
     return project;
   }
 
-  return toFakeUnclaimedProject(project);
+  return toProjectRepresentation(project);
 }
 
 function toForge(forge: string): Forge {
@@ -69,7 +69,7 @@ function toForge(forge: string): Forge {
   }
 }
 
-export async function toFakeUnclaimedProjectFromUrl(url: string) {
+export async function toProjectRepresentationFromUrl(url: string) {
   const pattern =
     /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
   const match = url.match(pattern);
@@ -104,7 +104,7 @@ function toUrl(forge: Forge, projectName: string): string {
   }
 }
 
-export async function toFakeUnclaimedProject(
+export async function toProjectRepresentation(
   project: ProjectDataValues,
 ): Promise<ProjectDataValues> {
   const { name, forge } = project;
@@ -116,7 +116,8 @@ export async function toFakeUnclaimedProject(
     name,
     forge,
     url: toUrl(forge, name),
-    verificationStatus: ProjectVerificationStatus.Unclaimed,
+    verificationStatus:
+      project.verificationStatus ?? ProjectVerificationStatus.Unclaimed,
     isValid: true,
     chain: project.chain,
   } as ProjectDataValues;
@@ -214,7 +215,7 @@ export async function toResolverProjects(
           if (project.chain === chain) {
             return mapClaimedProjectChainData(project, chain, chains);
           }
-          const fakeUnclaimedProject = await toFakeUnclaimedProject(project);
+          const fakeUnclaimedProject = await toProjectRepresentation(project);
 
           return mapUnClaimedProjectChainData(
             fakeUnclaimedProject,
@@ -275,7 +276,7 @@ export async function mergeProjects(
         );
       } else {
         if (!projectOnChain) {
-          projectOnChain = await toFakeUnclaimedProjectFromUrl(
+          projectOnChain = await toProjectRepresentationFromUrl(
             projectBase.url!,
           );
         }

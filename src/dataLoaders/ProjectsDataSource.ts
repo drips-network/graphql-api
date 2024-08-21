@@ -7,8 +7,9 @@ import type {
   ProjectMultiChainKey,
 } from '../common/types';
 import {
+  doesRepoExists,
   toApiProject,
-  toFakeUnclaimedProjectFromUrl,
+  toProjectRepresentationFromUrl,
 } from '../project/projectUtils';
 import type {
   ProjectSortInput,
@@ -92,10 +93,15 @@ export default class ProjectsDataSource {
     chains: DbSchema[],
   ): Promise<ProjectDataValues[] | null> {
     // TODO: To Data Loader.
+
+    if (!doesRepoExists(url)) {
+      return null;
+    }
+
     const dbProjects = await projectsQueries.getByUrl(chains, url);
 
     if (!dbProjects?.length) {
-      return [await toFakeUnclaimedProjectFromUrl(url)];
+      return [await toProjectRepresentationFromUrl(url)];
     }
 
     if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
