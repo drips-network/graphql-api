@@ -6,7 +6,7 @@ import { ProjectVerificationStatus } from './ProjectModel';
 import { RepoDriver__factory } from '../generated/contracts';
 import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
-import getProvider from '../common/getProvider';
+import FailoverProvider from '../common/FailoverProvider';
 
 export function splitProjectName(projectName: string): {
   ownerName: string;
@@ -109,7 +109,7 @@ export async function toFakeUnclaimedProjectFromUrl(url: string) {
 
   const repoDriver = RepoDriver__factory.connect(
     appSettings.repoDriverAddress,
-    getProvider(),
+    FailoverProvider.getActiveProvider(),
   );
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);
@@ -145,7 +145,7 @@ export async function toFakeUnclaimedProject(
 
   const repoDriver = RepoDriver__factory.connect(
     appSettings.repoDriverAddress,
-    getProvider(),
+    FailoverProvider.getActiveProvider(),
   );
 
   const nameAsBytesLike = ethers.toUtf8Bytes(`${ownerName}/${repoName}`);

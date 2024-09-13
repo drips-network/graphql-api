@@ -6,9 +6,14 @@ import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel
 import StreamsSetEventModel from '../models/StreamsSetEventModel';
 import appSettings from '../common/appSettings';
 import { Drips__factory } from '../generated/contracts';
-import getProvider from '../common/getProvider';
+import FailoverProvider from '../common/FailoverProvider';
 
-const drips = Drips__factory.connect(appSettings.dripsAddress, getProvider());
+function getDripsContract() {
+  return Drips__factory.connect(
+    appSettings.dripsAddress,
+    FailoverProvider.getActiveProvider(),
+  );
+}
 
 export async function getRelevantTokens(accountId: AccountId) {
   const streamReceiverSeenEventsForUser =
@@ -64,6 +69,7 @@ export async function getTokenBalances(
   accountId: AccountId,
   tokenAddress: string,
 ) {
+  const drips = getDripsContract();
   const [splittable, receivable, collectable] = await Promise.all([
     drips.splittable(accountId, tokenAddress),
     drips.receiveStreamsResult(accountId, tokenAddress, 10000),

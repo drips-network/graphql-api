@@ -5,7 +5,7 @@ import { Driver } from '../generated/graphql';
 import type { User } from '../generated/graphql';
 import getUserAddress from '../utils/getUserAddress';
 import getUserAccount from '../utils/getUserAccount';
-import getProvider from '../common/getProvider';
+import FailoverProvider from '../common/FailoverProvider';
 
 export default class UsersDataSource {
   public async getUserAccount(accountId: AddressDriverId) {
@@ -34,7 +34,7 @@ export default class UsersDataSource {
   public async getUserByAddress(address: Address): Promise<User> {
     const addressDriver = AddressDriver__factory.connect(
       appSettings.addressDriverAddress,
-      getProvider(),
+      FailoverProvider.getActiveProvider(),
     );
 
     const accountId = (await addressDriver.calcAccountId(address)).toString();

@@ -25,8 +25,14 @@ export default {
     process.env.REPO_DRIVER_ADDRESS ||
     missingEnvVarError('REPO_DRIVER_ADDRESS'),
 
-  rpcUrl: process.env.RPC_URL || missingEnvVarError('RPC_URL'),
-  rpcAccessToken: process.env.RPC_ACCESS_TOKEN,
+  primaryRpcUrl:
+    process.env.PRIMARY_RPC_URL ||
+    missingEnvVarError('PRIMARY_RPC_URL is not set.'),
+  fallbackRpcUrl: process.env.FALLBACK_RPC_URL,
+  primaryRpcAccessToken: process.env.PRIMARY_RPC_ACCESS_TOKEN,
+  fallbackRpcAccessToken: process.env.FALLBACK_RPC_ACCESS_TOKEN,
+  maxPrimaryProviderRetryDuration:
+    Number(process.env.MAX_PRIMARY_PROVIDER_RETRY_DURATION) || 86400000, // 24 hours.
   pretendAllReposExist:
     (process.env.PRETEND_ALL_REPOS_EXIST as unknown as string) === 'true',
   rateLimitWindowInMinutes: parseInt(
