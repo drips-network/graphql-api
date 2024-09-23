@@ -85,16 +85,26 @@ class FailoverProvider {
    * @param {ILogger} [config.pingInterval] - Optional interval in milliseconds for logging the active provider.
    * @returns {FailoverProvider} - The singleton instance of `FailoverProvider`.
    */
-  public static init(config: {
+  public static async init(config: {
     primaryProvider: IPrimaryProviderConfig;
     fallbackProviders?: IProviderConfig[];
     logger?: ILogger;
     pingInterval?: number;
-  }): FailoverProvider {
+  }): Promise<FailoverProvider> {
     if (!FailoverProvider._instance) {
       FailoverProvider._instance = new FailoverProvider(config.logger);
     } else {
       throw new Error('The provider has already been initialized.');
+    }
+
+    const primaryNetwork = await config.primaryProvider.provider.getNetwork();
+    for (const fallbackProvider of config.fallbackProviders ?? []) {
+      const fallbackNetwork = await fallbackProvider.provider.getNetwork();
+      if (primaryNetwork.chainId !== fallbackNetwork.chainId) {
+        throw new Error(
+          `Primary provider and fallback provider must be on the same network. Primary network: ${primaryNetwork.chainId}, Fallback network: ${fallbackNetwork.chainId}.`,
+        );
+      }
     }
 
     FailoverProvider._instance._primaryProviderConfig = config.primaryProvider;

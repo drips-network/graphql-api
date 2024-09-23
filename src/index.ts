@@ -19,7 +19,7 @@ async function initFailoverProvider() {
     maxPrimaryProviderRetryDuration,
   } = appSettings;
 
-  FailoverProvider.init({
+  await FailoverProvider.init({
     primaryProvider: {
       provider:
         (await createProvider(
