@@ -1,9 +1,4 @@
-import {
-  FetchRequest,
-  JsonRpcProvider,
-  WebSocketProvider,
-  ethers,
-} from 'ethers';
+import { FetchRequest, ethers } from 'ethers';
 import appSettings from './appSettings';
 import type { AddressDriver, Drips, RepoDriver } from '../generated/contracts';
 import {
@@ -21,6 +16,7 @@ import type {
   ProjectId,
 } from './types';
 import queryableChains from './queryableChains';
+import FailoverJsonRpcProvider from './FailoverProvider';
 
 const chainConfigs: Record<
   SupportedChain,
@@ -65,7 +61,7 @@ const chainConfigs: Record<
 const { rpcConfigs } = appSettings;
 
 const providers: {
-  [network in SupportedChain]?: JsonRpcProvider | WebSocketProvider;
+  [network in SupportedChain]?: FailoverJsonRpcProvider;
 } = {};
 
 function createAuthFetchRequest(rpcUrl: string, token: string): FetchRequest {
@@ -79,25 +75,26 @@ function createAuthFetchRequest(rpcUrl: string, token: string): FetchRequest {
 Object.values(SupportedChain).forEach((network) => {
   const rpcConfig = rpcConfigs[network];
 
-  if (rpcConfig?.url) {
-    const rpcUrl = rpcConfig.url;
-
-    let provider: JsonRpcProvider | WebSocketProvider | null = null;
-
-    if (rpcUrl.startsWith('http')) {
-      provider = rpcConfig?.accessToken
-        ? new JsonRpcProvider(
-            createAuthFetchRequest(rpcUrl, rpcConfig.accessToken),
-          )
-        : new JsonRpcProvider(rpcUrl);
-    } else if (rpcUrl.startsWith('wss')) {
-      provider = new WebSocketProvider(rpcUrl);
-    } else {
-      shouldNeverHappen(`Invalid RPC URL: ${rpcUrl}`);
-    }
-
-    providers[network] = provider;
+  if (!rpcConfig) {
+    return;
   }
+
+  const { url, accessToken, fallbackUrl, fallbackAccessToken } = rpcConfig;
+
+  const primaryEndpoint = accessToken
+    ? createAuthFetchRequest(url, accessToken)
+    : url;
+
+  const rpcEndpoints = [primaryEndpoint];
+
+  if (fallbackUrl) {
+    const fallbackEndpoint = fallbackAccessToken
+      ? createAuthFetchRequest(fallbackUrl, fallbackAccessToken)
+      : fallbackUrl;
+    rpcEndpoints.push(fallbackEndpoint);
+  }
+
+  providers[network] = new FailoverJsonRpcProvider(rpcEndpoints);
 });
 
 const dripsContracts: {

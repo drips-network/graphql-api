@@ -6,6 +6,8 @@ dotenv.config();
 type RpcConfig = {
   url: string;
   accessToken?: string;
+  fallbackUrl?: string;
+  fallbackAccessToken?: string;
 };
 
 export default {
@@ -14,22 +16,33 @@ export default {
     MAINNET: {
       url: process.env.RPC_URL_MAINNET,
       accessToken: process.env.RPC_ACCESS_TOKEN_MAINNET,
+      fallbackUrl: process.env.FALLBACK_RPC_URL_MAINNET,
+      fallbackAccessToken: process.env.FALLBACK_RPC_ACCESS_TOKEN_MAINNET,
     },
     SEPOLIA: {
       url: process.env.RPC_URL_SEPOLIA,
       accessToken: process.env.RPC_ACCESS_TOKEN_SEPOLIA,
+      fallbackUrl: process.env.FALLBACK_RPC_URL_SEPOLIA,
+      fallbackAccessToken: process.env.FALLBACK_RPC_ACCESS_TOKEN_SEPOLIA,
     },
     OPTIMISM_SEPOLIA: {
       url: process.env.RPC_URL_OPTIMISM_SEPOLIA,
       accessToken: process.env.RPC_ACCESS_TOKEN_OPTIMISM_SEPOLIA,
+      fallbackUrl: process.env.FALLBACK_RPC_URL_OPTIMISM_SEPOLIA,
+      fallbackAccessToken:
+        process.env.FALLBACK_RPC_ACCESS_TOKEN_OPTIMISM_SEPOLIA,
     },
     POLYGON_AMOY: {
       url: process.env.RPC_URL_POLYGON_AMOY,
+      fallbackUrl: process.env.FALLBACK_RPC_URL_POLYGON_AMOY,
       accessToken: process.env.RPC_ACCESS_TOKEN_POLYGON_AMOY,
+      fallbackAccessToken: process.env.FALLBACK_RPC_ACCESS_TOKEN_POLYGON_AMOY,
     },
     FILECOIN: {
       url: process.env.RPC_URL_FILECOIN,
+      fallbackUrl: process.env.FALLBACK_RPC_URL_FILECOIN,
       accessToken: process.env.RPC_ACCESS_TOKEN_FILECOIN,
+      fallbackAccessToken: process.env.FALLBACK_RPC_ACCESS_TOKEN_FILECOIN,
     },
   } as Record<SupportedChain, RpcConfig | undefined>,
   publicApiKeys: process.env.PUBLIC_API_KEYS?.split(',') || [],
