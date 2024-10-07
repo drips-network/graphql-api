@@ -7,7 +7,7 @@ import appSettings from './appSettings';
 const queryableChains: SupportedChain[] = [];
 
 Object.keys(SupportedChain).forEach((chain) => {
-  if (appSettings.rpcConfigs[chain as SupportedChain]) {
+  if (appSettings.rpcConfigs[chain as SupportedChain]?.url) {
     queryableChains.push(chain as SupportedChain);
   }
 });
