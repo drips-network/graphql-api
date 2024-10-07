@@ -118,6 +118,10 @@ const startServer = async () => {
 
   app.set('trust proxy', 1);
 
+  app.route('/health').get((_, res) => {
+    res.status(200).send('OK');
+  });
+
   app.use(
     '/',
     cors<cors.CorsRequest>(),
