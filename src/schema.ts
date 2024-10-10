@@ -8,17 +8,26 @@ import streamTypeDef from './stream/streamTypeDef';
 
 const rootTypeDef = gql`
   type Query {
-    projectById(id: ID!): Project
-    projectByUrl(url: String!): Project
-    projects(where: ProjectWhereInput, sort: ProjectSortInput): [Project!]!
-    dripList(id: ID!): DripList
-    dripLists(where: DripListWhereInput): [DripList!]!
-    gives(where: GiveWhereInput): [Give!]!
-    mintedTokensCountByOwnerAddress(ownerAddress: String!): Int!
-    earnedFunds(projectId: String!): [Amount!]!
-    userById(accountId: ID!): User!
-    userByAddress(address: String!): User!
-    streams(where: StreamWhereInput): [Stream!]!
+    projects(
+      chains: [SupportedChain!]
+      where: ProjectWhereInput
+      sort: ProjectSortInput
+    ): [Project!]!
+    projectById(id: ID!, chains: [SupportedChain!]): Project
+    projectByUrl(url: String!, chains: [SupportedChain!]): Project
+    earnedFunds(projectId: String!, chains: [SupportedChain!]): [ChainAmount!]!
+    dripLists(
+      chains: [SupportedChain!]
+      where: DripListWhereInput
+    ): [DripList!]!
+    dripList(id: ID!, chain: SupportedChain!): DripList
+    mintedTokensCountByOwnerAddress(
+      ownerAddress: String!
+      chain: SupportedChain!
+    ): MintedTokens!
+    userById(accountId: ID!, chains: [SupportedChain!]): User!
+    userByAddress(address: String!, chains: [SupportedChain!]): User!
+    streams(where: StreamWhereInput, chains: [SupportedChain!]): [Stream!]!
   }
 `;
 

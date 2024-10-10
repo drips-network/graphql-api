@@ -7,6 +7,7 @@ import type {
   AddressDriverId,
   AssetConfigMetadata,
   BigIntString,
+  DbSchema,
 } from '../common/types';
 import { Driver } from '../generated/graphql';
 import type {
@@ -114,6 +115,7 @@ export default function buildStreamReceiver(
 }
 
 export function mapReceiverToStream(
+  chain: DbSchema,
   receiver: ProtoStream,
   senderAccountId: string,
   tokenAddress: string,
@@ -151,6 +153,7 @@ export function mapReceiverToStream(
   );
 
   return {
+    chain,
     id: receiver.streamId,
     sender: {
       driver: Driver.ADDRESS,

@@ -20,6 +20,11 @@ const userTypeDef = gql`
 
   type User {
     account: AddressDriverAccount!
+    chainData: [UserData!]!
+  }
+
+  type UserData {
+    chain: SupportedChain!
     streams: UserStreams!
     projects: [Project]!
     dripLists: [DripList]!

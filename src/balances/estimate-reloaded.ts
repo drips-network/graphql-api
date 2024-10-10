@@ -1,7 +1,7 @@
 /* eslint-disable no-continue */
 
 import { AMT_PER_SEC_MULTIPLIER } from '../common/constants';
-import type { AccountId } from '../common/types';
+import type { AccountId, DbSchema } from '../common/types';
 import {
   TimelineItemType,
   type UserBalanceTimelineItem,
@@ -11,19 +11,21 @@ import {
 import { currentAmounts } from '../utils/balance-timelines';
 import type { AssetConfigHistoryItem } from '../utils/buildAssetConfigs';
 import getCycleInfo from '../utils/cycle';
-import { getTokenBalances } from '../utils/getWithdrawableBalances';
+import { getTokenBalancesOnChain } from '../utils/getWithdrawableBalances';
 import minMax from '../utils/minMax';
 
 export async function assetIncomingBalanceTimeline(
   accountId: AccountId,
   tokenAddress: string,
   incomingStreams: any[],
+  chain: DbSchema,
 ): Promise<UserBalanceTimelineItem[]> {
   const { currentCycleStartDate } = getCycleInfo();
 
-  const { receivable, splittable, collectable } = await getTokenBalances(
+  const { receivable, splittable, collectable } = await getTokenBalancesOnChain(
     accountId,
     tokenAddress,
+    chain,
   );
 
   const timeline: UserBalanceTimelineItem[] = [];

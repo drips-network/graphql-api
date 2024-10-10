@@ -5,9 +5,15 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
-import getSchema from '../utils/getSchema';
-import type { AccountId, Forge, ProjectId } from '../common/types';
+import type {
+  AccountId,
+  CommonDataValues,
+  Forge,
+  ProjectId,
+} from '../common/types';
 import { FORGES_MAP } from '../common/constants';
+
+export type ProjectDataValues = ProjectModel['dataValues'] & CommonDataValues;
 
 export enum ProjectVerificationStatus {
   Claimed = 'Claimed',
@@ -96,7 +102,6 @@ export default class ProjectModel extends Model<
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'GitProjects',
       },
     );

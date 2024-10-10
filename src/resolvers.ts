@@ -13,10 +13,13 @@ const resolvers = {
     ...streamResolvers.Query,
   },
   Project: projectResolvers.Project,
+  ProjectReceiver: commonResolvers.ProjectReceiver,
+  ProjectData: projectResolvers.ProjectData,
+  ClaimedProjectData: projectResolvers.ClaimedProjectData,
+  UnClaimedProjectData: projectResolvers.UnClaimedProjectData,
   DripList: dripListResolvers.DripList,
-  SplitsReceiver: projectResolvers.SplitsReceiver,
-  ClaimedProject: projectResolvers.ClaimedProject,
-  UnclaimedProject: projectResolvers.UnclaimedProject,
+  DripListReceiver: commonResolvers.DripListReceiver,
+  SplitsReceiver: commonResolvers.SplitsReceiver,
   SupportItem: commonResolvers.SupportItem,
   Avatar: projectResolvers.Avatar,
   ProjectSupport: commonResolvers.ProjectSupport,
@@ -25,9 +28,11 @@ const resolvers = {
   OneTimeDonationSupport: commonResolvers.OneTimeDonationSupport,
   Date: dateScalar,
   User: userResolvers.User,
+  UserData: userResolvers.UserData,
   UserStreams: userResolvers.UserStreams,
   Stream: streamResolvers.Stream,
   StreamReceiver: userResolvers.StreamReceiver,
+  AddressReceiver: commonResolvers.AddressReceiver,
 };
 
 export default resolvers;

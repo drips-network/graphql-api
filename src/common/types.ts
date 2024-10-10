@@ -1,9 +1,18 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
-import type { ProjectVerificationStatus } from '../generated/graphql';
+import type {
+  ClaimedProjectData,
+  DripList,
+  Give,
+  Project,
+  UnClaimedProjectData,
+  User,
+  UserData,
+} from '../generated/graphql';
 import type StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import type { FORGES_MAP, SUPPORTED_NETWORKS } from './constants';
+import type { DB_SCHEMAS, FORGES_MAP } from './constants';
 import type { addressDriverAccountMetadataParser } from '../schemas';
 import type StreamsSetEventModel from '../models/StreamsSetEventModel';
+import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 
 export type KnownAny = any;
 export type ValuesOf<T> = T[keyof T];
@@ -22,21 +31,11 @@ export type Address = string & { __brand: 'Address' };
 export type BigIntString = string & { __brand: 'BigIntString' };
 
 export type Forge = ValuesOf<typeof FORGES_MAP>;
-export type DbSchema = SupportedNetwork & { __brand: 'dbSchema' };
-export type SupportedNetwork = (typeof SUPPORTED_NETWORKS)[number];
 
 export enum DependencyType {
   ProjectDependency = 'ProjectDependency',
   DripListDependency = 'DripListDependency',
 }
-
-export type FakeUnclaimedProject = {
-  id: ProjectId;
-  name: string;
-  forge: Forge;
-  url: string;
-  verificationStatus: ProjectVerificationStatus;
-};
 
 export interface IEventModel {
   logIndex: number;
@@ -69,3 +68,73 @@ export type AssetConfigMetadata = AccountMetadata['assetConfigs'][number];
 export type StreamHistoryHashes = string & {
   __type: 'StreamHistoryHashes';
 };
+
+export type ResolverProject = Project & {
+  chainData: (ResolverClaimedProjectData | ResolverUnClaimedProjectData)[];
+};
+
+type ProjectDataParentProjectInfo = {
+  parentProjectInfo: {
+    projectId: ProjectId;
+    projectChain: DbSchema;
+    queriedChains: DbSchema[];
+  };
+};
+
+export type ResolverClaimedProjectData = ClaimedProjectData &
+  ProjectDataParentProjectInfo;
+
+export type ResolverUnClaimedProjectData = UnClaimedProjectData &
+  ProjectDataParentProjectInfo;
+
+export interface MultiChainKey<T = AccountId> {
+  id: T;
+  chains: DbSchema[];
+}
+export type ProjectMultiChainKey = MultiChainKey<ProjectId>;
+export type DripListMultiChainKey = MultiChainKey<DripListId>;
+
+export type ResolverDripList = DripList & {
+  chainData?: ResolverDripListData[];
+};
+
+type DripListDataParentDripListInfo = {
+  parentDripListInfo: {
+    dripListId: DripListId;
+    dripListChain: DbSchema;
+    queriedChain: DbSchema;
+  };
+};
+
+export type ResolverDripListData = DripList & DripListDataParentDripListInfo;
+
+export type CommonDataValues = {
+  createdAt: Date;
+  updatedAt: Date;
+  chain: DbSchema;
+};
+
+export type ResolverGive = Give & {
+  chainData: ResolverGiveChainData[];
+};
+
+export type ResolverGiveChainData = {
+  chain: DbSchema;
+  data: GivenEventModelDataValues | null;
+};
+
+export type ResolverUser = User & {
+  chainData: ResolverUserData[];
+};
+
+export type ResolverUserData = UserData & UserDataParentDripListInfo;
+
+export type UserDataParentDripListInfo = {
+  parentUserInfo: {
+    accountId: AccountId;
+    userChain: DbSchema;
+    queriedChains: DbSchema[];
+  };
+};
+
+export type DbSchema = (typeof DB_SCHEMAS)[number];

@@ -6,10 +6,17 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
-import getSchema from '../utils/getSchema';
-import type { AddressDriverId, DripListId, ProjectId } from '../common/types';
+import type {
+  AddressDriverId,
+  CommonDataValues,
+  DripListId,
+  ProjectId,
+} from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import ProjectModel from '../project/ProjectModel';
+
+export type AddressDriverSplitReceiverModelDataValues =
+  AddressDriverSplitReceiverModel['dataValues'] & CommonDataValues;
 
 export enum AddressDriverSplitReceiverType {
   ProjectMaintainer = 'ProjectMaintainer',
@@ -82,7 +89,6 @@ export default class AddressDriverSplitReceiverModel extends Model<
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'AddressDriverSplitReceivers',
       },
     );

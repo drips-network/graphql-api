@@ -1,16 +1,20 @@
 import { isAddress } from 'ethers';
-import type { GiveWhereInput } from '../generated/graphql';
+import type { Account, GiveWhereInput } from '../generated/graphql';
+import { SupportedChain } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, { isAccountId } from '../utils/assert';
-import type GivenEventModel from './GivenEventModel';
+import queryableChains from '../common/queryableChains';
+import type { GivenEventModelDataValues } from './GivenEventModel';
+import type { ResolverGive } from '../common/types';
+import { chainToDbSchema } from '../utils/chainSchemaMappings';
 
 const givenEventResolvers = {
   Query: {
     gives: async (
       _: any,
-      { where }: { where: GiveWhereInput },
+      { chains, where }: { chains: SupportedChain[]; where: GiveWhereInput },
       { dataSources }: Context,
-    ): Promise<GivenEventModel[]> => {
+    ): Promise<GivenEventModelDataValues[]> => {
       if (where?.receiverAccountId) {
         assert(isAccountId(where.receiverAccountId));
       }
@@ -23,14 +27,27 @@ const givenEventResolvers = {
         assert(isAddress(where.tokenAddress));
       }
 
-      return dataSources.givenEventsDb.getGivenEventsByFilter(where);
+      if (chains) {
+        chains.forEach((chain) => {
+          assert(chain in SupportedChain);
+        });
+      }
+
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
+
+      return dataSources.givenEventsDataSource.getGivenEventsByFilter(
+        dbSchemasToQuery,
+        where,
+      );
     },
   },
   Give: {
-    sender: () => {
-      // TODO: implement.
-    },
+    sender: (give: ResolverGive): Account => give.sender,
+    receiver: (give: ResolverGive): Account => give.receiver,
   },
+  // TODO: add the remaining resolvers
 };
 
 export default givenEventResolvers;

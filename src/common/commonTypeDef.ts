@@ -103,14 +103,24 @@ const commonTypeDef = gql`
     amount: String!
   }
 
+  type ChainAmount {
+    tokenAddress: String!
+    amount: String!
+    chain: SupportedChain!
+  }
+
+  type SupportGroup {
+    items: [Support!]
+  }
+
   union SupportItem =
-      DripListSupport
+    | DripListSupport
     | ProjectSupport
     | OneTimeDonationSupport
     | StreamSupport
 
   union Support =
-      DripListSupport
+    | DripListSupport
     | ProjectSupport
     | OneTimeDonationSupport
     | StreamSupport
@@ -118,6 +128,15 @@ const commonTypeDef = gql`
   enum SortDirection {
     ASC
     DESC
+  }
+
+  enum SupportedChain {
+    MAINNET
+    SEPOLIA
+    OPTIMISM_SEPOLIA
+    POLYGON_AMOY
+    BASE_SEPOLIA
+    FILECOIN
   }
 
   type WithdrawableBalance {

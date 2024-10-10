@@ -1,7 +1,3 @@
-import { Op } from 'sequelize';
-
-import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import StreamsSetEventModel from '../models/StreamsSetEventModel';
 import assert, { isAddressDriverId } from './assert';
 import getUserAccount from './getUserAccount';
 import type {
@@ -9,29 +5,24 @@ import type {
   NftDriverAccount,
 } from '../generated/graphql';
 
-import type { AccountId } from '../common/types';
+import type { AccountId, DbSchema } from '../common/types';
 import type { ProtoStream } from './buildAssetConfigs';
+import streamReceiverSeenEventQueries from '../dataLoaders/sqlQueries/streamReceiverSeenEventQueries';
+import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
 
 async function getUserIncomingStreams(
+  chains: DbSchema[],
   accountId: AccountId,
-): Promise<ProtoStream[]> {
-  const streamReceiverSeenEventsForUser =
-    await StreamReceiverSeenEventModel.findAll({
-      where: {
-        accountId,
-      },
-    });
+) {
+  const streamReceiverSeenEventModelDataValuesForUser =
+    await streamReceiverSeenEventQueries.getByAccountId(chains, accountId);
+
+  const receiversHashes = streamReceiverSeenEventModelDataValuesForUser.map(
+    (event) => event.receiversHash,
+  );
 
   const streamsSetEventsWithMatchingHistoryHash =
-    await StreamsSetEventModel.findAll({
-      where: {
-        receiversHash: {
-          [Op.in]: streamReceiverSeenEventsForUser.map(
-            (event) => event.receiversHash,
-          ),
-        },
-      },
-    });
+    await streamsSetEventsQueries.getByReceiversHashes(chains, receiversHashes);
 
   const accountIdsStreamingToUser = streamsSetEventsWithMatchingHistoryHash
     .map((event) => event.accountId)
@@ -40,26 +31,34 @@ async function getUserIncomingStreams(
   const accountsStreamingToUser = await Promise.all(
     accountIdsStreamingToUser.map((id) => {
       assert(isAddressDriverId(id));
-      return getUserAccount(id);
+      return getUserAccount(chains, id);
     }),
   );
 
-  const incomingStreams = accountsStreamingToUser.reduce<ProtoStream[]>(
-    (acc, account) => {
-      const streams = account.assetConfigs
-        .flatMap((assetConfig) => assetConfig.streams)
-        .filter(
-          (stream) =>
-            (stream.receiver as any as AddressDriverAccount | NftDriverAccount)
-              .accountId === accountId,
-        );
+  const response = {} as Record<DbSchema, ProtoStream[]>;
 
-      return [...acc, ...streams];
-    },
-    [],
-  );
+  chains.forEach((chain) => {
+    response[chain] = accountsStreamingToUser.reduce<ProtoStream[]>(
+      (acc, account) => {
+        const streams =
+          account[chain]?.assetConfigs
+            .flatMap((assetConfig) => assetConfig?.streams)
+            .filter(
+              (stream) =>
+                (
+                  stream.receiver as any as
+                    | AddressDriverAccount
+                    | NftDriverAccount
+                ).accountId === accountId,
+            ) || [];
 
-  return incomingStreams;
+        return [...acc, ...streams];
+      },
+      [],
+    );
+  });
+
+  return response;
 }
 
 export default {

@@ -4,6 +4,15 @@ const givenEventTypeDef = gql`
   type Give {
     sender: Account!
     receiver: Account!
+    chainData: [GiveChainData!]!
+  }
+
+  type GiveChainData {
+    chain: SupportedChain!
+    data: GiveData
+  }
+
+  type GiveData {
     amount: Amount!
     blockTimestamp: String!
   }

@@ -6,8 +6,9 @@ import type {
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
 import type { UUID } from 'crypto';
-import getSchema from '../utils/getSchema';
-import type { AccountId, DripListId } from '../common/types';
+import type { AccountId, CommonDataValues, DripListId } from '../common/types';
+
+export type DripListDataValues = DripListModel['dataValues'] & CommonDataValues;
 
 export default class DripListModel extends Model<
   InferAttributes<DripListModel>,
@@ -65,7 +66,6 @@ export default class DripListModel extends Model<
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'DripLists',
       },
     );

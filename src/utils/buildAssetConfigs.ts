@@ -13,6 +13,7 @@ import getUserAddress from './getUserAddress';
 import type {
   AccountMetadata,
   AddressDriverId,
+  DbSchema,
   StreamsSetEventWithReceivers,
 } from '../common/types';
 import { AMT_PER_SEC_MULTIPLIER } from '../common/constants';
@@ -27,6 +28,7 @@ export interface AssetConfig {
 }
 
 export interface AssetConfigHistoryItem {
+  chain: DbSchema;
   timestamp: Date;
   balance: {
     tokenAddress: string;
@@ -39,6 +41,7 @@ export interface AssetConfigHistoryItem {
 }
 
 export interface ProtoStream {
+  chain: DbSchema;
   streamId: string;
   config:
     | {
@@ -63,6 +66,7 @@ export default function buildAssetConfigs(
   accountId: AddressDriverId,
   accountMetadata: AccountMetadata | undefined,
   accountStreamsSetEvents: Map<Erc20, StreamsSetEventWithReceivers[]>,
+  chain: DbSchema,
 ) {
   const firstAppearanceMap = new Map<string, Date>();
 
@@ -137,6 +141,7 @@ export default function buildAssetConfigs(
           }
 
           assetConfigHistoryItemStreams.push({
+            chain,
             streamId,
             config: {
               raw: streamReceiverSeenEvent.config,
@@ -187,6 +192,7 @@ export default function buildAssetConfigs(
 
           if (streamExistedBefore) {
             assetConfigHistoryItemStreams.push({
+              chain,
               streamId: remainingStreamId,
               // Undefined streamConfig == stream was paused
               config: undefined,
@@ -223,6 +229,7 @@ export default function buildAssetConfigs(
         }
 
         assetConfigHistoryItems.push({
+          chain,
           timestamp: new Date(Number(streamsSetEvent.blockTimestamp)),
           balance: {
             tokenAddress,
@@ -244,6 +251,7 @@ export default function buildAssetConfigs(
         tokenAddress,
         streams: currentStreams.map((receiver) =>
           mapReceiverToStream(
+            chain,
             receiver,
             accountId,
             tokenAddress,

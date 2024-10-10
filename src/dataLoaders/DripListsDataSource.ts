@@ -1,64 +1,89 @@
-import type { WhereOptions } from 'sequelize';
-import { Op } from 'sequelize';
 import DataLoader from 'dataloader';
-import type { Address, DripListId } from '../common/types';
-import type { DripListWhereInput } from '../generated/graphql';
-import DripListModel from '../drip-list/DripListModel';
+import type {
+  Address,
+  DbSchema,
+  DripListId,
+  DripListMultiChainKey,
+} from '../common/types';
+import type { DripListWhereInput, SupportedChain } from '../generated/graphql';
+import type { DripListDataValues } from '../drip-list/DripListModel';
 import TransferEventModel from '../drip-list/TransferEventModel';
+import parseMultiChainKeys from '../utils/parseMultiChainKeys';
+import dripListsQueries from './sqlQueries/dripListsQueries';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
 export default class DripListsDataSource {
   private readonly _batchDripListsByIds = new DataLoader(
-    async (dripListIds: readonly DripListId[]): Promise<DripListModel[]> => {
-      const dripLists = await DripListModel.findAll({
-        where: {
-          id: {
-            [Op.in]: dripListIds,
-          },
-          isValid: true,
-        },
-      });
+    async (
+      dripListKeys: readonly DripListMultiChainKey[],
+    ): Promise<(DripListDataValues | null)[]> => {
+      const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
 
-      const dripListIdToDripListMap = dripLists.reduce<
-        Record<DripListId, DripListModel>
+      const dripListDataValues = await dripListsQueries.getByIds(
+        chains,
+        dripListIds,
+      );
+
+      const dripListIdToDripListMap = dripListDataValues.reduce<
+        Record<DripListId, DripListDataValues>
       >((mapping, dripList) => {
         mapping[dripList.id] = dripList; // eslint-disable-line no-param-reassign
 
         return mapping;
       }, {});
 
-      return dripListIds.map((id) => dripListIdToDripListMap[id]);
+      return dripListKeys.map(({ id }) => dripListIdToDripListMap[id] || null);
     },
   );
 
-  public async getDripListById(id: DripListId): Promise<DripListModel> {
-    return this._batchDripListsByIds.load(id);
+  public async getDripListById(
+    id: DripListId,
+    chains: DbSchema[],
+  ): Promise<DripListDataValues | null> {
+    return this._batchDripListsByIds.load({
+      id,
+      chains,
+    });
   }
 
   public async getDripListsByFilter(
-    where: DripListWhereInput,
-  ): Promise<DripListModel[]> {
-    const dripLists =
-      (await DripListModel.findAll({
-        where: (where as WhereOptions) || {},
-      })) || [];
-
-    return dripLists.filter((p) => p.isValid && p.name);
+    chains: DbSchema[],
+    where?: DripListWhereInput,
+  ): Promise<DripListDataValues[]> {
+    return dripListsQueries.getByFilter(chains, where);
   }
 
-  public async getDripListsByIds(ids: DripListId[]): Promise<DripListModel[]> {
-    return this._batchDripListsByIds.loadMany(ids) as Promise<DripListModel[]>;
+  public async getDripListsByIdsOnChain(
+    ids: DripListId[],
+    chain: DbSchema,
+  ): Promise<DripListDataValues[]> {
+    return (
+      await (this._batchDripListsByIds.loadMany(
+        ids.map((id) => ({
+          id,
+          chains: [chain],
+        })),
+      ) as Promise<DripListDataValues[]>)
+    ).filter((dripList) => dripList.chain === chain);
   }
 
   public async getMintedTokensCountByAccountId(
+    chain: DbSchema,
     ownerAddress: Address,
-  ): Promise<number> {
+  ): Promise<{
+    chain: SupportedChain;
+    total: number;
+  }> {
     // TODO: Fix edge case. This will not count tokens minted by the owner but immediately transferred to another address.
-    const total = await TransferEventModel.count({
+    const total = await TransferEventModel.schema(chain).count({
       where: {
         to: ownerAddress,
       },
     });
 
-    return total;
+    return {
+      chain: dbSchemaToChain[chain],
+      total,
+    };
   }
 }

@@ -4,9 +4,16 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import getSchema from '../utils/getSchema';
-import type { AccountId, BigIntString, IEventModel } from '../common/types';
+import type {
+  AccountId,
+  BigIntString,
+  CommonDataValues,
+  IEventModel,
+} from '../common/types';
 import getCommonEventAttributes from '../utils/getCommonEventAttributes';
+
+export type StreamReceiverSeenEventModelDataValues =
+  StreamReceiverSeenEventModel['dataValues'] & CommonDataValues;
 
 export default class StreamReceiverSeenEventModel
   extends Model<
@@ -44,7 +51,6 @@ export default class StreamReceiverSeenEventModel
       },
       {
         sequelize,
-        schema: getSchema(),
         tableName: 'StreamReceiverSeenEvents',
       },
     );

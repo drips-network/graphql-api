@@ -1,3 +1,5 @@
+import type { DbSchema } from '../common/types';
+
 type Amount = {
   amount: bigint;
   tokenAddress: string;
@@ -8,19 +10,26 @@ type Amount = {
  * where each particular tokenAddress appears once.
  * @param args The arrays of amounts to add together.
  */
-export default function mergeAmounts(...args: Amount[][]) {
+export default function mergeAmounts(
+  ...args: (Amount & { chain: DbSchema })[][]
+) {
   const amounts = new Map<string, Amount>();
 
   args.forEach((amountsArray) => {
     amountsArray.forEach((amount) => {
-      const existingAmount = amounts.get(amount.tokenAddress);
+      // Create a unique key using both tokenAddress and chain
+      const key = `${amount.tokenAddress}-${amount.chain}`;
+      const existingAmount = amounts.get(key);
+
       if (existingAmount) {
-        amounts.set(amount.tokenAddress, {
+        // If there is already an entry, add the new amount to the existing one
+        amounts.set(key, {
+          ...existingAmount,
           amount: existingAmount.amount + amount.amount,
-          tokenAddress: amount.tokenAddress,
         });
       } else {
-        amounts.set(amount.tokenAddress, amount);
+        // Otherwise, add the new amount to the map
+        amounts.set(key, amount);
       }
     });
   });

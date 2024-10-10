@@ -1,35 +1,38 @@
 import DataLoader from 'dataloader';
-import { Op } from 'sequelize';
-import {
-  DependencyType,
-  type DripListId,
-  type ProjectId,
+import type {
+  DripListMultiChainKey,
+  DripListId,
+  ProjectId,
+  ProjectMultiChainKey,
+  DbSchema,
 } from '../common/types';
-import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
+import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
+import parseMultiChainKeys from '../utils/parseMultiChainKeys';
+import repoDriverSplitReceiversQueries from './sqlQueries/repoDriverSplitReceiversQueries';
 
 export default class ReceiversOfTypeProjectDataSource {
   private readonly _batchReceiversOfTypeProjectByProjectIds = new DataLoader(
-    async (projectIds: readonly ProjectId[]) => {
-      const receivers = await RepoDriverSplitReceiverModel.findAll({
-        where: {
-          funderProjectId: {
-            [Op.in]: projectIds,
-          },
-          type: DependencyType.ProjectDependency,
-        },
-      });
+    async (projectKeys: readonly ProjectMultiChainKey[]) => {
+      const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
 
-      const receiversOfTypeProjectToProjectMapping = receivers.reduce<
-        Record<ProjectId, RepoDriverSplitReceiverModel[]>
-      >((mapping, receiver) => {
-        if (!mapping[receiver.funderProjectId as ProjectId]) {
-          mapping[receiver.funderProjectId as ProjectId] = []; // eslint-disable-line no-param-reassign
-        }
+      const repoDriverSplitReceiverModelDataValues =
+        await repoDriverSplitReceiversQueries.getByFunderProjectIds(
+          chains,
+          projectIds,
+        );
 
-        mapping[receiver.funderProjectId as ProjectId].push(receiver);
+      const receiversOfTypeProjectToProjectMapping =
+        repoDriverSplitReceiverModelDataValues.reduce<
+          Record<ProjectId, RepoDriverSplitReceiverModelDataValues[]>
+        >((mapping, receiver) => {
+          if (!mapping[receiver.funderProjectId as ProjectId]) {
+            mapping[receiver.funderProjectId as ProjectId] = []; // eslint-disable-line no-param-reassign
+          }
 
-        return mapping;
-      }, {});
+          mapping[receiver.funderProjectId as ProjectId].push(receiver);
+
+          return mapping;
+        }, {});
 
       return projectIds.map(
         (id) => receiversOfTypeProjectToProjectMapping[id] || [],
@@ -37,34 +40,40 @@ export default class ReceiversOfTypeProjectDataSource {
     },
   );
 
-  public async getReceiversOfTypeProjectByProjectId(
+  public async getReceiversOfTypeProjectByProjectIdOnChain(
     id: ProjectId,
-  ): Promise<RepoDriverSplitReceiverModel[]> {
-    return this._batchReceiversOfTypeProjectByProjectIds.load(id);
+    chain: DbSchema,
+  ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
+    return (
+      await this._batchReceiversOfTypeProjectByProjectIds.load({
+        id,
+        chains: [chain],
+      })
+    ).filter((receiver) => receiver.chain === chain);
   }
 
   private readonly _batchReceiversOfTypeProjectByDripListIds = new DataLoader(
-    async (dripListIds: readonly DripListId[]) => {
-      const receivers = await RepoDriverSplitReceiverModel.findAll({
-        where: {
-          funderDripListId: {
-            [Op.in]: dripListIds,
-          },
-          type: DependencyType.DripListDependency,
-        },
-      });
+    async (dripListKeys: readonly DripListMultiChainKey[]) => {
+      const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
 
-      const receiversOfTypeProjectToDripListMapping = receivers.reduce<
-        Record<DripListId, RepoDriverSplitReceiverModel[]>
-      >((mapping, receiver) => {
-        if (!mapping[receiver.funderDripListId as DripListId]) {
-          mapping[receiver.funderDripListId as DripListId] = []; // eslint-disable-line no-param-reassign
-        }
+      const repoDriverSplitReceiverModelDataValues =
+        await repoDriverSplitReceiversQueries.getByFunderDripListIds(
+          chains,
+          dripListIds,
+        );
 
-        mapping[receiver.funderDripListId as DripListId].push(receiver);
+      const receiversOfTypeProjectToDripListMapping =
+        repoDriverSplitReceiverModelDataValues.reduce<
+          Record<DripListId, RepoDriverSplitReceiverModelDataValues[]>
+        >((mapping, receiver) => {
+          if (!mapping[receiver.funderDripListId as DripListId]) {
+            mapping[receiver.funderDripListId as DripListId] = []; // eslint-disable-line no-param-reassign
+          }
 
-        return mapping;
-      }, {});
+          mapping[receiver.funderDripListId as DripListId].push(receiver);
+
+          return mapping;
+        }, {});
 
       return dripListIds.map(
         (id) => receiversOfTypeProjectToDripListMapping[id] || [],
@@ -72,9 +81,15 @@ export default class ReceiversOfTypeProjectDataSource {
     },
   );
 
-  public async getReceiversOfTypeProjectByDripListId(
+  public async getReceiversOfTypeProjectByDripListIdOnChain(
     id: DripListId,
-  ): Promise<RepoDriverSplitReceiverModel[]> {
-    return this._batchReceiversOfTypeProjectByDripListIds.load(id);
+    chain: DbSchema,
+  ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
+    return (
+      await this._batchReceiversOfTypeProjectByDripListIds.load({
+        id,
+        chains: [chain],
+      })
+    ).filter((receiver) => receiver.chain === chain);
   }
 }

@@ -1,36 +1,50 @@
-import type { Order, WhereOptions } from 'sequelize';
-import { Op } from 'sequelize';
 import DataLoader from 'dataloader';
-import ProjectModel from '../project/ProjectModel';
-import type { FakeUnclaimedProject, ProjectId } from '../common/types';
+import type { ProjectDataValues } from '../project/ProjectModel';
+import type {
+  AccountId,
+  DbSchema,
+  ProjectId,
+  ProjectMultiChainKey,
+} from '../common/types';
 import {
   doesRepoExists,
-  isValidateProjectName,
   toApiProject,
-  toFakeUnclaimedProjectFromUrl,
+  toProjectRepresentationFromUrl,
 } from '../project/projectUtils';
-import type { ProjectSortInput, ProjectWhereInput } from '../generated/graphql';
-import SplitEventModel from '../models/SplitEventModel';
-import GivenEventModel from '../given-event/GivenEventModel';
+import type {
+  ProjectSortInput,
+  ProjectWhereInput,
+  SupportedChain,
+} from '../generated/graphql';
+import parseMultiChainKeys from '../utils/parseMultiChainKeys';
+import projectsQueries from './sqlQueries/projectsQueries';
+import givenEventsQueries from './sqlQueries/givenEventsQueries';
+import splitEventsQueries from './sqlQueries/splitEventsQueries';
+import shouldNeverHappen from '../utils/shouldNeverHappen';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
-    async (projectIds: readonly ProjectId[]): Promise<ProjectModel[]> => {
-      const projects = await ProjectModel.findAll({
-        where: {
-          id: {
-            [Op.in]: projectIds,
-          },
-          isValid: true,
-        },
-      }).then((projectModels) =>
-        projectModels.filter((p) =>
-          p.name ? isValidateProjectName(p.name) : true,
-        ),
+    async (
+      projectKeys: readonly ProjectMultiChainKey[],
+    ): Promise<ProjectDataValues[]> => {
+      const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
+
+      const projectsDataValues = await projectsQueries.getByIds(
+        chains,
+        projectIds,
       );
 
-      const projectIdToProjectMap = projects.reduce<
-        Record<ProjectId, ProjectModel>
+      const apiProjectsDataValues = await Promise.all(
+        projectsDataValues.map(toApiProject),
+      );
+
+      const filteredProjectsDataValues = apiProjectsDataValues.filter(
+        Boolean,
+      ) as ProjectDataValues[];
+
+      const projectIdToProjectMap = filteredProjectsDataValues.reduce<
+        Record<ProjectId, ProjectDataValues>
       >((mapping, project) => {
         mapping[project.id] = project; // eslint-disable-line no-param-reassign
 
@@ -41,74 +55,126 @@ export default class ProjectsDataSource {
     },
   );
 
+  public async getProjectByIdOnChain(
+    id: ProjectId,
+    chain: DbSchema,
+  ): Promise<ProjectDataValues | null> {
+    const dbProject = await this._batchProjectsByIds.load({
+      id,
+      chains: [chain],
+    });
+
+    return dbProject ?? null;
+  }
+
   public async getProjectById(
     id: ProjectId,
-  ): Promise<ProjectModel | FakeUnclaimedProject | null> {
-    return toApiProject(await this._batchProjectsByIds.load(id));
+    chains: DbSchema[],
+  ): Promise<ProjectDataValues[] | null> {
+    const dbProjects = (
+      await this._batchProjectsByIds.loadMany([{ id, chains }])
+    ).filter(Boolean) as ProjectDataValues[];
+
+    if (!dbProjects?.length) {
+      return null;
+    }
+
+    if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
+      shouldNeverHappen(
+        'Found same project with different ids on different chains.',
+      );
+    }
+
+    return dbProjects;
   }
 
   public async getProjectByUrl(
     url: string,
-  ): Promise<ProjectModel | FakeUnclaimedProject | null> {
-    const project = await ProjectModel.findOne({ where: { url } });
+    chains: DbSchema[],
+  ): Promise<ProjectDataValues[] | null> {
+    // TODO: To Data Loader.
 
-    if (project) {
-      return toApiProject(project);
+    if (!doesRepoExists(url)) {
+      return null;
     }
 
-    const exists = await doesRepoExists(url);
+    const dbProjects = await projectsQueries.getByUrl(chains, url);
 
-    return exists ? toFakeUnclaimedProjectFromUrl(url) : null;
+    if (!dbProjects?.length) {
+      return [await toProjectRepresentationFromUrl(url)];
+    }
+
+    if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
+      shouldNeverHappen(
+        'Found same project with different ids on different chains.',
+      );
+    }
+
+    return dbProjects;
   }
 
   public async getProjectsByFilter(
-    where: ProjectWhereInput,
+    chains: DbSchema[],
+    where?: ProjectWhereInput,
     sort?: ProjectSortInput,
-  ): Promise<(ProjectModel | FakeUnclaimedProject)[]> {
-    const order: Order = sort ? [[sort.field, sort.direction || 'DESC']] : [];
+  ): Promise<ProjectDataValues[]> {
+    const projectsDataValues = await projectsQueries.getByFilter(
+      chains,
+      where,
+      sort,
+    );
 
-    const projects =
-      (await ProjectModel.findAll({
-        where: (where as WhereOptions) || {},
-        order,
-      })) || [];
-
-    return projects
-      .filter((p) => p.isValid)
-      .filter((p) => (p.name ? isValidateProjectName(p.name) : true))
-      .map(toApiProject)
-      .filter(Boolean) as (ProjectModel | FakeUnclaimedProject)[];
+    return Promise.all(
+      projectsDataValues
+        .map(toApiProject)
+        .filter(Boolean) as ProjectDataValues[],
+    );
   }
 
-  public async getProjectsByIds(ids: ProjectId[]): Promise<ProjectModel[]> {
-    return this._batchProjectsByIds.loadMany(ids) as Promise<ProjectModel[]>;
+  public async getProjectsByIdsOnChain(
+    ids: ProjectId[],
+    chain: DbSchema,
+  ): Promise<ProjectDataValues[]> {
+    return (
+      await (this._batchProjectsByIds.loadMany(
+        ids.map((id) => ({
+          id,
+          chains: [chain],
+        })),
+      ) as Promise<ProjectDataValues[]>)
+    ).filter((p) => p.chain === chain);
   }
 
-  public async getEarnedFunds(projectId: ProjectId): Promise<
+  public async getEarnedFunds(
+    projectId: ProjectId,
+    chains: DbSchema[],
+  ): Promise<
     {
       tokenAddress: string;
       amount: string;
+      chain: SupportedChain;
     }[]
   > {
     const amounts = await Promise.all([
-      this._getIncomingSplitTotal(projectId),
-      this._getIncomingGivesTotal(projectId),
+      this._getIncomingSplitTotal(projectId, chains),
+      this._getIncomingGivesTotal(projectId, chains),
     ]);
 
     return this._mergeAmounts(...amounts);
   }
 
-  private async _getIncomingSplitTotal(accountId: string) {
-    const incomingSplitEvents = await SplitEventModel.findAll({
-      where: {
-        receiver: accountId,
-      },
-    });
+  private async _getIncomingSplitTotal(
+    accountId: AccountId,
+    chains: DbSchema[],
+  ) {
+    const incomingSplitEventModelDataValues =
+      await splitEventsQueries.getByReceiver(chains, accountId);
 
-    return incomingSplitEvents.reduce<
+    return incomingSplitEventModelDataValues.reduce<
       {
         tokenAddress: string;
         amount: bigint;
+        chain: DbSchema;
       }[]
     >((acc, curr) => {
       const existing = acc.find((e) => e.tokenAddress === curr.erc20);
@@ -121,6 +187,7 @@ export default class ProjectsDataSource {
         acc.push({
           tokenAddress: curr.erc20,
           amount,
+          chain: curr.chain,
         });
       }
 
@@ -128,17 +195,18 @@ export default class ProjectsDataSource {
     }, []);
   }
 
-  private async _getIncomingGivesTotal(accountId: string) {
-    const incomingGiveEvents = await GivenEventModel.findAll({
-      where: {
-        receiver: accountId,
-      },
-    });
+  private async _getIncomingGivesTotal(
+    accountId: AccountId,
+    chains: DbSchema[],
+  ) {
+    const incomingGivenEventModelDataValues =
+      await givenEventsQueries.getByReceiver(chains, accountId);
 
-    return incomingGiveEvents.reduce<
+    return incomingGivenEventModelDataValues.reduce<
       {
         tokenAddress: string;
         amount: bigint;
+        chain: DbSchema;
       }[]
     >((acc, curr) => {
       const existing = acc.find((e) => e.tokenAddress === curr.erc20);
@@ -150,6 +218,7 @@ export default class ProjectsDataSource {
         acc.push({
           tokenAddress: curr.erc20,
           amount,
+          chain: curr.chain,
         });
       }
 
@@ -161,6 +230,7 @@ export default class ProjectsDataSource {
     ...args: {
       tokenAddress: string;
       amount: bigint;
+      chain: DbSchema;
     }[][]
   ) {
     const amounts = new Map<
@@ -168,26 +238,33 @@ export default class ProjectsDataSource {
       {
         tokenAddress: string;
         amount: bigint;
+        chain: SupportedChain;
       }
     >();
 
     args.forEach((amountsArray) => {
       amountsArray.forEach((amount) => {
-        const existingAmount = amounts.get(amount.tokenAddress);
+        const key = `${amount.chain}-${amount.tokenAddress}`;
+        const existingAmount = amounts.get(key);
         if (existingAmount) {
-          amounts.set(amount.tokenAddress, {
+          amounts.set(key, {
+            ...existingAmount,
+            chain: dbSchemaToChain[amount.chain],
             amount: existingAmount.amount + amount.amount,
-            tokenAddress: amount.tokenAddress,
           });
         } else {
-          amounts.set(amount.tokenAddress, amount);
+          amounts.set(key, {
+            ...amount,
+            chain: dbSchemaToChain[amount.chain],
+          });
         }
       });
     });
 
     return Array.from(amounts.values()).map((x) => ({
-      amount: x.amount.toString(),
       tokenAddress: x.tokenAddress,
+      amount: x.amount.toString(),
+      chain: x.chain,
     }));
   }
 }

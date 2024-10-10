@@ -1,9 +1,14 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
-import { ethers, hexlify, toUtf8Bytes, zeroPadBytes } from 'ethers';
+import { ethers } from 'ethers';
 import { addressDriverAccountMetadataParser } from '../schemas';
-import type { AccountId, IpfsHash } from '../common/types';
+import type {
+  AccountId,
+  AddressDriverId,
+  DbSchema,
+  IpfsHash,
+} from '../common/types';
 import appSettings from '../common/appSettings';
-import AccountMetadataEmittedEventModel from '../models/AccountMetadataEmittedEventModel';
+import accountMetadataEmittedEventsQueries from '../dataLoaders/sqlQueries/accountMetadataEmittedEventsQueries';
 
 function toIpfsHash(str: string): IpfsHash {
   const ipfsHash = ethers.toUtf8String(str);
@@ -21,43 +26,55 @@ async function getIpfsFile(hash: IpfsHash): Promise<Response> {
   return fetch(`${appSettings.ipfsGatewayUrl}/ipfs/${hash}`);
 }
 
-export async function getLatestMetadataHash(
+export default async function getLatestAccountMetadataOnChain(
+  chains: DbSchema[],
+  accountId: AddressDriverId,
+) {
+  const accountMetadataEmittedEventModelDataValues =
+    await accountMetadataEmittedEventsQueries.getByAccountId(chains, accountId);
+
+  const response: {
+    [chain in DbSchema]?: {
+      metadata: AnyVersion<typeof addressDriverAccountMetadataParser>;
+      ipfsHash: IpfsHash;
+    } | null;
+  } = {};
+
+  for (const metadataDataValues of accountMetadataEmittedEventModelDataValues) {
+    if (!accountMetadataEmittedEventModelDataValues.length) {
+      response[metadataDataValues.chain as DbSchema] = null;
+    } else {
+      const ipfsHash = toIpfsHash(
+        accountMetadataEmittedEventModelDataValues[0].value,
+      );
+
+      const ipfsFile = await (await getIpfsFile(ipfsHash)).json();
+      const metadata = addressDriverAccountMetadataParser.parseAny(ipfsFile);
+
+      response[metadataDataValues.chain as DbSchema] = {
+        metadata,
+        ipfsHash,
+      };
+    }
+  }
+
+  return response;
+}
+
+export async function getLatestMetadataHashOnChain(
   accountId: AccountId,
+  chain: DbSchema,
 ): Promise<IpfsHash | undefined> {
+  // Ordered by blockNumber and logIndex.
   const latestAccountMetadataEmittedEvent =
-    await AccountMetadataEmittedEventModel.findAll({
-      where: {
-        accountId,
-        key: zeroPadBytes(hexlify(toUtf8Bytes('ipfs')), 32),
-      },
-      order: [
-        ['blockNumber', 'DESC'],
-        ['logIndex', 'DESC'],
-      ],
-      limit: 1,
-    });
+    await accountMetadataEmittedEventsQueries.getByAccountId(
+      [chain],
+      accountId,
+    );
 
   if (!latestAccountMetadataEmittedEvent.length) {
     return undefined;
   }
 
   return toIpfsHash(latestAccountMetadataEmittedEvent[0].value);
-}
-
-export default async function getLatestAccountMetadata(
-  accountId: AccountId,
-): Promise<
-  | {
-      metadata: AnyVersion<typeof addressDriverAccountMetadataParser>;
-      ipfsHash: IpfsHash;
-    }
-  | undefined
-> {
-  const ipfsHash = await getLatestMetadataHash(accountId);
-  if (!ipfsHash) return undefined;
-
-  const ipfsFile = await (await getIpfsFile(ipfsHash)).json();
-  const metadata = addressDriverAccountMetadataParser.parseAny(ipfsFile);
-
-  return { metadata, ipfsHash };
 }

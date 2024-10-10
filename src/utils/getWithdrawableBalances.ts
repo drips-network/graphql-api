@@ -1,56 +1,32 @@
-import { Op, col, fn } from 'sequelize';
-import type { AccountId } from '../common/types';
-import GivenEventModel from '../given-event/GivenEventModel';
-import SplitEventModel from '../models/SplitEventModel';
-import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import StreamsSetEventModel from '../models/StreamsSetEventModel';
-import appSettings from '../common/appSettings';
-import { Drips__factory } from '../generated/contracts';
-import provider from '../common/provider';
+import type { AccountId, DbSchema } from '../common/types';
+import dripsContracts from '../common/dripsContracts';
+import streamReceiverSeenEventQueries from '../dataLoaders/sqlQueries/streamReceiverSeenEventQueries';
+import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
+import givenEventsQueries from '../dataLoaders/sqlQueries/givenEventsQueries';
+import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
+import { dbSchemaToChain } from './chainSchemaMappings';
 
-const drips = Drips__factory.connect(appSettings.dripsAddress, provider);
-
-export async function getRelevantTokens(accountId: AccountId) {
+export async function getRelevantTokens(accountId: AccountId, chain: DbSchema) {
   const streamReceiverSeenEventsForUser =
-    await StreamReceiverSeenEventModel.findAll({
-      where: {
-        accountId,
-      },
-    });
+    await streamReceiverSeenEventQueries.getByAccountId([chain], accountId);
 
   const [
     incomingStreamTokenAddresses,
     incomingGivesTokenAddresses,
     incomingSplitEventsTokenAddresses,
   ] = await Promise.all([
-    StreamsSetEventModel.findAll({
-      attributes: [[fn('DISTINCT', col('erc20')), 'erc20']],
-      where: {
-        receiversHash: {
-          [Op.in]: streamReceiverSeenEventsForUser.map(
-            (event) => event.receiversHash,
-          ),
-        },
-      },
-    }),
-    GivenEventModel.findAll({
-      attributes: [[fn('DISTINCT', col('erc20')), 'erc20']],
-      where: {
-        receiver: accountId,
-      },
-    }),
-    SplitEventModel.findAll({
-      attributes: [[fn('DISTINCT', col('erc20')), 'erc20']],
-      where: {
-        receiver: accountId,
-      },
-    }),
+    streamsSetEventsQueries.getDistinctErc20ByReceiversHashes(
+      [chain],
+      streamReceiverSeenEventsForUser.map((event) => event.receiversHash),
+    ),
+    givenEventsQueries.getDistinctErc20ByReceiver([chain], accountId),
+    splitEventsQueries.getDistinctErc20ByReceiver([chain], accountId),
   ]);
 
   return [
-    ...incomingStreamTokenAddresses.map((event) => event.erc20),
-    ...incomingGivesTokenAddresses.map((event) => event.erc20),
-    ...incomingSplitEventsTokenAddresses.map((event) => event.erc20),
+    ...incomingStreamTokenAddresses,
+    ...incomingGivesTokenAddresses,
+    ...incomingSplitEventsTokenAddresses,
   ].reduce<string[]>((acc, tokenAddress) => {
     if (!acc.includes(tokenAddress)) {
       return [...acc, tokenAddress];
@@ -60,10 +36,13 @@ export async function getRelevantTokens(accountId: AccountId) {
   }, []);
 }
 
-export async function getTokenBalances(
+export async function getTokenBalancesOnChain(
   accountId: AccountId,
   tokenAddress: string,
+  chain: DbSchema,
 ) {
+  const { drips } = dripsContracts[dbSchemaToChain[chain]]!;
+
   const [splittable, receivable, collectable] = await Promise.all([
     drips.splittable(accountId, tokenAddress),
     drips.receiveStreamsResult(accountId, tokenAddress, 10000),
@@ -77,8 +56,11 @@ export async function getTokenBalances(
   };
 }
 
-export default async function getWithdrawableBalances(accountId: AccountId) {
-  const relevantTokenAddresses = await getRelevantTokens(accountId);
+export default async function getWithdrawableBalancesOnChain(
+  accountId: AccountId,
+  chain: DbSchema,
+) {
+  const relevantTokenAddresses = await getRelevantTokens(accountId, chain);
 
   const balances: {
     [tokenAddress: string]: {
@@ -89,10 +71,8 @@ export default async function getWithdrawableBalances(accountId: AccountId) {
   } = Object.fromEntries(
     await Promise.all(
       relevantTokenAddresses.map(async (tokenAddress) => {
-        const { splittable, receivable, collectable } = await getTokenBalances(
-          accountId,
-          tokenAddress,
-        );
+        const { splittable, receivable, collectable } =
+          await getTokenBalancesOnChain(accountId, tokenAddress, chain);
 
         return [tokenAddress, { splittable, receivable, collectable }];
       }),
