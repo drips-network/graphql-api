@@ -12,15 +12,13 @@ const RpcConfigSchema = z.record(
   z.nativeEnum(SupportedChain),
   z
     .object({
-      url: z.string().url(), // The RPC URL for the provider.
-      accessToken: z.string().optional(), // Optional. The access token for the RPC URL.
-      fallbackUrl: z.string().optional(), // Optional. The fallback RPC URL.
-      fallbackAccessToken: z.string().optional(), // Optional. The access token for the fallback RPC URL.
+      url: z.string().url(),
+      accessToken: z.string().optional(),
+      fallbackUrl: z.string().optional(),
+      fallbackAccessToken: z.string().optional(),
     })
     .optional(),
 );
-
-console.log('process.env.RPC_CONFIG', process.env.RPC_CONFIG);
 
 export default {
   port: (process.env.PORT || 8080) as number,
