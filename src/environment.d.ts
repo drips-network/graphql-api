@@ -4,32 +4,7 @@ declare global {
   namespace NodeJS {
     interface ProcessEnv {
       PORT: string;
-
-      RPC_URL_MAINNET: string | undefined;
-      RPC_ACCESS_TOKEN_MAINNET: string | undefined;
-      FALLBACK_RPC_URL_MAINNET: string | undefined;
-      FALLBACK_RPC_ACCESS_TOKEN_MAINNET: string | undefined;
-
-      RPC_URL_SEPOLIA: string | undefined;
-      FALLBACK_RPC_URL_SEPOLIA: string | undefined;
-      RPC_ACCESS_TOKEN_SEPOLIA: string | undefined;
-      FALLBACK_RPC_ACCESS_TOKEN_SEPOLIA: string | undefined;
-
-      RPC_URL_OPTIMISM_SEPOLIA: string | undefined;
-      FALLBACK_RPC_URL_OPTIMISM_SEPOLIA: string | undefined;
-      RPC_ACCESS_TOKEN_OPTIMISM_SEPOLIA: string | undefined;
-      FALLBACK_RPC_ACCESS_TOKEN_OPTIMISM_SEPOLIA: string | undefined;
-
-      RPC_URL_POLYGON_AMOY: string | undefined;
-      FALLBACK_RPC_URL_POLYGON_AMOY: string | undefined;
-      RPC_ACCESS_TOKEN_POLYGON_AMOY: string | undefined;
-      FALLBACK_RPC_ACCESS_TOKEN_POLYGON_AMOY: string | undefined;
-
-      RPC_URL_FILECOIN: string | undefined;
-      FALLBACK_RPC_URL_FILECOIN: string;
-      RPC_ACCESS_TOKEN_FILECOIN: string | undefined;
-      FALLBACK_RPC_ACCESS_TOKEN_FILECOIN: string | undefined;
-
+      RPC_CONFIG: string;
       PUBLIC_API_KEYS: string;
       DRIPS_API_KEY: string;
       NODE_ENV: 'development' | 'production';

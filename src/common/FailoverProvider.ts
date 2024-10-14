@@ -6,6 +6,19 @@ import type {
 } from 'ethers';
 import { JsonRpcProvider, FetchRequest } from 'ethers';
 
+class AggregatedRpcError extends Error {
+  public readonly errors: { rpcEndpoint: string; error: any }[];
+
+  constructor(errors: { rpcEndpoint: string; error: any }[]) {
+    super(
+      `All RPC endpoints failed:\n${errors.map((e) => `Endpoint '${e.rpcEndpoint}' failed with error: ${e.error.message}.`).join('\n')}`,
+    );
+
+    this.name = 'AggregatedRpcError';
+    this.errors = errors;
+  }
+}
+
 /**
  * A `JsonRpcProvider` that transparently fails over to a list of backup JSON-RPC endpoints.
  */
@@ -68,21 +81,7 @@ export default class FailoverJsonRpcProvider extends JsonRpcProvider {
       }
     }
 
-    // All endpoints failed. Throw an error containing the details.
-    const errorMessages = errors
-      .map(
-        (e) =>
-          `Endpoint '${e.rpcEndpoint}' failed with error: ${e.error.message}.`,
-      )
-      .join('\n');
-
-    const aggregatedError = new Error(
-      `All RPC endpoints failed:\n${errorMessages}`,
-    ) as Error & { errors: { rpcEndpoint: string; error: any }[] };
-
-    aggregatedError.errors = errors;
-
-    throw aggregatedError;
+    throw new AggregatedRpcError(errors);
   }
 
   /**

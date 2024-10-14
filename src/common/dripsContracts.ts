@@ -58,7 +58,7 @@ const chainConfigs: Record<
   },
 };
 
-const { rpcConfigs } = appSettings;
+const { rpcConfig } = appSettings;
 
 const providers: {
   [network in SupportedChain]?: FailoverJsonRpcProvider;
@@ -73,13 +73,13 @@ function createAuthFetchRequest(rpcUrl: string, token: string): FetchRequest {
 }
 
 Object.values(SupportedChain).forEach((network) => {
-  const rpcConfig = rpcConfigs[network];
+  const config = rpcConfig[network];
 
-  if (!rpcConfig) {
+  if (!config) {
     return;
   }
 
-  const { url, accessToken, fallbackUrl, fallbackAccessToken } = rpcConfig;
+  const { url, accessToken, fallbackUrl, fallbackAccessToken } = config;
 
   const primaryEndpoint = accessToken
     ? createAuthFetchRequest(url, accessToken)

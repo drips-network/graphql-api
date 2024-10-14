@@ -1,50 +1,32 @@
 import dotenv from 'dotenv';
-import type { SupportedChain } from '../generated/graphql';
+import { z } from 'zod';
+import { SupportedChain } from '../generated/graphql';
 
 dotenv.config();
 
-type RpcConfig = {
-  url: string;
-  accessToken?: string;
-  fallbackUrl?: string;
-  fallbackAccessToken?: string;
-};
+function missingEnvVar(name: string): never {
+  throw new Error(`Missing ${name} in .env file.`);
+}
+
+const RpcConfigSchema = z.record(
+  z.nativeEnum(SupportedChain),
+  z
+    .object({
+      url: z.string().url(), // The RPC URL for the provider.
+      accessToken: z.string().optional(), // Optional. The access token for the RPC URL.
+      fallbackUrl: z.string().optional(), // Optional. The fallback RPC URL.
+      fallbackAccessToken: z.string().optional(), // Optional. The access token for the fallback RPC URL.
+    })
+    .optional(),
+);
+
+console.log('process.env.RPC_CONFIG', process.env.RPC_CONFIG);
 
 export default {
   port: (process.env.PORT || 8080) as number,
-  rpcConfigs: {
-    MAINNET: {
-      url: process.env.RPC_URL_MAINNET,
-      accessToken: process.env.RPC_ACCESS_TOKEN_MAINNET,
-      fallbackUrl: process.env.FALLBACK_RPC_URL_MAINNET,
-      fallbackAccessToken: process.env.FALLBACK_RPC_ACCESS_TOKEN_MAINNET,
-    },
-    SEPOLIA: {
-      url: process.env.RPC_URL_SEPOLIA,
-      accessToken: process.env.RPC_ACCESS_TOKEN_SEPOLIA,
-      fallbackUrl: process.env.FALLBACK_RPC_URL_SEPOLIA,
-      fallbackAccessToken: process.env.FALLBACK_RPC_ACCESS_TOKEN_SEPOLIA,
-    },
-    OPTIMISM_SEPOLIA: {
-      url: process.env.RPC_URL_OPTIMISM_SEPOLIA,
-      accessToken: process.env.RPC_ACCESS_TOKEN_OPTIMISM_SEPOLIA,
-      fallbackUrl: process.env.FALLBACK_RPC_URL_OPTIMISM_SEPOLIA,
-      fallbackAccessToken:
-        process.env.FALLBACK_RPC_ACCESS_TOKEN_OPTIMISM_SEPOLIA,
-    },
-    POLYGON_AMOY: {
-      url: process.env.RPC_URL_POLYGON_AMOY,
-      fallbackUrl: process.env.FALLBACK_RPC_URL_POLYGON_AMOY,
-      accessToken: process.env.RPC_ACCESS_TOKEN_POLYGON_AMOY,
-      fallbackAccessToken: process.env.FALLBACK_RPC_ACCESS_TOKEN_POLYGON_AMOY,
-    },
-    FILECOIN: {
-      url: process.env.RPC_URL_FILECOIN,
-      fallbackUrl: process.env.FALLBACK_RPC_URL_FILECOIN,
-      accessToken: process.env.RPC_ACCESS_TOKEN_FILECOIN,
-      fallbackAccessToken: process.env.FALLBACK_RPC_ACCESS_TOKEN_FILECOIN,
-    },
-  } as Record<SupportedChain, RpcConfig | undefined>,
+  rpcConfig: process.env.RPC_CONFIG
+    ? RpcConfigSchema.parse(JSON.parse(process.env.RPC_CONFIG))
+    : missingEnvVar('RPC_CONFIG'),
   publicApiKeys: process.env.PUBLIC_API_KEYS?.split(',') || [],
   dripsApiKey: process.env.DRIPS_API_KEY,
   postgresConnectionString: process.env.POSTGRES_CONNECTION_STRING,
