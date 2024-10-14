@@ -52,9 +52,9 @@ const chainConfigs: Record<
     repoDriverAddress: '0x54372850Db72915Fd9C5EC745683EB607b4a8642',
   },
   FILECOIN: {
-    dripsAddress: '0x29252acF5a3dA105CB3aC245B7758F6e50281ba7',
-    addressDriverAddress: '0xE13A4f3671ee451F81Df3aa1AEb6653e4c33D5e0',
-    repoDriverAddress: '0x249e35aC49ccC4B1F0688Bc4c0bFA866a1b1E3fE',
+    dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
+    addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
+    repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
   },
 };
 
@@ -134,7 +134,15 @@ export async function getCrossChainAddressDriverAccountIdByAddress(
   address: Address,
 ): Promise<AddressDriverId> {
   // AddressDriver account IDs are the same across all chains.
-  const { addressDriver } = dripsContracts[queryableChains[0]]!;
+  const availableChain = queryableChains.find(
+    (chain) => dripsContracts[chain] && dripsContracts[chain]!.addressDriver,
+  );
+
+  if (!availableChain) {
+    throw new Error('No available chain with initialized contracts.');
+  }
+
+  const { addressDriver } = dripsContracts[availableChain]!;
 
   const accountId = (await addressDriver.calcAccountId(address)).toString();
 
@@ -146,7 +154,15 @@ export async function getCrossChainRepoDriverAccountIdByAddress(
   project: string,
 ): Promise<AccountId> {
   // RepoDriver account IDs are the same across all chains.
-  const { repoDriver } = dripsContracts[queryableChains[0]]!;
+  const availableChain = queryableChains.find(
+    (chain) => dripsContracts[chain] && dripsContracts[chain]!.repoDriver,
+  );
+
+  if (!availableChain) {
+    throw new Error('No available chain with initialized contracts.');
+  }
+
+  const { repoDriver } = dripsContracts[availableChain]!;
 
   const nameAsBytesLike = ethers.toUtf8Bytes(project);
 
