@@ -1,6 +1,6 @@
 import { Driver, type StreamWhereInput } from '../generated/graphql';
 import type { Context } from '../server';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
+import unreachableError from '../utils/unreachableError';
 
 const streamResolvers = {
   Query: {
@@ -24,7 +24,7 @@ const streamResolvers = {
         );
       }
 
-      throw shouldNeverHappen();
+      throw unreachableError();
     },
     sender: (parent: any, _: any, { dataSources }: Context) => {
       if (parent.sender.driver === Driver.ADDRESS) {
@@ -35,7 +35,7 @@ const streamResolvers = {
         return dataSources.dripListsDb.getDripListById(parent.sender.accountId);
       }
 
-      throw shouldNeverHappen();
+      throw unreachableError();
     },
   },
 };
