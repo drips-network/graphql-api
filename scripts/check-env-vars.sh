@@ -7,7 +7,7 @@ if [ -f .env ]; then
   export $(grep -v '^#' .env | xargs)
 fi
 
-required_vars=("RPC_CONFIG" "POSTGRES_CONNECTION_STRING" "DRIPS_API_KEY" "PUBLIC_API_KEYS")
+required_vars=("RPC_CONFIG" "POSTGRES_CONNECTION_STRING" "DRIPS_API_KEY")
 
 for var in "${required_vars[@]}"; do
   if [ -z "${!var}" ]; then
