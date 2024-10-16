@@ -120,6 +120,13 @@ const startServer = async () => {
   app.set('trust proxy', 1);
 
   app.route('/health').get((_, res) => {
+    try {
+      server.assertStarted('/health');
+    } catch (error) {
+      res.status(500).send('Server not ready');
+      return;
+    }
+
     res.status(200).send('OK');
   });
 
