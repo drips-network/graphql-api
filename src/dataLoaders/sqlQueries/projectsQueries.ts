@@ -65,6 +65,12 @@ async function getProjectsByFilter(
     conditions.push(`"verificationStatus" = :verificationStatus`);
     parameters.verificationStatus = where.verificationStatus;
   }
+  if (where?.nameStartsWith) {
+    conditions.push(`"name" ILIKE :nameStartsWith`);
+    parameters.nameStartsWith = `${where.nameStartsWith
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '')}%`;
+  }
 
   const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 

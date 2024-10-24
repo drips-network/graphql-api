@@ -61,6 +61,7 @@ const projectTypeDef = gql`
     url: String
     ownerAddress: String
     verificationStatus: ProjectVerificationStatus
+    nameStartsWith: String
   }
 
   input ProjectSortInput {
