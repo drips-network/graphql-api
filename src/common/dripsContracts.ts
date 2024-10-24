@@ -12,11 +12,12 @@ import type {
   AccountId,
   Address,
   AddressDriverId,
+  DbSchema,
   Forge,
   ProjectId,
 } from './types';
-import queryableChains from './queryableChains';
 import FailoverJsonRpcProvider from './FailoverProvider';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
 const chainConfigs: Record<
   SupportedChain,
@@ -132,17 +133,20 @@ export default dripsContracts;
 
 export async function getCrossChainAddressDriverAccountIdByAddress(
   address: Address,
+  chainsToQuery: DbSchema[],
 ): Promise<AddressDriverId> {
   // AddressDriver account IDs are the same across all chains.
-  const availableChain = queryableChains.find(
-    (chain) => dripsContracts[chain] && dripsContracts[chain]!.addressDriver,
+  const availableChain = chainsToQuery.find(
+    (chain) =>
+      dripsContracts[dbSchemaToChain[chain]] &&
+      dripsContracts[dbSchemaToChain[chain]]!.addressDriver,
   );
 
   if (!availableChain) {
     throw new Error('No available chain with initialized contracts.');
   }
 
-  const { addressDriver } = dripsContracts[availableChain]!;
+  const { addressDriver } = dripsContracts[dbSchemaToChain[availableChain]]!;
 
   const accountId = (await addressDriver.calcAccountId(address)).toString();
 
@@ -152,17 +156,20 @@ export async function getCrossChainAddressDriverAccountIdByAddress(
 export async function getCrossChainRepoDriverAccountIdByAddress(
   forge: Forge,
   project: string,
+  chainsToQuery: DbSchema[],
 ): Promise<AccountId> {
   // RepoDriver account IDs are the same across all chains.
-  const availableChain = queryableChains.find(
-    (chain) => dripsContracts[chain] && dripsContracts[chain]!.repoDriver,
+  const availableChain = chainsToQuery.find(
+    (chain) =>
+      dripsContracts[dbSchemaToChain[chain]] &&
+      dripsContracts[dbSchemaToChain[chain]]!.repoDriver,
   );
 
   if (!availableChain) {
     throw new Error('No available chain with initialized contracts.');
   }
 
-  const { repoDriver } = dripsContracts[availableChain]!;
+  const { repoDriver } = dripsContracts[dbSchemaToChain[availableChain]]!;
 
   const nameAsBytesLike = ethers.toUtf8Bytes(project);
 

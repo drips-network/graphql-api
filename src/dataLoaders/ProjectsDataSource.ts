@@ -36,7 +36,7 @@ export default class ProjectsDataSource {
       );
 
       const apiProjectsDataValues = await Promise.all(
-        projectsDataValues.map(toApiProject),
+        projectsDataValues.map((p) => toApiProject(p, chains)),
       );
 
       const filteredProjectsDataValues = apiProjectsDataValues.filter(
@@ -101,7 +101,7 @@ export default class ProjectsDataSource {
     const dbProjects = await projectsQueries.getByUrl(chains, url);
 
     if (!dbProjects?.length) {
-      return [await toProjectRepresentationFromUrl(url)];
+      return [await toProjectRepresentationFromUrl(url, chains)];
     }
 
     if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
@@ -126,7 +126,7 @@ export default class ProjectsDataSource {
 
     return Promise.all(
       projectsDataValues
-        .map(toApiProject)
+        .map((p) => toApiProject(p, chains))
         .filter(Boolean) as ProjectDataValues[],
     );
   }

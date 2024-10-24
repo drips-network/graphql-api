@@ -73,8 +73,10 @@ const userResolvers = {
         (chain) => chainToDbSchema[chain],
       );
 
-      const accountId =
-        await getCrossChainAddressDriverAccountIdByAddress(address);
+      const accountId = await getCrossChainAddressDriverAccountIdByAddress(
+        address,
+        dbSchemasToQuery,
+      );
 
       return toResolverUser(dbSchemasToQuery, accountId);
     },

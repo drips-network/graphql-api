@@ -37,7 +37,7 @@ export async function doesRepoExists(url: string) {
   return res.status === 200;
 }
 
-export function toApiProject(project: ProjectDataValues) {
+export function toApiProject(project: ProjectDataValues, chains: DbSchema[]) {
   if (!project) {
     return null;
   }
@@ -55,7 +55,7 @@ export function toApiProject(project: ProjectDataValues) {
     return project;
   }
 
-  return toProjectRepresentation(project);
+  return toProjectRepresentation(project, chains);
 }
 
 function toForge(forge: string): Forge {
@@ -69,7 +69,10 @@ function toForge(forge: string): Forge {
   }
 }
 
-export async function toProjectRepresentationFromUrl(url: string) {
+export async function toProjectRepresentationFromUrl(
+  url: string,
+  chains: DbSchema[],
+) {
   const pattern =
     /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
   const match = url.match(pattern);
@@ -86,6 +89,7 @@ export async function toProjectRepresentationFromUrl(url: string) {
     id: await getCrossChainRepoDriverAccountIdByAddress(
       forge,
       `${ownerName}/${repoName}`,
+      chains,
     ),
     name: `${ownerName}/${repoName}`,
     forge,
@@ -106,13 +110,14 @@ function toUrl(forge: Forge, projectName: string): string {
 
 export async function toProjectRepresentation(
   project: ProjectDataValues,
+  chains: DbSchema[],
 ): Promise<ProjectDataValues> {
   const { name, forge } = project;
 
   assert(name && forge, 'Project name and forge must be defined.');
 
   return {
-    id: await getCrossChainRepoDriverAccountIdByAddress(forge, name),
+    id: await getCrossChainRepoDriverAccountIdByAddress(forge, name, chains),
     name,
     forge,
     url: toUrl(forge, name),
@@ -215,7 +220,9 @@ export async function toResolverProjects(
           if (project.chain === chain) {
             return mapClaimedProjectChainData(project, chain, chains);
           }
-          const fakeUnclaimedProject = await toProjectRepresentation(project);
+          const fakeUnclaimedProject = await toProjectRepresentation(project, [
+            chain,
+          ]);
 
           return mapUnClaimedProjectChainData(
             fakeUnclaimedProject,
@@ -278,6 +285,7 @@ export async function mergeProjects(
         if (!projectOnChain) {
           projectOnChain = await toProjectRepresentationFromUrl(
             projectBase.url!,
+            chains,
           );
         }
 
