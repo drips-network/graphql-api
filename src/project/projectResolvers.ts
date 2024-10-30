@@ -469,9 +469,6 @@ const projectResolvers = {
       parentProjectInfo: { projectId, projectChain },
     }: ResolverUnClaimedProjectData) =>
       getWithdrawableBalancesOnChain(projectId, projectChain),
-    owner: (
-      projectData: ResolverClaimedProjectData,
-    ): AddressDriverAccount | null => projectData.owner,
   },
   Avatar: {
     __resolveType(parent: { cid: string } | { emoji: string }) {

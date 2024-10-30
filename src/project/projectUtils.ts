@@ -1,4 +1,3 @@
-import { ZeroAddress } from 'ethers';
 import type {
   DbSchema,
   Forge,
@@ -126,8 +125,6 @@ export async function toProjectRepresentation(
       project.verificationStatus ?? ProjectVerificationStatus.Unclaimed,
     isValid: true,
     chain: project.chain,
-    ownerAddress: project.ownerAddress || ZeroAddress,
-    ownerAccountId: project.ownerAccountId || '0',
   } as ProjectDataValues;
 }
 
@@ -193,11 +190,6 @@ function mapUnClaimedProjectChainData(
     support: [], // Will be populated by the resolver.
     totalEarned: [], // Will be populated by the resolver.
     withdrawableBalances: [], // Will be populated by the resolver.
-    owner: {
-      driver: Driver.ADDRESS,
-      accountId: fakeUnclaimedProject.ownerAccountId,
-      address: fakeUnclaimedProject.ownerAddress as string,
-    },
   } as ResolverUnClaimedProjectData;
 }
 
