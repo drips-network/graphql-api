@@ -54,6 +54,7 @@ const projectTypeDef = gql`
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
     withdrawableBalances: [WithdrawableBalance!]!
+    owner: AddressDriverAccount!
   }
 
   input ProjectWhereInput {
