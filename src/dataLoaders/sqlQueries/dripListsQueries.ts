@@ -10,7 +10,7 @@ async function getDripListsByFilter(
   where?: DripListWhereInput,
 ) {
   const baseSQL = (schema: DbSchema) => `
-    SELECT "id", "isValid", "name", "creator", "description", "ownerAddress", "ownerAccountId", "latestVotingRoundId", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
+    SELECT "id", "isValid", "isVisible", "name", "creator", "description", "ownerAddress", "ownerAccountId", "latestVotingRoundId", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."DripLists"
   `;
 
@@ -47,7 +47,7 @@ async function getDripListsByIds(
   dripListIds: DripListId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
-    SELECT "id", "isValid", "ownerAddress", "ownerAccountId", "name", "latestVotingRoundId", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
+    SELECT "id", "isValid", "isVisible", "ownerAddress", "ownerAccountId", "name", "latestVotingRoundId", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."DripLists"
   `;
 

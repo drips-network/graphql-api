@@ -50,6 +50,7 @@ export async function toResolverDripLists(
           splits: [], // Will be populated by the resolver.
           latestVotingRoundId: dripList.latestVotingRoundId,
           totalEarned: [], // Will be populated by the resolver.
+          isVisible: dripList.isVisible,
         } as ResolverDripList;
       }),
     )

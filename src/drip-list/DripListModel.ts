@@ -23,6 +23,7 @@ export default class DripListModel extends Model<
   public declare ownerAccountId: AccountId;
   public declare previousOwnerAddress: AddressLike;
   public declare latestVotingRoundId: UUID | null;
+  public declare isVisible: boolean;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
@@ -61,6 +62,10 @@ export default class DripListModel extends Model<
         },
         previousOwnerAddress: {
           type: DataTypes.STRING,
+          allowNull: false,
+        },
+        isVisible: {
+          type: DataTypes.BOOLEAN,
           allowNull: false,
         },
       },

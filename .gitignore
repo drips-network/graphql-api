@@ -138,3 +138,7 @@ dist
 
 # Google Cloud
 app.yaml
+
+# IntelliJ
+.idea
+

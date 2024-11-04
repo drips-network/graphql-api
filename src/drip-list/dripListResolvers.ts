@@ -86,6 +86,7 @@ const dripListResolvers = {
     account: (dripList: ResolverDripList): NftDriverAccount => dripList.account,
     name: (dripListData: ResolverDripListData) =>
       dripListData.name ?? 'Unnamed Drip List',
+    isVisible: ({ isVisible }: ResolverDripListData) => isVisible,
     creator: (dripListData: ResolverDripListData) => dripListData.creator,
     description: (dripListData: ResolverDripListData) =>
       dripListData.description,

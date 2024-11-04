@@ -14,6 +14,7 @@ const dripListTypeDef = gql`
     latestVotingRoundId: String
     totalEarned: [Amount!]!
     latestMetadataIpfsHash: String
+    isVisible: Boolean!
   }
 
   input DripListWhereInput {
