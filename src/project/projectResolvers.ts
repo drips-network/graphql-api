@@ -136,6 +136,7 @@ const projectResolvers = {
     source: (project: ResolverProject): Source => project.source,
     account: (project: ResolverProject): RepoDriverAccount => project.account,
     chainData: (project: ResolverProject): ProjectData[] => project.chainData,
+    isVisible: (project: ResolverProject): boolean => project.isVisible,
   },
   ProjectData: {
     __resolveType(parent: ProjectData) {

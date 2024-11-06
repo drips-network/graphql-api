@@ -13,7 +13,7 @@ async function getProjectByUrl(
   url: string,
 ): Promise<ProjectDataValues[]> {
   const baseSQL = (schema: DbSchema) => `
-    SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
+    SELECT "id", "isValid", "isVisible", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
     FROM "${schema}"."GitProjects"
   `;
 
@@ -43,7 +43,7 @@ async function getProjectsByFilter(
 ): Promise<ProjectDataValues[]> {
   const baseSQL = (schema: DbSchema) =>
     `SELECT 
-      "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain 
+      "id", "isValid", "isVisible", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain 
      FROM "${schema}"."GitProjects" `;
 
   const conditions: string[] = ['"isValid" = true'];
@@ -91,7 +91,7 @@ async function getProjectsByIds(
   projectIds: ProjectId[],
 ): Promise<ProjectDataValues[]> {
   const baseSQL = (schema: DbSchema) => `
-  SELECT "id", "isValid", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
+  SELECT "id", "isValid", "isVisible", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", '${schema}' AS chain
   FROM "${schema}"."GitProjects"
 `;
 

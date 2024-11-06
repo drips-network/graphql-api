@@ -41,6 +41,7 @@ export default class ProjectModel extends Model<
   public declare color: string | null;
   public declare description: string | null;
   public declare verificationStatus: ProjectVerificationStatus;
+  public declare isVisible: boolean;
 
   public declare claimedAt: Date | null;
 
@@ -98,6 +99,10 @@ export default class ProjectModel extends Model<
         description: {
           type: DataTypes.TEXT,
           allowNull: true,
+        },
+        isVisible: {
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
         },
       },
       {

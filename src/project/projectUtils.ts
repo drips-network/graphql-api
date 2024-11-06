@@ -12,8 +12,8 @@ import { ProjectVerificationStatus } from './ProjectModel';
 import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
 import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
-import { Driver } from '../generated/graphql';
 import type { Forge as GraphQlForge, Splits } from '../generated/graphql';
+import { Driver } from '../generated/graphql';
 import { singleOrDefault } from '../utils/linq';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
@@ -97,6 +97,7 @@ export async function toProjectRepresentationFromUrl(
     url,
     verificationStatus: ProjectVerificationStatus.Unclaimed,
     isValid: true,
+    isVisible: true,
   } as ProjectDataValues;
 }
 
@@ -253,6 +254,7 @@ export async function toResolverProjects(
             .ownerName,
           forge: (project.forge as GraphQlForge) || shouldNeverHappen(),
         },
+        isVisible: project.isVisible,
         chainData,
       } as ResolverProject;
     }),
@@ -304,7 +306,7 @@ export async function mergeProjects(
     }),
   );
 
-  const mergedProject = {
+  return {
     account: {
       accountId: projectBase.id,
       driver: Driver.REPO,
@@ -317,8 +319,7 @@ export async function mergeProjects(
         .ownerName,
       forge: (projectBase.forge as GraphQlForge) || shouldNeverHappen(),
     },
+    isVisible: projectBase.isVisible,
     chainData,
   } as ResolverProject;
-
-  return mergedProject;
 }

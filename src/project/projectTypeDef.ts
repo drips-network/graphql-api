@@ -29,6 +29,7 @@ const projectTypeDef = gql`
     source: Source!
     account: RepoDriverAccount!
     chainData: [ProjectData!]!
+    isVisible: Boolean!
   }
 
   union ProjectData = ClaimedProjectData | UnClaimedProjectData
