@@ -126,6 +126,7 @@ export async function toProjectRepresentation(
     verificationStatus:
       project.verificationStatus ?? ProjectVerificationStatus.Unclaimed,
     isValid: true,
+    isVisible: project.isVisible,
     chain: project.chain,
     ownerAddress: project.ownerAddress || ZeroAddress,
     ownerAccountId: project.ownerAccountId || '0',
