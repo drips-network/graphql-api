@@ -380,6 +380,8 @@ const projectResolvers = {
       parentProjectInfo: { projectId, projectChain },
     }: ResolverUnClaimedProjectData) =>
       getLatestMetadataHashOnChain(projectId, projectChain),
+    lastProcessedIpfsHash: (projectData: ResolverClaimedProjectData) =>
+      projectData.lastProcessedIpfsHash,
   },
   UnClaimedProjectData: {
     verificationStatus: (projectData: ResolverUnClaimedProjectData) =>

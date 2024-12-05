@@ -42,6 +42,7 @@ export default class ProjectModel extends Model<
   public declare description: string | null;
   public declare verificationStatus: ProjectVerificationStatus;
   public declare isVisible: boolean;
+  public declare lastProcessedIpfsHash: string | null;
 
   public declare claimedAt: Date | null;
 
@@ -103,6 +104,10 @@ export default class ProjectModel extends Model<
         isVisible: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
+        },
+        lastProcessedIpfsHash: {
+          type: DataTypes.TEXT,
+          allowNull: true,
         },
       },
       {
