@@ -209,7 +209,7 @@ const startServer = async () => {
 
   await new Promise<void>((resolve) =>
     // eslint-disable-next-line no-promise-executor-return
-    httpServer.listen({ port: appSettings.port }, resolve),
+    httpServer.listen(appSettings.port, '::', resolve),
   );
 
   console.log(`config: ${JSON.stringify(appSettings, null, 2)}`);
