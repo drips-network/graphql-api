@@ -47,7 +47,7 @@ async function getDripListsByIds(
   dripListIds: DripListId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
-    SELECT "id", "isValid", "isVisible", "ownerAddress", "ownerAccountId", "name", "latestVotingRoundId", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
+    SELECT "id", "isValid", "isVisible", "ownerAddress", "ownerAccountId", "name", "latestVotingRoundId", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain
     FROM "${schema}"."DripLists"
   `;
 

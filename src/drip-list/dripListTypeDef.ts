@@ -15,6 +15,7 @@ const dripListTypeDef = gql`
     totalEarned: [Amount!]!
     latestMetadataIpfsHash: String
     isVisible: Boolean!
+    lastProcessedIpfsHash: String
   }
 
   input DripListWhereInput {

@@ -297,6 +297,8 @@ const dripListResolvers = {
       parentDripListInfo: { dripListChain, dripListId },
     }: ResolverDripListData) =>
       getLatestMetadataHashOnChain(dripListId, dripListChain),
+    lastProcessedIpfsHash: (dripListData: ResolverDripListData) =>
+      dripListData.lastProcessedIpfsHash,
   },
 };
 
