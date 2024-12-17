@@ -16,7 +16,7 @@ import type {
   Forge,
   ProjectId,
 } from './types';
-import FailoverJsonRpcProvider from './FailoverProvider';
+import FailoverJsonRpcProvider from './FailoverJsonRpcProvider';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
 const chainConfigs: Record<
@@ -95,7 +95,14 @@ Object.values(SupportedChain).forEach((network) => {
     rpcEndpoints.push(fallbackEndpoint);
   }
 
-  providers[network] = new FailoverJsonRpcProvider(rpcEndpoints);
+  providers[network] = new FailoverJsonRpcProvider(
+    rpcEndpoints,
+    undefined,
+    undefined,
+    {
+      logger: console,
+    },
+  );
 });
 
 const dripsContracts: {
