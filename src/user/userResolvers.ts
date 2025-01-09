@@ -36,8 +36,9 @@ import toResolverUser from './userUtils';
 import { getCrossChainAddressDriverAccountIdByAddress } from '../common/dripsContracts';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
-import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
-import getTokens from '../dataLoaders/sqlQueries/getTokens';
+import getWithdrawableBalancesOnChain, {
+  getRelevantTokens,
+} from '../utils/getWithdrawableBalances';
 
 const userResolvers = {
   Query: {
@@ -109,18 +110,27 @@ const userResolvers = {
 
       const metadata = chainMetadata[userChain]?.metadata ?? {};
 
-      const [assetConfigs, incomingStreams] = await Promise.all([
-        await getAssetConfigs(accountId as AddressDriverId, metadata, [
-          userChain,
+      const [assetConfigs, incomingStreams, relevantTokensForIncomingBalance] =
+        await Promise.all([
+          await getAssetConfigs(accountId as AddressDriverId, metadata, [
+            userChain,
+          ]),
+          streamsDataSource.getUserIncomingStreams(
+            [userChain],
+            accountId as AddressDriverId,
+          ),
+          getRelevantTokens(accountId as AccountId, userChain),
+        ]);
+
+      const allTokens = Array.from(
+        new Set([
+          ...assetConfigs[userChain].map((ac) => ac.tokenAddress),
+          ...relevantTokensForIncomingBalance,
         ]),
-        streamsDataSource.getUserIncomingStreams(
-          [userChain],
-          accountId as AddressDriverId,
-        ),
-      ]);
+      );
 
       return Promise.all(
-        (await getTokens(userChain)).map(async (tokenAddress) => {
+        allTokens.map(async (tokenAddress) => {
           const outgoingAssetConfig = assetConfigs[userChain].find(
             (ac) => ac.tokenAddress === tokenAddress,
           );
