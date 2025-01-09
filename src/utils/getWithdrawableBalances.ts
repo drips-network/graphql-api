@@ -1,40 +1,7 @@
 import type { AccountId, DbSchema } from '../common/types';
 import dripsContracts from '../common/dripsContracts';
-import streamReceiverSeenEventQueries from '../dataLoaders/sqlQueries/streamReceiverSeenEventQueries';
-import streamsSetEventsQueries from '../dataLoaders/sqlQueries/streamsSetEventsQueries';
-import givenEventsQueries from '../dataLoaders/sqlQueries/givenEventsQueries';
-import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
 import { dbSchemaToChain } from './chainSchemaMappings';
-
-export async function getRelevantTokens(accountId: AccountId, chain: DbSchema) {
-  const streamReceiverSeenEventsForUser =
-    await streamReceiverSeenEventQueries.getByAccountId([chain], accountId);
-
-  const [
-    incomingStreamTokenAddresses,
-    incomingGivesTokenAddresses,
-    incomingSplitEventsTokenAddresses,
-  ] = await Promise.all([
-    streamsSetEventsQueries.getDistinctErc20ByReceiversHashes(
-      [chain],
-      streamReceiverSeenEventsForUser.map((event) => event.receiversHash),
-    ),
-    givenEventsQueries.getDistinctErc20ByReceiver([chain], accountId),
-    splitEventsQueries.getDistinctErc20ByReceiver([chain], accountId),
-  ]);
-
-  return [
-    ...incomingStreamTokenAddresses,
-    ...incomingGivesTokenAddresses,
-    ...incomingSplitEventsTokenAddresses,
-  ].reduce<string[]>((acc, tokenAddress) => {
-    if (!acc.includes(tokenAddress)) {
-      return [...acc, tokenAddress];
-    }
-
-    return acc;
-  }, []);
-}
+import getTokens from '../dataLoaders/sqlQueries/getTokens';
 
 export async function getTokenBalancesOnChain(
   accountId: AccountId,
@@ -60,7 +27,7 @@ export default async function getWithdrawableBalancesOnChain(
   accountId: AccountId,
   chain: DbSchema,
 ) {
-  const relevantTokenAddresses = await getRelevantTokens(accountId, chain);
+  const relevantTokenAddresses = await getTokens(chain);
 
   const balances: {
     [tokenAddress: string]: {
