@@ -123,12 +123,13 @@ export default function buildAssetConfigs(
           const durationInMilliseconds = eventConfig.duration * BigInt(1000);
           const startTimeInMilliseconds = BigInt(
             streamsSetEvent.blockTimestamp.getTime(),
-          ).toString();
+          );
 
           if (eventConfig.start) {
             if (eventConfig.duration) {
               endsAt = new Date(
-                startTimeInMilliseconds + durationInMilliseconds,
+                Number(startTimeInMilliseconds) +
+                  Number(durationInMilliseconds),
               );
             }
           } else if (eventConfig.duration) {

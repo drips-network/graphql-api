@@ -241,7 +241,7 @@ export function assetOutgoingBalanceTimeline(
                   ? new Date(startDate.getTime() + durationSeconds * 1000)
                   : new Date(timestamp.getTime() + durationSeconds * 1000);
 
-                if (endDate.getTime() < ts.getTime()) return acc;
+                if (endDate.getTime() <= ts.getTime()) return acc;
               }
 
               return acc + BigInt(amountPerSecond.amount);
