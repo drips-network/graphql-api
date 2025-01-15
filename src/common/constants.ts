@@ -37,4 +37,5 @@ export const DB_SCHEMAS = [
   'polygon_amoy',
   'base_sepolia',
   'filecoin',
+  'metis',
 ] as const;
