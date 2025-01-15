@@ -51,6 +51,7 @@ export async function toResolverDripLists(
           latestVotingRoundId: dripList.latestVotingRoundId,
           totalEarned: [], // Will be populated by the resolver.
           isVisible: dripList.isVisible,
+          lastProcessedIpfsHash: dripList.lastProcessedIpfsHash,
         } as ResolverDripList;
       }),
     )
