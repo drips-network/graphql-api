@@ -57,6 +57,11 @@ const chainConfigs: Record<
     addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
   },
+  LOCALTESTNET: {
+    dripsAddress: '0xC776EFe2B6EaA34AF16Bc01e98081775E51C7103',
+    addressDriverAddress: '0xbb5799E5558406F892073850bb2BdCaE1303B5d0',
+    repoDriverAddress: '0x273Ef3B20D92a9C8F8941b0cbBCA4B0259e807Ee',
+  },
 };
 
 const { rpcConfig } = appSettings;
