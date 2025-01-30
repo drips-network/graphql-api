@@ -58,9 +58,9 @@ const chainConfigs: Record<
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
   },
   LOCALTESTNET: {
-    dripsAddress: '0xC776EFe2B6EaA34AF16Bc01e98081775E51C7103',
-    addressDriverAddress: '0xbb5799E5558406F892073850bb2BdCaE1303B5d0',
-    repoDriverAddress: '0x273Ef3B20D92a9C8F8941b0cbBCA4B0259e807Ee',
+    dripsAddress: '0x7CBbD3FdF9E5eb359E6D9B12848c5Faa81629944',
+    addressDriverAddress: '0x1707De7b41A3915F990A663d27AD3a952D50151d',
+    repoDriverAddress: '0x971e08fc533d2A5f228c7944E511611dA3B56B24',
   },
 };
 
