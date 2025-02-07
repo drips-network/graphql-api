@@ -58,9 +58,9 @@ const chainConfigs: Record<
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
   },
   METIS: {
-    dripsAddress: '0x6dc0d80E170B0f3AeB5b7354e5deE674F02202d7',
-    addressDriverAddress: '0x749c34e4028c89c8308c78860C659E5909204d4a',
-    repoDriverAddress: '0x2dA9a9322BC5FFE1DEE59Ae90f2E4656Cb552BB0',
+    dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
+    addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
+    repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
   },
   LOCALTESTNET: {
     dripsAddress: '0x7CBbD3FdF9E5eb359E6D9B12848c5Faa81629944',
