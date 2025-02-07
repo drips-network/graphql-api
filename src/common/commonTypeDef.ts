@@ -138,6 +138,7 @@ const commonTypeDef = gql`
     BASE_SEPOLIA
     FILECOIN
     METIS
+    LOCALTESTNET
   }
 
   type WithdrawableBalance {

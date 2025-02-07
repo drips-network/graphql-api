@@ -5,6 +5,7 @@ export const SUPPORTED_NETWORKS = [
   'sepolia',
   'goerli',
   'localtestnet',
+  'metis',
 ] as const;
 
 export const COMMON_EVENT_INIT_ATTRIBUTES = {
