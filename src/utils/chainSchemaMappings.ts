@@ -9,6 +9,7 @@ export const dbSchemaToChain: Record<DbSchema, SupportedChain> = {
   base_sepolia: SupportedChain.BASE_SEPOLIA,
   filecoin: SupportedChain.FILECOIN,
   metis: SupportedChain.METIS,
+  localtestnet: SupportedChain.LOCALTESTNET,
 };
 
 export const chainToDbSchema: Record<SupportedChain, DbSchema> = {
@@ -19,4 +20,5 @@ export const chainToDbSchema: Record<SupportedChain, DbSchema> = {
   [SupportedChain.BASE_SEPOLIA]: 'base_sepolia',
   [SupportedChain.FILECOIN]: 'filecoin',
   [SupportedChain.METIS]: 'metis',
+  [SupportedChain.LOCALTESTNET]: 'localtestnet',
 };

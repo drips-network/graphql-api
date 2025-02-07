@@ -12,9 +12,9 @@
     "test:e2e": "docker compose up --attach app --build --exit-code-from app && docker compose down",
     "build:graphql": "graphql-codegen",
     "build:contracts": "typechain --target=ethers-v6 --out-dir ./src/generated/contracts ./src/abi/**.json",
-    "build": "./scripts/check-env-vars.sh && npm run build:contracts && npm run build:graphql && tsc",
+    "build": "npm run build:contracts && npm run build:graphql && tsc",
     "dev": "npx nodemon",
-    "start": "node dist/index.js",
+    "start": "./scripts/check-env-vars.sh && node dist/index.js",
     "check": "tsc --noEmit"
   },
   "keywords": [],
