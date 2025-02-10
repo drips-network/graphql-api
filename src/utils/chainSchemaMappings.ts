@@ -8,6 +8,7 @@ export const dbSchemaToChain: Record<DbSchema, SupportedChain> = {
   polygon_amoy: SupportedChain.POLYGON_AMOY,
   base_sepolia: SupportedChain.BASE_SEPOLIA,
   filecoin: SupportedChain.FILECOIN,
+  metis: SupportedChain.METIS,
   localtestnet: SupportedChain.LOCALTESTNET,
 };
 
@@ -18,5 +19,6 @@ export const chainToDbSchema: Record<SupportedChain, DbSchema> = {
   [SupportedChain.POLYGON_AMOY]: 'polygon_amoy',
   [SupportedChain.BASE_SEPOLIA]: 'base_sepolia',
   [SupportedChain.FILECOIN]: 'filecoin',
+  [SupportedChain.METIS]: 'metis',
   [SupportedChain.LOCALTESTNET]: 'localtestnet',
 };

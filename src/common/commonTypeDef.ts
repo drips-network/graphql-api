@@ -137,6 +137,7 @@ const commonTypeDef = gql`
     POLYGON_AMOY
     BASE_SEPOLIA
     FILECOIN
+    METIS
     LOCALTESTNET
   }
 

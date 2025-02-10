@@ -5,6 +5,7 @@ export const SUPPORTED_NETWORKS = [
   'sepolia',
   'goerli',
   'localtestnet',
+  'metis',
 ] as const;
 
 export const COMMON_EVENT_INIT_ATTRIBUTES = {
@@ -42,5 +43,6 @@ export const DB_SCHEMAS = [
   'polygon_amoy',
   'base_sepolia',
   'filecoin',
+  'metis',
   'localtestnet',
 ] as const;
