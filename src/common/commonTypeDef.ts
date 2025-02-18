@@ -139,6 +139,7 @@ const commonTypeDef = gql`
     FILECOIN
     METIS
     LOCALTESTNET
+    OPTIMISM
   }
 
   type WithdrawableBalance {

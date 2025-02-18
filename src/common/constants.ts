@@ -1,13 +1,5 @@
 import { DataTypes } from 'sequelize';
 
-export const SUPPORTED_NETWORKS = [
-  'mainnet',
-  'sepolia',
-  'goerli',
-  'localtestnet',
-  'metis',
-] as const;
-
 export const COMMON_EVENT_INIT_ATTRIBUTES = {
   transactionHash: {
     type: DataTypes.STRING,
@@ -45,4 +37,5 @@ export const DB_SCHEMAS = [
   'filecoin',
   'metis',
   'localtestnet',
+  'optimism',
 ] as const;
