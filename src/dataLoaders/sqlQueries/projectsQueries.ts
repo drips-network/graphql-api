@@ -6,7 +6,7 @@ import type {
 } from '../../generated/graphql';
 import type { ProjectDataValues } from '../../project/ProjectModel';
 import ProjectModel from '../../project/ProjectModel';
-import type { DbSchema, ProjectId } from '../../common/types';
+import type { DbSchema, RepoDriverId } from '../../common/types';
 
 async function getProjectByUrl(
   chains: DbSchema[],
@@ -88,7 +88,7 @@ async function getProjectsByFilter(
 
 async function getProjectsByIds(
   chains: DbSchema[],
-  projectIds: ProjectId[],
+  projectIds: RepoDriverId[],
 ): Promise<ProjectDataValues[]> {
   const baseSQL = (schema: DbSchema) => `
   SELECT "id", "isValid", "isVisible", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain

@@ -2,7 +2,7 @@ import { isAddress } from 'ethers';
 import { SortDirection } from '../generated/graphql';
 import {
   isGitHubUrl,
-  isProjectId,
+  isRepoDriverId,
   isProjectVerificationStatus,
 } from '../utils/assert';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
@@ -17,7 +17,7 @@ export default function validateProjectsInput(
 ) {
   const { where, sort, chains } = projectsQueryArgs;
 
-  if (where?.id && !isProjectId(where.id)) {
+  if (where?.id && !isRepoDriverId(where.id)) {
     throw new Error('Invalid project id.');
   }
 

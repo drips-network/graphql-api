@@ -1,5 +1,5 @@
 import type {
-  ProjectId,
+  RepoDriverId,
   ResolverClaimedProjectData,
   ResolverProject,
   ResolverUnClaimedProjectData,
@@ -29,7 +29,7 @@ import queryableChains from '../common/queryableChains';
 import type { ProjectDataValues } from './ProjectModel';
 import validateProjectsInput from './projectValidators';
 import type { DripListDataValues } from '../drip-list/DripListModel';
-import assert, { isGitHubUrl, isProjectId } from '../utils/assert';
+import assert, { isGitHubUrl, isRepoDriverId } from '../utils/assert';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import { toResolverDripList } from '../drip-list/dripListUtils';
@@ -66,10 +66,10 @@ const projectResolvers = {
     },
     projectById: async (
       _: undefined,
-      { id, chains }: { id: ProjectId; chains?: SupportedChain[] },
+      { id, chains }: { id: RepoDriverId; chains?: SupportedChain[] },
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<ResolverProject | null> => {
-      assert(isProjectId(id));
+      assert(isRepoDriverId(id));
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -111,7 +111,7 @@ const projectResolvers = {
       {
         projectId,
         chains,
-      }: { projectId: ProjectId; chains?: SupportedChain[] },
+      }: { projectId: RepoDriverId; chains?: SupportedChain[] },
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<
       {
@@ -120,7 +120,7 @@ const projectResolvers = {
         chain: SupportedChain;
       }[]
     > => {
-      assert(isProjectId(projectId));
+      assert(isRepoDriverId(projectId));
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -294,13 +294,13 @@ const projectResolvers = {
         dataSources: {
           projectsDataSource,
           dripListsDataSource,
-          projectAndDripListSupportDataSource,
+          supportDataSource,
         },
       }: Context,
     ) => {
       // `RepoDriverSplitReceiver`s that represent the Project as a receiver.
       const dbRepoDriverSplitReceivers =
-        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByProjectIdOnChain(
+        await supportDataSource.getSplitSupportByProjectIdOnChain(
           projectId,
           projectChain,
         );
@@ -360,7 +360,7 @@ const projectResolvers = {
 
       // `GivenEventModelDataValues`s that represent one time donations to the Project.
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
+        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
           projectId,
           projectChain,
         );
@@ -395,13 +395,13 @@ const projectResolvers = {
         dataSources: {
           projectsDataSource,
           dripListsDataSource,
-          projectAndDripListSupportDataSource,
+          supportDataSource,
         },
       }: Context,
     ) => {
       // `RepoDriverSplitReceiver`s that represent the Project as a receiver.
       const dbRepoDriverSplitReceivers =
-        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByProjectIdOnChain(
+        await supportDataSource.getSplitSupportByProjectIdOnChain(
           projectId,
           projectChain,
         );
@@ -461,7 +461,7 @@ const projectResolvers = {
 
       // `GivenEventModelDataValues`s that represent one time donations to the Project.
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
+        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
           projectId,
           projectChain,
         );

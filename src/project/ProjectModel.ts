@@ -9,7 +9,7 @@ import type {
   AccountId,
   CommonDataValues,
   Forge,
-  ProjectId,
+  RepoDriverId,
 } from '../common/types';
 import { FORGES_MAP } from '../common/constants';
 
@@ -28,7 +28,7 @@ export default class ProjectModel extends Model<
   InferAttributes<ProjectModel>,
   InferCreationAttributes<ProjectModel>
 > {
-  public declare id: ProjectId; // The `accountId` from `OwnerUpdatedRequested` event.
+  public declare id: RepoDriverId; // The `accountId` from `OwnerUpdatedRequested` event.
   public declare isValid: boolean;
   public declare name: string | null;
   public declare forge: Forge | null;

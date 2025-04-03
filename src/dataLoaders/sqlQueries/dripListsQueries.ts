@@ -1,5 +1,5 @@
 import { QueryTypes } from 'sequelize';
-import type { DbSchema, DripListId } from '../../common/types';
+import type { DbSchema, NftDriverId } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
 import type { DripListDataValues } from '../../drip-list/DripListModel';
 import DripListModel from '../../drip-list/DripListModel';
@@ -44,7 +44,7 @@ async function getDripListsByFilter(
 
 async function getDripListsByIds(
   chains: DbSchema[],
-  dripListIds: DripListId[],
+  dripListIds: NftDriverId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
     SELECT "id", "isValid", "isVisible", "ownerAddress", "ownerAccountId", "name", "latestVotingRoundId", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain

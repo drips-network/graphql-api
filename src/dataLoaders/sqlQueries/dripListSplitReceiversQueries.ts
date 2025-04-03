@@ -1,13 +1,13 @@
 import { QueryTypes } from 'sequelize';
 import { DependencyType } from '../../common/types';
-import type { DbSchema, DripListId, ProjectId } from '../../common/types';
+import type { DbSchema, NftDriverId, RepoDriverId } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
 import type { DripListSplitReceiverModelDataValues } from '../../models/DripListSplitReceiverModel';
 import DripListSplitReceiverModel from '../../models/DripListSplitReceiverModel';
 
 async function getDripListSplitReceiversByFundeeDripListIds(
   chains: DbSchema[],
-  fundeeDripListIds: DripListId[],
+  fundeeDripListIds: NftDriverId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeDripListId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt", '${schema}' AS chain
@@ -38,7 +38,7 @@ async function getDripListSplitReceiversByFundeeDripListIds(
 
 async function getDripListSplitReceiversByFunderProjectIds(
   chains: DbSchema[],
-  funderProjectIds: ProjectId[],
+  funderProjectIds: RepoDriverId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeDripListId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt",'${schema}' AS chain
@@ -71,7 +71,7 @@ async function getDripListSplitReceiversByFunderProjectIds(
 
 async function getDripListSplitReceiversByFunderDripListIds(
   chains: DbSchema[],
-  funderDripListIds: DripListId[],
+  funderDripListIds: NftDriverId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
     SELECT "id", "fundeeDripListId", "funderProjectId", "funderDripListId", "weight", "type"::TEXT, "blockTimestamp", "createdAt", "updatedAt",'${schema}' AS chain

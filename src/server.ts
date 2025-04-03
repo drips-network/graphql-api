@@ -27,10 +27,11 @@ import ReceiversOfTypeAddressDataSource from './dataLoaders/ReceiversOfTypeAddre
 import DripListsDataSource from './dataLoaders/DripListsDataSource';
 import ReceiversOfTypeDripListDataSource from './dataLoaders/ReceiversOfTypeDripListDataSource';
 import GivenEventsDataSource from './dataLoaders/GivenEventsDataSource';
-import ProjectAndDripListSupportDataSource from './dataLoaders/ProjectAndDripListSupportDataSource';
+import SupportDataSource from './dataLoaders/SupportDataSource';
 import UsersDataSource from './user/UserDataSource';
 import StreamsDataSource from './stream/StreamsDataSource';
 import TotalEarnedDataSource from './dataLoaders/TotalEarnedDataSource';
+import EcosystemsDataSource from './dataLoaders/EcosystemsDataSource';
 
 export interface Context {
   dataSources: {
@@ -40,10 +41,11 @@ export interface Context {
     receiversOfTypeAddressDataSource: ReceiversOfTypeAddressDataSource;
     receiversOfTypeProjectDataSource: ReceiversOfTypeProjectDataSource;
     receiversOfTypeDripListDataSource: ReceiversOfTypeDripListDataSource;
-    projectAndDripListSupportDataSource: ProjectAndDripListSupportDataSource;
+    supportDataSource: SupportDataSource;
     usersDataSource: UsersDataSource;
     streamsDataSource: StreamsDataSource;
     totalEarnedDataSource: TotalEarnedDataSource;
+    ecosystemsDataSource: EcosystemsDataSource;
   };
 }
 
@@ -195,12 +197,12 @@ const startServer = async () => {
               new ReceiversOfTypeProjectDataSource(),
             receiversOfTypeDripListDataSource:
               new ReceiversOfTypeDripListDataSource(),
-            projectAndDripListSupportDataSource:
-              new ProjectAndDripListSupportDataSource(),
+            supportDataSource: new SupportDataSource(),
             givesDb: new GivenEventsDataSource(),
             usersDataSource: new UsersDataSource(),
             streamsDataSource: new StreamsDataSource(),
             totalEarnedDataSource: new TotalEarnedDataSource(),
+            ecosystemsDataSource: new EcosystemsDataSource(),
           },
         };
       },

@@ -5,16 +5,16 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
-import type { UUID } from 'crypto';
 import type { AccountId, CommonDataValues, NftDriverId } from '../common/types';
 
-export type DripListDataValues = DripListModel['dataValues'] & CommonDataValues;
+export type EcosystemDataValues = EcosystemModel['dataValues'] &
+  CommonDataValues;
 
-export default class DripListModel extends Model<
-  InferAttributes<DripListModel>,
-  InferCreationAttributes<DripListModel>
+export default class EcosystemModel extends Model<
+  InferAttributes<EcosystemModel>,
+  InferCreationAttributes<EcosystemModel>
 > {
-  public declare id: NftDriverId; // The `tokenId` from `TransferEvent` event.
+  public declare id: NftDriverId;
   public declare isValid: boolean;
   public declare name: string | null;
   public declare creator: AddressLike;
@@ -22,7 +22,6 @@ export default class DripListModel extends Model<
   public declare ownerAddress: AddressLike;
   public declare ownerAccountId: AccountId;
   public declare previousOwnerAddress: AddressLike;
-  public declare latestVotingRoundId: UUID | null;
   public declare isVisible: boolean;
   public declare lastProcessedIpfsHash: string | null;
 
@@ -49,10 +48,6 @@ export default class DripListModel extends Model<
           type: DataTypes.STRING,
           allowNull: true,
         },
-        latestVotingRoundId: {
-          type: DataTypes.UUID,
-          allowNull: true,
-        },
         description: {
           type: DataTypes.TEXT,
           allowNull: true,
@@ -76,7 +71,7 @@ export default class DripListModel extends Model<
       },
       {
         sequelize,
-        tableName: 'DripLists',
+        tableName: 'Ecosystems',
       },
     );
   }

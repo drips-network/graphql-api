@@ -1,6 +1,7 @@
 import commonResolvers from './common/commonResolvers';
 import dateScalar from './common/date';
 import dripListResolvers from './drip-list/dripListResolvers';
+import ecosystemResolvers from './ecosystem/ecosystemResolvers';
 import projectResolvers from './project/projectResolvers';
 import streamResolvers from './stream/streamResolvers';
 import userResolvers from './user/userResolvers';
@@ -9,6 +10,7 @@ const resolvers = {
   Query: {
     ...projectResolvers.Query,
     ...dripListResolvers.Query,
+    ...ecosystemResolvers.Query,
     ...userResolvers.Query,
     ...streamResolvers.Query,
   },
@@ -33,6 +35,7 @@ const resolvers = {
   Stream: streamResolvers.Stream,
   StreamReceiver: userResolvers.StreamReceiver,
   AddressReceiver: commonResolvers.AddressReceiver,
+  Ecosystem: ecosystemResolvers.Ecosystem,
 };
 
 export default resolvers;

@@ -3,8 +3,8 @@ import type { ProjectDataValues } from '../project/ProjectModel';
 import type {
   AccountId,
   DbSchema,
-  ProjectId,
-  ProjectMultiChainKey,
+  RepoDriverId,
+  RepoDriverMultiChainKey,
 } from '../common/types';
 import {
   doesRepoExists,
@@ -26,7 +26,7 @@ import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
     async (
-      projectKeys: readonly ProjectMultiChainKey[],
+      projectKeys: readonly RepoDriverMultiChainKey[],
     ): Promise<ProjectDataValues[]> => {
       const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
 
@@ -44,7 +44,7 @@ export default class ProjectsDataSource {
       ) as ProjectDataValues[];
 
       const projectIdToProjectMap = filteredProjectsDataValues.reduce<
-        Record<ProjectId, ProjectDataValues>
+        Record<RepoDriverId, ProjectDataValues>
       >((mapping, project) => {
         mapping[project.id] = project; // eslint-disable-line no-param-reassign
 
@@ -56,7 +56,7 @@ export default class ProjectsDataSource {
   );
 
   public async getProjectByIdOnChain(
-    id: ProjectId,
+    id: RepoDriverId,
     chain: DbSchema,
   ): Promise<ProjectDataValues | null> {
     const dbProject = await this._batchProjectsByIds.load({
@@ -68,7 +68,7 @@ export default class ProjectsDataSource {
   }
 
   public async getProjectById(
-    id: ProjectId,
+    id: RepoDriverId,
     chains: DbSchema[],
   ): Promise<ProjectDataValues[] | null> {
     const dbProjects = (
@@ -132,7 +132,7 @@ export default class ProjectsDataSource {
   }
 
   public async getProjectsByIdsOnChain(
-    ids: ProjectId[],
+    ids: RepoDriverId[],
     chain: DbSchema,
   ): Promise<ProjectDataValues[]> {
     return (
@@ -146,7 +146,7 @@ export default class ProjectsDataSource {
   }
 
   public async getEarnedFunds(
-    projectId: ProjectId,
+    projectId: RepoDriverId,
     chains: DbSchema[],
   ): Promise<
     {

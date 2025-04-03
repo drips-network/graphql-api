@@ -6,9 +6,14 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import { DependencyType } from '../common/types';
-import type { CommonDataValues, DripListId, ProjectId } from '../common/types';
+import type {
+  CommonDataValues,
+  NftDriverId,
+  RepoDriverId,
+} from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import ProjectModel from '../project/ProjectModel';
+import EcosystemModel from '../ecosystem/EcosystemModel';
 
 export type DripListSplitReceiverModelDataValues =
   DripListSplitReceiverModel['dataValues'] & CommonDataValues;
@@ -18,9 +23,10 @@ export default class DripListSplitReceiverModel extends Model<
   InferCreationAttributes<DripListSplitReceiverModel>
 > {
   public declare id: CreationOptional<number>; // Primary key
-  public declare fundeeDripListId: DripListId; // Foreign key
-  public declare funderProjectId: ProjectId | null; // Foreign key
-  public declare funderDripListId: DripListId | null; // Foreign key
+  public declare fundeeDripListId: NftDriverId; // Foreign key
+  public declare funderProjectId: RepoDriverId | null; // Foreign key
+  public declare funderDripListId: NftDriverId | null; // Foreign key
+  public declare funderEcosystemId: NftDriverId | null; // Foreign key
 
   public declare weight: number;
   public declare type: DependencyType;
@@ -48,6 +54,15 @@ export default class DripListSplitReceiverModel extends Model<
           type: DataTypes.STRING,
           references: {
             model: ProjectModel,
+            key: 'id',
+          },
+          allowNull: true,
+        },
+        funderEcosystemId: {
+          // Foreign key
+          type: DataTypes.STRING,
+          references: {
+            model: EcosystemModel,
             key: 'id',
           },
           allowNull: true,

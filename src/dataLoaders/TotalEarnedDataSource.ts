@@ -3,33 +3,35 @@ import DataLoader from 'dataloader';
 import type {
   AccountId,
   DbSchema,
-  DripListId,
-  DripListMultiChainKey,
-  ProjectId,
-  ProjectMultiChainKey,
+  NftDriverId,
+  NftDriverMultiChainKey,
+  RepoDriverId,
+  RepoDriverMultiChainKey,
 } from '../common/types';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import type { SplitEventModelDataValues } from '../models/SplitEventModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
-import { isDripListId, isProjectId } from '../utils/assert';
+import { isNftDriverId, isRepoDriverId } from '../utils/assert';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import givenEventsQueries from './sqlQueries/givenEventsQueries';
 import splitEventsQueries from './sqlQueries/splitEventsQueries';
 
 export default class TotalEarnedDataSource {
-  private readonly _batchTotalEarnedByProjectIds = new DataLoader(
-    async (keys: readonly (DripListMultiChainKey | ProjectMultiChainKey)[]) => {
-      const { chains, ids: projectIds } = parseMultiChainKeys(keys);
+  private readonly _batchTotalEarnedByAccountIds = new DataLoader(
+    async (
+      keys: readonly (NftDriverMultiChainKey | RepoDriverMultiChainKey)[],
+    ) => {
+      const { chains, ids: accountIds } = parseMultiChainKeys(keys);
 
       const givenEventModelDataValues = await givenEventsQueries.getByReceivers(
         chains,
-        projectIds,
+        accountIds,
       );
 
       const splitEventModelDataValues =
-        await splitEventsQueries.getByProjectReceivers(chains, projectIds);
+        await splitEventsQueries.getByProjectReceivers(chains, accountIds);
 
-      const splitEventsByDripListId = splitEventModelDataValues.reduce<
+      const splitEventsByAccountId = splitEventModelDataValues.reduce<
         Record<AccountId, SplitEventModelDataValues[]>
       >((mapping, event) => {
         if (!mapping[event.receiver]) {
@@ -41,7 +43,7 @@ export default class TotalEarnedDataSource {
         return mapping;
       }, {});
 
-      const givenEventsByDripListId = givenEventModelDataValues.reduce<
+      const givenEventsByAccountId = givenEventModelDataValues.reduce<
         Record<AccountId, GivenEventModelDataValues[]>
       >((mapping, event) => {
         if (!mapping[event.receiver]) {
@@ -53,27 +55,27 @@ export default class TotalEarnedDataSource {
         return mapping;
       }, {});
 
-      return projectIds.map((id) => ({
-        splitEventsForDripListDataValues: splitEventsByDripListId[id] || [],
-        givenEventsForDripListDataValues: givenEventsByDripListId[id] || [],
+      return accountIds.map((id) => ({
+        splitEventsForAccountDataValues: splitEventsByAccountId[id] || [],
+        givenEventsForAccountDataValues: givenEventsByAccountId[id] || [],
       }));
     },
   );
 
-  public async getTotalEarnedByProjectIds(
-    id: DripListId | ProjectId,
+  public async getTotalEarnedByAccountIds(
+    id: NftDriverId | RepoDriverId,
     chains: DbSchema[],
   ): Promise<{
-    splitEventsForDripListDataValues: SplitEventModelDataValues[];
-    givenEventsForDripListDataValues: GivenEventModelDataValues[];
+    splitEventsForAccountDataValues: SplitEventModelDataValues[];
+    givenEventsForAccountDataValues: GivenEventModelDataValues[];
   }> {
     // eslint-disable-next-line no-nested-ternary
-    const key = isDripListId(id)
+    const key = isNftDriverId(id)
       ? { id, chains }
-      : isProjectId(id)
-      ? { id, chains }
-      : shouldNeverHappen();
+      : isRepoDriverId(id)
+        ? { id, chains }
+        : shouldNeverHappen();
 
-    return this._batchTotalEarnedByProjectIds.load(key);
+    return this._batchTotalEarnedByAccountIds.load(key);
   }
 }

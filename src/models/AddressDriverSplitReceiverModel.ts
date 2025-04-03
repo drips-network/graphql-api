@@ -9,11 +9,12 @@ import type { AddressLike } from 'ethers';
 import type {
   AddressDriverId,
   CommonDataValues,
-  DripListId,
-  ProjectId,
+  NftDriverId,
+  RepoDriverId,
 } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import ProjectModel from '../project/ProjectModel';
+import EcosystemModel from '../ecosystem/EcosystemModel';
 
 export type AddressDriverSplitReceiverModelDataValues =
   AddressDriverSplitReceiverModel['dataValues'] & CommonDataValues;
@@ -29,8 +30,9 @@ export default class AddressDriverSplitReceiverModel extends Model<
   InferCreationAttributes<AddressDriverSplitReceiverModel>
 > {
   public declare id: CreationOptional<number>; // Primary key
-  public declare funderProjectId: ProjectId | null; // Foreign key
-  public declare funderDripListId: DripListId | null; // Foreign key
+  public declare funderProjectId: RepoDriverId | null; // Foreign key
+  public declare funderDripListId: NftDriverId | null; // Foreign key
+  public declare funderEcosystemId: NftDriverId | null; // Foreign key
 
   public declare weight: number;
   public declare type: AddressDriverSplitReceiverType;
@@ -68,6 +70,15 @@ export default class AddressDriverSplitReceiverModel extends Model<
           type: DataTypes.STRING,
           references: {
             model: DripListModel,
+            key: 'id',
+          },
+          allowNull: true,
+        },
+        funderEcosystemId: {
+          // Foreign key
+          type: DataTypes.STRING,
+          references: {
+            model: EcosystemModel,
             key: 'id',
           },
           allowNull: true,

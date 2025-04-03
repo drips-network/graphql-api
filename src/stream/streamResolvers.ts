@@ -1,5 +1,5 @@
 import queryableChains from '../common/queryableChains';
-import type { AddressDriverId, DripListId } from '../common/types';
+import type { AddressDriverId, NftDriverId } from '../common/types';
 import { toResolverDripList } from '../drip-list/dripListUtils';
 import type { StreamWhereInput, SupportedChain } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
@@ -49,7 +49,7 @@ const streamResolvers = {
       if (receiver.driver === Driver.NFT) {
         const dbDripList =
           (await dataSources.dripListsDataSource.getDripListById(
-            receiver.accountId as DripListId,
+            receiver.accountId as NftDriverId,
             [chain],
           )) || shouldNeverHappen('Expected Drip List to exist.');
 

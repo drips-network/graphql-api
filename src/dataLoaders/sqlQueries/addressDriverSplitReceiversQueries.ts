@@ -1,7 +1,7 @@
 import { QueryTypes } from 'sequelize';
 import { dbConnection } from '../../database/connectToDatabase';
 
-import type { AccountId, DbSchema, DripListId } from '../../common/types';
+import type { AccountId, DbSchema, NftDriverId } from '../../common/types';
 import type { AddressDriverSplitReceiverModelDataValues } from '../../models/AddressDriverSplitReceiverModel';
 import AddressDriverSplitReceiverModel, {
   AddressDriverSplitReceiverType,
@@ -9,7 +9,7 @@ import AddressDriverSplitReceiverModel, {
 
 async function getAddressDriverSplitReceiversDripListDependenciesByFunders(
   chains: DbSchema[],
-  funderDripListIds: DripListId[],
+  funderDripListIds: NftDriverId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
   SELECT "id", "fundeeAccountId", "fundeeAccountAddress", "funderProjectId", "funderDripListId","weight", "type"::TEXT, "createdAt", "updatedAt", '${schema}' AS chain

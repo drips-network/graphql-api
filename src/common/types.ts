@@ -2,6 +2,7 @@ import type { AnyVersion } from '@efstajas/versioned-parser';
 import type {
   ClaimedProjectData,
   DripList,
+  Ecosystem,
   Give,
   Project,
   UnClaimedProjectData,
@@ -21,10 +22,10 @@ export type IpfsHash = string & { __brand: 'IpfsHash' };
 export type AddressDriverId = string & {
   __brand: 'AddressDriverId';
 };
-export type DripListId = string & { __brand: 'DripListId' };
-export type ProjectId = string & { __brand: 'ProjectId' };
+export type NftDriverId = string & { __brand: 'NftDriverId' };
+export type RepoDriverId = string & { __brand: 'RepoDriverId' };
 
-export type AccountId = AddressDriverId | DripListId | ProjectId;
+export type AccountId = AddressDriverId | NftDriverId | RepoDriverId;
 
 export type Address = string & { __brand: 'Address' };
 
@@ -75,7 +76,7 @@ export type ResolverProject = Project & {
 
 type ProjectDataParentProjectInfo = {
   parentProjectInfo: {
-    projectId: ProjectId;
+    projectId: RepoDriverId;
     projectChain: DbSchema;
     queriedChains: DbSchema[];
   };
@@ -91,8 +92,8 @@ export interface MultiChainKey<T = AccountId> {
   id: T;
   chains: DbSchema[];
 }
-export type ProjectMultiChainKey = MultiChainKey<ProjectId>;
-export type DripListMultiChainKey = MultiChainKey<DripListId>;
+export type RepoDriverMultiChainKey = MultiChainKey<RepoDriverId>;
+export type NftDriverMultiChainKey = MultiChainKey<NftDriverId>;
 
 export type ResolverDripList = DripList & {
   chainData?: ResolverDripListData[];
@@ -100,13 +101,28 @@ export type ResolverDripList = DripList & {
 
 type DripListDataParentDripListInfo = {
   parentDripListInfo: {
-    dripListId: DripListId;
+    dripListId: NftDriverId;
     dripListChain: DbSchema;
     queriedChain: DbSchema;
   };
 };
 
 export type ResolverDripListData = DripList & DripListDataParentDripListInfo;
+
+export type ResolverEcosystem = Ecosystem & {
+  chainData?: ResolverEcosystemData[];
+};
+
+type EcosystemDataParentEcosystemInfo = {
+  parentEcosystemInfo: {
+    ecosystemId: NftDriverId;
+    ecosystemChain: DbSchema;
+    queriedChains: DbSchema[];
+  };
+};
+
+export type ResolverEcosystemData = Ecosystem &
+  EcosystemDataParentEcosystemInfo;
 
 export type CommonDataValues = {
   createdAt: Date;
