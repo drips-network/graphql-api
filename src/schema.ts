@@ -29,7 +29,7 @@ const rootTypeDef = gql`
     userById(accountId: ID!, chains: [SupportedChain!]): User!
     userByAddress(address: String!, chains: [SupportedChain!]): User!
     streams(where: StreamWhereInput, chains: [SupportedChain!]): [Stream!]!
-    ecosystem(id: ID!, chain: SupportedChain!): Ecosystem!
+    ecosystem(id: ID!, chain: SupportedChain!): Ecosystem
   }
 `;
 
