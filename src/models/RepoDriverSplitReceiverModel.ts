@@ -13,7 +13,7 @@ import type {
 import { DependencyType } from '../common/types';
 import ProjectModel from '../project/ProjectModel';
 import DripListModel from '../drip-list/DripListModel';
-import EcosystemModel from '../ecosystem/EcosystemModel';
+import EcosystemMainAccountModel from '../ecosystem/EcosystemMainAccountModel';
 
 export type RepoDriverSplitReceiverModelDataValues =
   RepoDriverSplitReceiverModel['dataValues'] & CommonDataValues;
@@ -71,7 +71,7 @@ export default class RepoDriverSplitReceiverModel extends Model<
           // Foreign key
           type: DataTypes.STRING,
           references: {
-            model: EcosystemModel,
+            model: EcosystemMainAccountModel,
             key: 'id',
           },
           allowNull: true,

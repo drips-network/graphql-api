@@ -7,12 +7,12 @@ import { DataTypes, Model } from 'sequelize';
 import type { AddressLike } from 'ethers';
 import type { AccountId, CommonDataValues, NftDriverId } from '../common/types';
 
-export type EcosystemDataValues = EcosystemModel['dataValues'] &
+export type EcosystemDataValues = EcosystemMainAccountModel['dataValues'] &
   CommonDataValues;
 
-export default class EcosystemModel extends Model<
-  InferAttributes<EcosystemModel>,
-  InferCreationAttributes<EcosystemModel>
+export default class EcosystemMainAccountModel extends Model<
+  InferAttributes<EcosystemMainAccountModel>,
+  InferCreationAttributes<EcosystemMainAccountModel>
 > {
   public declare id: NftDriverId;
   public declare isValid: boolean;
@@ -71,7 +71,7 @@ export default class EcosystemModel extends Model<
       },
       {
         sequelize,
-        tableName: 'Ecosystems',
+        tableName: 'EcosystemMainAccounts',
       },
     );
   }

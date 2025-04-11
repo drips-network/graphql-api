@@ -12,7 +12,7 @@ import StreamsSetEventModel from '../models/StreamsSetEventModel';
 import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
 import AccountMetadataEmittedEventModel from '../models/AccountMetadataEmittedEventModel';
 import SqueezedStreamsEventModel from '../models/SqueezedStreamsEventModel';
-import EcosystemModel from '../ecosystem/EcosystemModel';
+import EcosystemMainAccountModel from '../ecosystem/EcosystemMainAccountModel';
 
 export const dbConnection = new Sequelize(
   `${appSettings.postgresConnectionString}`,
@@ -22,7 +22,6 @@ export const dbConnection = new Sequelize(
 export async function connectToDatabase() {
   await dbConnection.authenticate();
 
-  EcosystemModel.initialize(dbConnection);
   ProjectModel.initialize(dbConnection);
   DripListModel.initialize(dbConnection);
   SplitEventModel.initialize(dbConnection);
@@ -30,6 +29,7 @@ export async function connectToDatabase() {
   TransferEventModel.initialize(dbConnection);
   StreamsSetEventModel.initialize(dbConnection);
   SqueezedStreamsEventModel.initialize(dbConnection);
+  EcosystemMainAccountModel.initialize(dbConnection);
   DripListSplitReceiverModel.initialize(dbConnection);
   StreamReceiverSeenEventModel.initialize(dbConnection);
   RepoDriverSplitReceiverModel.initialize(dbConnection);

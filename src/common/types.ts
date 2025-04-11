@@ -2,7 +2,7 @@ import type { AnyVersion } from '@efstajas/versioned-parser';
 import type {
   ClaimedProjectData,
   DripList,
-  Ecosystem,
+  EcosystemMainAccount,
   Give,
   Project,
   UnClaimedProjectData,
@@ -109,7 +109,7 @@ type DripListDataParentDripListInfo = {
 
 export type ResolverDripListData = DripList & DripListDataParentDripListInfo;
 
-export type ResolverEcosystem = Ecosystem & {
+export type ResolverEcosystem = EcosystemMainAccount & {
   chainData?: ResolverEcosystemData[];
 };
 
@@ -121,7 +121,7 @@ type EcosystemDataParentEcosystemInfo = {
   };
 };
 
-export type ResolverEcosystemData = Ecosystem &
+export type ResolverEcosystemData = EcosystemMainAccount &
   EcosystemDataParentEcosystemInfo;
 
 export type CommonDataValues = {

@@ -1,8 +1,8 @@
 import { QueryTypes } from 'sequelize';
 import type { DbSchema, NftDriverId } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { EcosystemDataValues } from '../../ecosystem/EcosystemModel';
-import EcosystemModel from '../../ecosystem/EcosystemModel';
+import type { EcosystemDataValues } from '../../ecosystem/EcosystemMainAccountModel';
+import EcosystemMainAccountModel from '../../ecosystem/EcosystemMainAccountModel';
 
 async function getEcosystemsByIds(
   chains: DbSchema[],
@@ -10,7 +10,7 @@ async function getEcosystemsByIds(
 ) {
   const baseSQL = (schema: DbSchema) => `
     SELECT "id", "isValid", "isVisible", "ownerAddress", "ownerAccountId", "name", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain
-    FROM "${schema}"."Ecosystems"
+    FROM "${schema}"."EcosystemMainAccounts"
   `;
 
   const conditions: string[] = ['"id" IN (:ecosystemsIds)', '"isValid" = true'];
@@ -27,7 +27,7 @@ async function getEcosystemsByIds(
       type: QueryTypes.SELECT,
       replacements: parameters,
       mapToModel: true,
-      model: EcosystemModel,
+      model: EcosystemMainAccountModel,
     })
   ).map((p) => p.dataValues as EcosystemDataValues);
 }

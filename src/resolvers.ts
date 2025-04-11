@@ -35,7 +35,7 @@ const resolvers = {
   Stream: streamResolvers.Stream,
   StreamReceiver: userResolvers.StreamReceiver,
   AddressReceiver: commonResolvers.AddressReceiver,
-  Ecosystem: ecosystemResolvers.Ecosystem,
+  EcosystemMainAccount: ecosystemResolvers.EcosystemMainAccount,
 };
 
 export default resolvers;

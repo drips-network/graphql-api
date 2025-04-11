@@ -3,7 +3,7 @@ import gql from 'graphql-tag';
 const ecosystemTypeDef = gql`
   union EcosystemSupportItem = OneTimeDonationSupport | StreamSupport
 
-  type Ecosystem {
+  type EcosystemMainAccount {
     account: NftDriverAccount!
     chain: SupportedChain!
     name: String!

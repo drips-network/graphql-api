@@ -17,7 +17,7 @@ import { toResolverEcosystem } from './ecosystemUtils';
 
 const ecosystemResolvers = {
   Query: {
-    ecosystem: async (
+    ecosystemMainAccount: async (
       _: undefined,
       { id, chain }: { id: NftDriverId; chain: SupportedChain },
       { dataSources: { ecosystemsDataSource } }: Context,
@@ -36,7 +36,7 @@ const ecosystemResolvers = {
         : null;
     },
   },
-  Ecosystem: {
+  EcosystemMainAccount: {
     account: (ecosystem: ResolverEcosystem): NftDriverAccount =>
       ecosystem.account,
     name: (ecosystemData: ResolverEcosystemData) =>

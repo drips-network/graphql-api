@@ -13,7 +13,7 @@ import type {
 } from '../common/types';
 import DripListModel from '../drip-list/DripListModel';
 import ProjectModel from '../project/ProjectModel';
-import EcosystemModel from '../ecosystem/EcosystemModel';
+import EcosystemMainAccountModel from '../ecosystem/EcosystemMainAccountModel';
 
 export type DripListSplitReceiverModelDataValues =
   DripListSplitReceiverModel['dataValues'] & CommonDataValues;
@@ -62,7 +62,7 @@ export default class DripListSplitReceiverModel extends Model<
           // Foreign key
           type: DataTypes.STRING,
           references: {
-            model: EcosystemModel,
+            model: EcosystemMainAccountModel,
             key: 'id',
           },
           allowNull: true,

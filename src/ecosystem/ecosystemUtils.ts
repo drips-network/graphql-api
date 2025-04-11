@@ -2,7 +2,7 @@ import type { DbSchema, ResolverEcosystem } from '../common/types';
 import { Driver } from '../generated/graphql';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 import { singleOrDefault } from '../utils/linq';
-import type { EcosystemDataValues } from './EcosystemModel';
+import type { EcosystemDataValues } from './EcosystemMainAccountModel';
 
 export async function toResolverEcosystem(
   chain: DbSchema,

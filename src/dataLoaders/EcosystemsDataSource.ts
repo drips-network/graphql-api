@@ -6,7 +6,7 @@ import type {
 } from '../common/types';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import ecosystemsQueries from './sqlQueries/ecosystemsQueries';
-import type { EcosystemDataValues } from '../ecosystem/EcosystemModel';
+import type { EcosystemDataValues } from '../ecosystem/EcosystemMainAccountModel';
 
 export default class EcosystemsDataSource {
   private readonly _batchEcosystemsById = new DataLoader(
