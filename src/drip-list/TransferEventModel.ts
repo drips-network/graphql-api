@@ -5,7 +5,7 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import type { CommonDataValues, DripListId } from '../common/types';
+import type { CommonDataValues, NftDriverId } from '../common/types';
 import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
 
 export type TransferEventModelDataValues = TransferEventModel['dataValues'] &
@@ -15,7 +15,7 @@ export default class TransferEventModel extends Model<
   InferAttributes<TransferEventModel>,
   InferCreationAttributes<TransferEventModel>
 > {
-  public declare tokenId: DripListId; // The `tokenId` from `Transfer` event.
+  public declare tokenId: NftDriverId; // The `tokenId` from `Transfer` event.
   public declare from: AddressLike;
   public declare to: AddressLike;
 

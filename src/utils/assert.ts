@@ -1,4 +1,8 @@
-import type { AddressDriverId, DripListId, ProjectId } from '../common/types';
+import type {
+  AddressDriverId,
+  NftDriverId,
+  RepoDriverId,
+} from '../common/types';
 import { ProjectVerificationStatus } from '../generated/graphql';
 import getContractNameByAccountId from './getContractNameByAccountId';
 
@@ -23,7 +27,7 @@ export function isAddressDriverId(id: string): id is AddressDriverId {
   return true;
 }
 
-export function isDripListId(id: string): id is DripListId {
+export function isNftDriverId(id: string): id is NftDriverId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfNftDriver = getContractNameByAccountId(id) === 'nftDriver';
 
@@ -34,7 +38,7 @@ export function isDripListId(id: string): id is DripListId {
   return true;
 }
 
-export function isProjectId(id: string): id is ProjectId {
+export function isRepoDriverId(id: string): id is RepoDriverId {
   const isNaN = Number.isNaN(Number(id));
   const isAccountIdOfRepoDriver =
     getContractNameByAccountId(id) === 'repoDriver';
@@ -70,5 +74,5 @@ export function isProjectVerificationStatus(
 }
 
 export function isAccountId(id: string): boolean {
-  return isAddressDriverId(id) || isDripListId(id) || isProjectId(id);
+  return isAddressDriverId(id) || isNftDriverId(id) || isRepoDriverId(id);
 }

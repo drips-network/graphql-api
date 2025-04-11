@@ -1,7 +1,7 @@
 import { isAddress } from 'ethers';
 import type {
   Address,
-  DripListId,
+  NftDriverId,
   ResolverDripList,
   ResolverDripListData,
 } from '../common/types';
@@ -14,7 +14,7 @@ import type {
 import { SupportedChain, Driver } from '../generated/graphql';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Context } from '../server';
-import assert, { isDripListId } from '../utils/assert';
+import assert, { isNftDriverId } from '../utils/assert';
 import type { ProjectDataValues } from '../project/ProjectModel';
 import queryableChains from '../common/queryableChains';
 import { toResolverDripList, toResolverDripLists } from './dripListUtils';
@@ -50,10 +50,10 @@ const dripListResolvers = {
     },
     dripList: async (
       _: undefined,
-      { id, chain }: { id: DripListId; chain: SupportedChain },
+      { id, chain }: { id: NftDriverId; chain: SupportedChain },
       { dataSources: { dripListsDataSource } }: Context,
     ): Promise<ResolverDripList | null> => {
-      assert(isDripListId(id));
+      assert(isNftDriverId(id));
       assert(chain in SupportedChain);
 
       const dbSchemaToQuery = chainToDbSchema[chain];
@@ -205,13 +205,13 @@ const dripListResolvers = {
         dataSources: {
           projectsDataSource,
           dripListsDataSource,
-          projectAndDripListSupportDataSource,
+          supportDataSource,
         },
       }: Context,
     ) => {
       // All `RepoDriverSplitReceiver`s that represent the Drip List as a receiver.
       const dbRepoDriverSplitReceivers =
-        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByDripListIdOnChain(
+        await supportDataSource.getSplitSupportByDripListIdOnChain(
           dripListId,
           dripListChain,
         );
@@ -271,13 +271,13 @@ const dripListResolvers = {
 
       // `GivenEventModelDataValues`s that represent one time donations to the Project.
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
+        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
           dripListId,
           dripListChain,
         );
 
       const streamSupport =
-        await projectAndDripListSupportDataSource.getStreamSupportByAccountIdOnChain(
+        await supportDataSource.getStreamSupportByAccountIdOnChain(
           dripListId,
           dripListChain,
         );

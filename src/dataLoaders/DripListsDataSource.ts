@@ -2,8 +2,8 @@ import DataLoader from 'dataloader';
 import type {
   Address,
   DbSchema,
-  DripListId,
-  DripListMultiChainKey,
+  NftDriverId,
+  NftDriverMultiChainKey,
 } from '../common/types';
 import type { DripListWhereInput, SupportedChain } from '../generated/graphql';
 import type { DripListDataValues } from '../drip-list/DripListModel';
@@ -15,7 +15,7 @@ import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 export default class DripListsDataSource {
   private readonly _batchDripListsByIds = new DataLoader(
     async (
-      dripListKeys: readonly DripListMultiChainKey[],
+      dripListKeys: readonly NftDriverMultiChainKey[],
     ): Promise<(DripListDataValues | null)[]> => {
       const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
 
@@ -25,7 +25,7 @@ export default class DripListsDataSource {
       );
 
       const dripListIdToDripListMap = dripListDataValues.reduce<
-        Record<DripListId, DripListDataValues>
+        Record<NftDriverId, DripListDataValues>
       >((mapping, dripList) => {
         mapping[dripList.id] = dripList; // eslint-disable-line no-param-reassign
 
@@ -37,7 +37,7 @@ export default class DripListsDataSource {
   );
 
   public async getDripListById(
-    id: DripListId,
+    id: NftDriverId,
     chains: DbSchema[],
   ): Promise<DripListDataValues | null> {
     return this._batchDripListsByIds.load({
@@ -54,7 +54,7 @@ export default class DripListsDataSource {
   }
 
   public async getDripListsByIdsOnChain(
-    ids: DripListId[],
+    ids: NftDriverId[],
     chain: DbSchema,
   ): Promise<DripListDataValues[]> {
     return (

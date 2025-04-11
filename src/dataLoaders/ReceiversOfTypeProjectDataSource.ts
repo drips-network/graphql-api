@@ -1,9 +1,9 @@
 import DataLoader from 'dataloader';
 import type {
-  DripListMultiChainKey,
-  DripListId,
-  ProjectId,
-  ProjectMultiChainKey,
+  NftDriverMultiChainKey,
+  NftDriverId,
+  RepoDriverId,
+  RepoDriverMultiChainKey,
   DbSchema,
 } from '../common/types';
 import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
@@ -12,7 +12,7 @@ import repoDriverSplitReceiversQueries from './sqlQueries/repoDriverSplitReceive
 
 export default class ReceiversOfTypeProjectDataSource {
   private readonly _batchReceiversOfTypeProjectByProjectIds = new DataLoader(
-    async (projectKeys: readonly ProjectMultiChainKey[]) => {
+    async (projectKeys: readonly RepoDriverMultiChainKey[]) => {
       const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
 
       const repoDriverSplitReceiverModelDataValues =
@@ -23,13 +23,13 @@ export default class ReceiversOfTypeProjectDataSource {
 
       const receiversOfTypeProjectToProjectMapping =
         repoDriverSplitReceiverModelDataValues.reduce<
-          Record<ProjectId, RepoDriverSplitReceiverModelDataValues[]>
+          Record<RepoDriverId, RepoDriverSplitReceiverModelDataValues[]>
         >((mapping, receiver) => {
-          if (!mapping[receiver.funderProjectId as ProjectId]) {
-            mapping[receiver.funderProjectId as ProjectId] = []; // eslint-disable-line no-param-reassign
+          if (!mapping[receiver.funderProjectId as RepoDriverId]) {
+            mapping[receiver.funderProjectId as RepoDriverId] = []; // eslint-disable-line no-param-reassign
           }
 
-          mapping[receiver.funderProjectId as ProjectId].push(receiver);
+          mapping[receiver.funderProjectId as RepoDriverId].push(receiver);
 
           return mapping;
         }, {});
@@ -41,7 +41,7 @@ export default class ReceiversOfTypeProjectDataSource {
   );
 
   public async getReceiversOfTypeProjectByProjectIdOnChain(
-    id: ProjectId,
+    id: RepoDriverId,
     chain: DbSchema,
   ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
     return (
@@ -53,7 +53,7 @@ export default class ReceiversOfTypeProjectDataSource {
   }
 
   private readonly _batchReceiversOfTypeProjectByDripListIds = new DataLoader(
-    async (dripListKeys: readonly DripListMultiChainKey[]) => {
+    async (dripListKeys: readonly NftDriverMultiChainKey[]) => {
       const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
 
       const repoDriverSplitReceiverModelDataValues =
@@ -64,13 +64,13 @@ export default class ReceiversOfTypeProjectDataSource {
 
       const receiversOfTypeProjectToDripListMapping =
         repoDriverSplitReceiverModelDataValues.reduce<
-          Record<DripListId, RepoDriverSplitReceiverModelDataValues[]>
+          Record<NftDriverId, RepoDriverSplitReceiverModelDataValues[]>
         >((mapping, receiver) => {
-          if (!mapping[receiver.funderDripListId as DripListId]) {
-            mapping[receiver.funderDripListId as DripListId] = []; // eslint-disable-line no-param-reassign
+          if (!mapping[receiver.funderDripListId as NftDriverId]) {
+            mapping[receiver.funderDripListId as NftDriverId] = []; // eslint-disable-line no-param-reassign
           }
 
-          mapping[receiver.funderDripListId as DripListId].push(receiver);
+          mapping[receiver.funderDripListId as NftDriverId].push(receiver);
 
           return mapping;
         }, {});
@@ -82,7 +82,7 @@ export default class ReceiversOfTypeProjectDataSource {
   );
 
   public async getReceiversOfTypeProjectByDripListIdOnChain(
-    id: DripListId,
+    id: NftDriverId,
     chain: DbSchema,
   ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
     return (
