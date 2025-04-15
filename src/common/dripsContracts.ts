@@ -72,6 +72,11 @@ const chainConfigs: Record<
     addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
   },
+  ZKSYNC_ERA_SEPOLIA: {
+    dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
+    addressDriverAddress: '0x0557b6BA791A24df0Fa6167E1Dc304F403ee777A',
+    repoDriverAddress: '0x8bDC23877A23Ce59fEF1712A1486810d9A6E2B94',
+  },
 };
 
 const { rpcConfig } = appSettings;
