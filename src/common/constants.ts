@@ -38,4 +38,5 @@ export const DB_SCHEMAS = [
   'metis',
   'localtestnet',
   'optimism',
+  'zksync_era_sepolia',
 ] as const;

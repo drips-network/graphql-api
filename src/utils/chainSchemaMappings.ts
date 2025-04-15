@@ -11,6 +11,7 @@ export const dbSchemaToChain: Record<DbSchema, SupportedChain> = {
   optimism: SupportedChain.OPTIMISM,
   metis: SupportedChain.METIS,
   localtestnet: SupportedChain.LOCALTESTNET,
+  zksync_era_sepolia: SupportedChain.ZKSYNC_ERA_SEPOLIA,
 };
 
 export const chainToDbSchema: Record<SupportedChain, DbSchema> = {
@@ -23,4 +24,5 @@ export const chainToDbSchema: Record<SupportedChain, DbSchema> = {
   [SupportedChain.METIS]: 'metis',
   [SupportedChain.LOCALTESTNET]: 'localtestnet',
   [SupportedChain.OPTIMISM]: 'optimism',
+  [SupportedChain.ZKSYNC_ERA_SEPOLIA]: 'zksync_era_sepolia',
 };
