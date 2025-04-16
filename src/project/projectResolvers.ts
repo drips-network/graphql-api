@@ -453,11 +453,13 @@ const projectResolvers = {
             };
           }
 
-          return shouldNeverHappen(
-            'Supported is neither a Project nor a DripList.',
-          );
+          return null;
         }),
       );
+
+      // Filter out null values from the projectsAndDripListsSupport array.
+      const filteredProjectsAndDripListsSupport =
+        projectsAndDripListsSupport.filter((support) => support !== null);
 
       // `GivenEventModelDataValues`s that represent one time donations to the Project.
       const oneTimeDonationSupport =
@@ -466,7 +468,10 @@ const projectResolvers = {
           projectChain,
         );
 
-      return [...projectsAndDripListsSupport, ...oneTimeDonationSupport];
+      return [
+        ...filteredProjectsAndDripListsSupport,
+        ...oneTimeDonationSupport,
+      ];
     },
     withdrawableBalances: async ({
       parentProjectInfo: { projectId, projectChain },
