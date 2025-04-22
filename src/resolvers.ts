@@ -23,6 +23,7 @@ const resolvers = {
   DripListReceiver: commonResolvers.DripListReceiver,
   SplitsReceiver: commonResolvers.SplitsReceiver,
   SupportItem: commonResolvers.SupportItem,
+  EcosystemSupportItem: commonResolvers.SupportItem,
   Avatar: projectResolvers.Avatar,
   ProjectSupport: commonResolvers.ProjectSupport,
   DripListSupport: commonResolvers.DripListSupport,

@@ -30,6 +30,7 @@ import type projectResolvers from '../project/projectResolvers';
 import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import type dripListResolvers from '../drip-list/dripListResolvers';
+import type ecosystemResolvers from '../ecosystem/ecosystemResolvers';
 
 async function resolveTotalSplit(
   parent:
@@ -101,8 +102,9 @@ const commonResolvers = {
         | Awaited<
             ReturnType<typeof projectResolvers.ClaimedProjectData.support>
           >[number]
+        | Awaited<ReturnType<typeof dripListResolvers.DripList.support>>[number]
         | Awaited<
-            ReturnType<typeof dripListResolvers.DripList.support>
+            ReturnType<typeof ecosystemResolvers.EcosystemMainAccount.support>
           >[number],
     ) {
       if ('dripList' in parent || 'project' in parent) {
