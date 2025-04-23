@@ -16,6 +16,7 @@ import type {
   SupportedChain,
   AddressDriverAccount,
   User,
+  EcosystemMainAccount,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
@@ -298,9 +299,13 @@ const userResolvers = {
     },
   },
   StreamReceiver: {
-    __resolveType(parent: DripListModel | User) {
+    __resolveType(parent: DripListModel | User | EcosystemMainAccount) {
       if ('account' in parent && parent.account.driver === Driver.NFT) {
         return 'DripList';
+      }
+
+      if ('parentEcosystemInfo' in parent) {
+        return 'EcosystemMainAccount';
       }
 
       return 'User';
