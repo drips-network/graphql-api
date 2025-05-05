@@ -1,4 +1,4 @@
-import { FetchRequest, ethers } from 'ethers';
+import { FetchRequest, JsonRpcProvider, ethers } from 'ethers';
 import appSettings from './appSettings';
 import type { AddressDriver, Drips, RepoDriver } from '../generated/contracts';
 import {
@@ -16,7 +16,6 @@ import type {
   Forge,
   RepoDriverId,
 } from './types';
-import FailoverJsonRpcProvider from './FailoverJsonRpcProvider';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
 const chainConfigs: Record<
@@ -77,7 +76,7 @@ const chainConfigs: Record<
 const { rpcConfig } = appSettings;
 
 const providers: {
-  [network in SupportedChain]?: FailoverJsonRpcProvider;
+  [network in SupportedChain]?: JsonRpcProvider;
 } = {};
 
 function createAuthFetchRequest(rpcUrl: string, token: string): FetchRequest {
@@ -95,28 +94,14 @@ Object.values(SupportedChain).forEach((network) => {
     return;
   }
 
-  const { url, accessToken, fallbackUrl, fallbackAccessToken } = config;
+  const { url, accessToken } = config;
 
-  const primaryEndpoint = accessToken
-    ? createAuthFetchRequest(url, accessToken)
-    : url;
+  const endpoint = accessToken ? createAuthFetchRequest(url, accessToken) : url;
 
-  const rpcEndpoints = [primaryEndpoint];
-
-  if (fallbackUrl) {
-    const fallbackEndpoint = fallbackAccessToken
-      ? createAuthFetchRequest(fallbackUrl, fallbackAccessToken)
-      : fallbackUrl;
-    rpcEndpoints.push(fallbackEndpoint);
-  }
-
-  providers[network] = new FailoverJsonRpcProvider(
-    rpcEndpoints,
-    undefined,
-    undefined,
-    {
-      logger: console,
-    },
+  providers[network] = new JsonRpcProvider(
+    endpoint,
+    undefined, // network
+    undefined, // options
   );
 });
 

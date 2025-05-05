@@ -14,8 +14,6 @@ const RpcConfigSchema = z.record(
     .object({
       url: z.string().url(),
       accessToken: z.string().optional(),
-      fallbackUrl: z.string().optional(),
-      fallbackAccessToken: z.string().optional(),
     })
     .optional(),
 );
