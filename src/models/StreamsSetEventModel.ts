@@ -7,13 +7,15 @@ import { DataTypes, Model } from 'sequelize';
 import type {
   AccountId,
   BigIntString,
-  CommonDataValues,
+  DbSchema,
   IEventModel,
 } from '../common/types';
-import getCommonEventAttributes from '../utils/getCommonEventAttributes';
+import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
 
 export type StreamsSetEventModelDataValues =
-  StreamsSetEventModel['dataValues'] & CommonDataValues;
+  StreamsSetEventModel['dataValues'] & {
+    chain: DbSchema;
+  };
 
 export default class StreamsSetEventModel
   extends Model<
@@ -28,8 +30,6 @@ export default class StreamsSetEventModel
   public declare streamsHistoryHash: string;
   public declare balance: BigIntString;
   public declare maxEnd: BigIntString;
-
-  // Common event log properties.
   public declare logIndex: number;
   public declare blockNumber: number;
   public declare blockTimestamp: Date;
@@ -39,34 +39,48 @@ export default class StreamsSetEventModel
     this.init(
       {
         accountId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         erc20: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         receiversHash: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         streamsHistoryHash: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         balance: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         maxEnd: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
-        ...getCommonEventAttributes(),
+        ...COMMON_EVENT_INIT_ATTRIBUTES,
       },
       {
         sequelize,
-        tableName: 'StreamsSetEvents',
+        tableName: 'streams_set_events',
+        underscored: true,
+        timestamps: true,
+        indexes: [
+          {
+            fields: ['receiversHash'],
+            name: `idx_streams_set_events_receiversHash`,
+            unique: false,
+          },
+          {
+            fields: ['accountId'],
+            name: `idx_streams_set_events_accountId`,
+            unique: false,
+          },
+        ],
       },
     );
   }

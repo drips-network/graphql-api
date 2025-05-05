@@ -5,15 +5,17 @@ import type {
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
 import type {
+  DbSchema,
+  IEventModel,
   AccountId,
   BigIntString,
-  CommonDataValues,
-  IEventModel,
 } from '../common/types';
-import getCommonEventAttributes from '../utils/getCommonEventAttributes';
+import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
 
 export type StreamReceiverSeenEventModelDataValues =
-  StreamReceiverSeenEventModel['dataValues'] & CommonDataValues;
+  StreamReceiverSeenEventModel['dataValues'] & {
+    chain: DbSchema;
+  };
 
 export default class StreamReceiverSeenEventModel
   extends Model<
@@ -25,8 +27,6 @@ export default class StreamReceiverSeenEventModel
   public declare receiversHash: string;
   public declare accountId: AccountId;
   public declare config: BigIntString;
-
-  // Common event log properties.
   public declare logIndex: number;
   public declare blockNumber: number;
   public declare blockTimestamp: Date;
@@ -36,22 +36,31 @@ export default class StreamReceiverSeenEventModel
     this.init(
       {
         accountId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         config: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         receiversHash: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
-        ...getCommonEventAttributes(),
+        ...COMMON_EVENT_INIT_ATTRIBUTES,
       },
       {
         sequelize,
-        tableName: 'StreamReceiverSeenEvents',
+        tableName: 'stream_receiver_seen_events',
+        underscored: true,
+        timestamps: true,
+        indexes: [
+          {
+            fields: ['accountId'],
+            name: `idx_stream_receiver_seen_events_accountId`,
+            unique: false,
+          },
+        ],
       },
     );
   }

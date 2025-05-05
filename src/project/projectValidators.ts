@@ -9,7 +9,7 @@ import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import type projectResolvers from './projectResolvers';
 
 function isSortableProjectField(field: string): boolean {
-  return ['claimedAt'].includes(field);
+  return ['claimed_at'].includes(field);
 }
 
 export default function validateProjectsInput(
@@ -17,7 +17,7 @@ export default function validateProjectsInput(
 ) {
   const { where, sort, chains } = projectsQueryArgs;
 
-  if (where?.id && !isRepoDriverId(where.id)) {
+  if (where?.accountId && !isRepoDriverId(where.accountId)) {
     throw new Error('Invalid project id.');
   }
 

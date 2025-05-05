@@ -1,82 +1,115 @@
 import type {
+  CreationOptional,
   InferAttributes,
   InferCreationAttributes,
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import type { AddressLike } from 'ethers';
 import type { UUID } from 'crypto';
-import type { AccountId, CommonDataValues, NftDriverId } from '../common/types';
+import type {
+  AccountId,
+  Address,
+  DbSchema,
+  NftDriverId,
+} from '../common/types';
 
-export type DripListDataValues = DripListModel['dataValues'] & CommonDataValues;
+export type DripListDataValues = DripListModel['dataValues'] & {
+  chain: DbSchema;
+};
 
 export default class DripListModel extends Model<
   InferAttributes<DripListModel>,
   InferCreationAttributes<DripListModel>
 > {
-  public declare id: NftDriverId; // The `tokenId` from `TransferEvent` event.
+  public declare accountId: NftDriverId;
   public declare isValid: boolean;
   public declare name: string | null;
-  public declare creator: AddressLike;
+  public declare creator: Address | null;
   public declare description: string | null;
-  public declare ownerAddress: AddressLike;
+  public declare ownerAddress: Address;
   public declare ownerAccountId: AccountId;
-  public declare previousOwnerAddress: AddressLike;
+  public declare previousOwnerAddress: Address | null;
   public declare latestVotingRoundId: UUID | null;
   public declare isVisible: boolean;
-  public declare lastProcessedIpfsHash: string | null;
+  public declare lastProcessedIpfsHash: string;
+  public declare lastProcessedVersion: string;
+  public declare createdAt: CreationOptional<Date>;
+  public declare updatedAt: CreationOptional<Date>;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
       {
-        id: {
-          type: DataTypes.STRING,
+        accountId: {
           primaryKey: true,
+          type: DataTypes.STRING,
         },
         isValid: {
-          type: DataTypes.BOOLEAN,
           allowNull: false,
+          type: DataTypes.BOOLEAN,
         },
         ownerAddress: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         ownerAccountId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         name: {
-          type: DataTypes.STRING,
           allowNull: true,
+          type: DataTypes.STRING,
         },
         latestVotingRoundId: {
-          type: DataTypes.UUID,
           allowNull: true,
+          type: DataTypes.UUID,
         },
         description: {
-          type: DataTypes.TEXT,
           allowNull: true,
+          type: DataTypes.TEXT,
         },
         creator: {
+          allowNull: true,
           type: DataTypes.STRING,
-          allowNull: false,
         },
         previousOwnerAddress: {
+          allowNull: true,
           type: DataTypes.STRING,
-          allowNull: false,
         },
         isVisible: {
-          type: DataTypes.BOOLEAN,
           allowNull: false,
+          type: DataTypes.BOOLEAN,
         },
         lastProcessedIpfsHash: {
+          allowNull: false,
           type: DataTypes.TEXT,
-          allowNull: true,
+        },
+        lastProcessedVersion: {
+          allowNull: false,
+          type: DataTypes.BIGINT,
+        },
+        createdAt: {
+          allowNull: false,
+          type: DataTypes.DATE,
+        },
+        updatedAt: {
+          allowNull: false,
+          type: DataTypes.DATE,
         },
       },
       {
         sequelize,
-        tableName: 'DripLists',
+        tableName: 'drip_lists',
+        underscored: true,
+        timestamps: true,
+        indexes: [
+          {
+            fields: ['ownerAddress'],
+            name: `idx_drip_lists_owner_address`,
+            where: {
+              isValid: true,
+            },
+          },
+        ],
       },
     );
   }

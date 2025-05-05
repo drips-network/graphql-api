@@ -9,7 +9,7 @@ async function getStreamReceiverSeenEventsByAccountId(
   accountId: AccountId,
 ) {
   const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."StreamReceiverSeenEvents" WHERE "accountId" = :accountId`;
+    `SELECT *, '${schema}' AS chain FROM "${schema}"."stream_receiver_seen_events" WHERE "account_id" = :accountId`;
 
   const fullQuery = `${chains
     .map((chain) => `${baseSQL(chain)}`)

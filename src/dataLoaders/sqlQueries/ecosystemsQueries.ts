@@ -9,11 +9,13 @@ async function getEcosystemsByIds(
   ecosystemsIds: NftDriverId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
-    SELECT "id", "isValid", "isVisible", "ownerAddress", "ownerAccountId", "name", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain
-    FROM "${schema}"."EcosystemMainAccounts"
+    SELECT *, '${schema}' AS chain FROM ${schema}.ecosystem_main_accounts
   `;
 
-  const conditions: string[] = ['"id" IN (:ecosystemsIds)', '"isValid" = true'];
+  const conditions: string[] = [
+    'account_id IN (:ecosystemsIds)',
+    'is_valid = true',
+  ];
   const parameters: { [key: string]: any } = { ecosystemsIds };
 
   const whereClause = ` WHERE ${conditions.join(' AND ')}`;

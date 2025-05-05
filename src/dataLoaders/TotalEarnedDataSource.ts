@@ -63,17 +63,17 @@ export default class TotalEarnedDataSource {
   );
 
   public async getTotalEarnedByAccountIds(
-    id: NftDriverId | RepoDriverId,
+    accountId: NftDriverId | RepoDriverId,
     chains: DbSchema[],
   ): Promise<{
     splitEventsForAccountDataValues: SplitEventModelDataValues[];
     givenEventsForAccountDataValues: GivenEventModelDataValues[];
   }> {
     // eslint-disable-next-line no-nested-ternary
-    const key = isNftDriverId(id)
-      ? { id, chains }
-      : isRepoDriverId(id)
-        ? { id, chains }
+    const key = isNftDriverId(accountId)
+      ? { accountId, chains }
+      : isRepoDriverId(accountId)
+        ? { accountId, chains }
         : shouldNeverHappen();
 
     return this._batchTotalEarnedByAccountIds.load(key);

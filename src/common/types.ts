@@ -10,7 +10,7 @@ import type {
   UserData,
 } from '../generated/graphql';
 import type StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import type { DB_SCHEMAS, FORGES_MAP } from './constants';
+import type { DB_SCHEMAS } from './constants';
 import type { addressDriverAccountMetadataParser } from '../schemas';
 import type StreamsSetEventModel from '../models/StreamsSetEventModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
@@ -24,14 +24,22 @@ export type AddressDriverId = string & {
 };
 export type NftDriverId = string & { __brand: 'NftDriverId' };
 export type RepoDriverId = string & { __brand: 'RepoDriverId' };
-
-export type AccountId = AddressDriverId | NftDriverId | RepoDriverId;
+export type ImmutableSplitsDriverId = string & {
+  __brand: 'ImmutableSplitsDriverId';
+};
+export type RepoDeadlineDriverId = string & {
+  __brand: 'RepoDeadlineDriverId';
+};
+export type AccountId =
+  | AddressDriverId
+  | NftDriverId
+  | RepoDriverId
+  | ImmutableSplitsDriverId
+  | RepoDeadlineDriverId;
 
 export type Address = string & { __brand: 'Address' };
 
 export type BigIntString = string & { __brand: 'BigIntString' };
-
-export type Forge = ValuesOf<typeof FORGES_MAP>;
 
 export enum DependencyType {
   ProjectDependency = 'ProjectDependency',
@@ -89,7 +97,7 @@ export type ResolverUnClaimedProjectData = UnClaimedProjectData &
   ProjectDataParentProjectInfo;
 
 export interface MultiChainKey<T = AccountId> {
-  id: T;
+  accountId: T;
   chains: DbSchema[];
 }
 export type RepoDriverMultiChainKey = MultiChainKey<RepoDriverId>;
@@ -123,12 +131,6 @@ type EcosystemDataParentEcosystemInfo = {
 
 export type ResolverEcosystemData = EcosystemMainAccount &
   EcosystemDataParentEcosystemInfo;
-
-export type CommonDataValues = {
-  createdAt: Date;
-  updatedAt: Date;
-  chain: DbSchema;
-};
 
 export type ResolverGive = Give & {
   chainData: ResolverGiveChainData[];

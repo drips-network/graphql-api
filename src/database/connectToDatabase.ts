@@ -1,9 +1,6 @@
 import { Sequelize } from 'sequelize';
 import ProjectModel from '../project/ProjectModel';
-import AddressDriverSplitReceiverModel from '../models/AddressDriverSplitReceiverModel';
 import DripListModel from '../drip-list/DripListModel';
-import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
-import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
 import GivenEventModel from '../given-event/GivenEventModel';
 import appSettings from '../common/appSettings';
 import TransferEventModel from '../drip-list/TransferEventModel';
@@ -13,6 +10,8 @@ import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel
 import AccountMetadataEmittedEventModel from '../models/AccountMetadataEmittedEventModel';
 import SqueezedStreamsEventModel from '../models/SqueezedStreamsEventModel';
 import EcosystemMainAccountModel from '../ecosystem/EcosystemMainAccountModel';
+import SubListModel from '../models/SubListModel';
+import SplitsReceiverModel from '../models/SplitsReceiverModel';
 
 export const dbConnection = new Sequelize(
   `${appSettings.postgresConnectionString}`,
@@ -22,17 +21,16 @@ export const dbConnection = new Sequelize(
 export async function connectToDatabase() {
   await dbConnection.authenticate();
 
+  SubListModel.initialize(dbConnection);
   ProjectModel.initialize(dbConnection);
   DripListModel.initialize(dbConnection);
-  SplitEventModel.initialize(dbConnection);
   GivenEventModel.initialize(dbConnection);
+  SplitEventModel.initialize(dbConnection);
   TransferEventModel.initialize(dbConnection);
+  SplitsReceiverModel.initialize(dbConnection);
   StreamsSetEventModel.initialize(dbConnection);
   SqueezedStreamsEventModel.initialize(dbConnection);
   EcosystemMainAccountModel.initialize(dbConnection);
-  DripListSplitReceiverModel.initialize(dbConnection);
   StreamReceiverSeenEventModel.initialize(dbConnection);
-  RepoDriverSplitReceiverModel.initialize(dbConnection);
-  AddressDriverSplitReceiverModel.initialize(dbConnection);
   AccountMetadataEmittedEventModel.initialize(dbConnection);
 }

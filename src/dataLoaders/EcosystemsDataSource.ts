@@ -23,23 +23,23 @@ export default class EcosystemsDataSource {
       const ecosystemIdToEcosystemMap = ecosystemDataValues.reduce<
         Record<NftDriverId, EcosystemDataValues>
       >((mapping, ecosystem) => {
-        mapping[ecosystem.id] = ecosystem; // eslint-disable-line no-param-reassign
+        mapping[ecosystem.accountId] = ecosystem; // eslint-disable-line no-param-reassign
 
         return mapping;
       }, {});
 
       return ecosystemKeys.map(
-        ({ id }) => ecosystemIdToEcosystemMap[id] || null,
+        ({ accountId }) => ecosystemIdToEcosystemMap[accountId] || null,
       );
     },
   );
 
   public async getEcosystemById(
-    id: NftDriverId,
+    accountId: NftDriverId,
     chains: DbSchema[],
   ): Promise<EcosystemDataValues | null> {
     return this._batchEcosystemsById.load({
-      id,
+      accountId,
       chains,
     });
   }

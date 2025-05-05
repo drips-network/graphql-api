@@ -9,7 +9,7 @@ async function getDistinctErc20ByReceiver(
   receiver: AccountId,
 ) {
   const baseSQL = (schema: DbSchema) =>
-    `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
+    `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM ${schema}.split_events`;
 
   const whereClause = ` WHERE "receiver" = :receiver`;
 
@@ -33,12 +33,13 @@ async function getSplitEventsByAccountIdAndReceiver(
   receiver: AccountId,
 ): Promise<SplitEventModelDataValues[]> {
   const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
+    `SELECT *, '${schema}' AS chain FROM ${schema}.split_events`;
 
   const conditions: string[] = [
-    '"accountId" = :accountId',
-    '"receiver" = :receiver',
+    'account_id = :accountId',
+    'receiver = :receiver',
   ];
+
   const parameters: { [receiver: string]: any } = {
     accountId,
     receiver,
@@ -91,7 +92,7 @@ async function getSplitEventsByProjectReceivers(
   accountIds: AccountId[],
 ): Promise<SplitEventModelDataValues[]> {
   const baseSplitEventsSQL = (schema: DbSchema) =>
-    `SELECT "accountId", "receiver", "erc20", "amt", "transactionHash", "logIndex", "blockTimestamp", "blockNumber", "createdAt", "updatedAt", '${schema}' AS chain FROM "${schema}"."SplitEvents"`;
+    `SELECT *, '${schema}' AS chain FROM ${schema}.split_events`;
 
   const conditions: string[] = [`"receiver" IN (:receivers)`];
   const parameters: { [key: string]: any } = {

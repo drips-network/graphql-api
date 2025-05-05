@@ -20,7 +20,13 @@ import type {
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
-import assert, { isAccountId, isAddressDriverId } from '../utils/assert';
+import assert, {
+  assertIsNftDriverId,
+  assertIsRepoDriverId,
+  assertMany,
+  isAccountId,
+  isAddressDriverId,
+} from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
 import getUserAddress from '../utils/getUserAddress';
 import queryableChains from '../common/queryableChains';
@@ -190,54 +196,60 @@ const userResolvers = {
         },
       }: Context,
     ) => {
-      // `RepoDriverSplitReceiver`s that represent the Project as a receiver.
-      const dbAddressDriverSplitReceivers =
-        await supportDataSource.getSplitSupportByAddressDriverIdOnChain(
-          accountId as AddressDriverId,
+      const splitsReceivers =
+        await supportDataSource.getSplitSupportByReceiverIdOnChain(
+          accountId,
           userChain,
         );
 
+      assertMany(
+        splitsReceivers.map((s) => s.receiverAccountType),
+        (s) => s === 'project' || s === 'drip_list',
+      );
+
       const projectsAndDripListsSupport = await Promise.all(
-        dbAddressDriverSplitReceivers.map(async (receiver) => {
+        splitsReceivers.map(async (receiver) => {
           const {
-            funderProjectId,
-            funderDripListId,
-            fundeeAccountId,
+            senderAccountId,
+            senderAccountType,
             blockTimestamp,
+            receiverAccountId,
           } = receiver;
 
-          // Supported is a Project.
-          if (funderProjectId && !funderDripListId) {
+          if (senderAccountType === 'project') {
+            assertIsRepoDriverId(senderAccountId);
+
             return {
               ...receiver,
               account: {
                 driver: Driver.NFT,
-                accountId: fundeeAccountId,
+                accountId: receiverAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
               project: await toResolverProject(
                 [userChain],
                 (await projectsDataSource.getProjectByIdOnChain(
-                  funderProjectId,
+                  senderAccountId,
                   userChain,
                 )) || shouldNeverHappen(),
               ),
             };
-            // Supported is a DripList.
           }
-          if (funderDripListId && !funderProjectId) {
+          if (senderAccountType === 'drip_list') {
+            assertIsNftDriverId(senderAccountId);
+
             return {
               ...receiver,
               account: {
                 driver: Driver.NFT,
-                accountId: fundeeAccountId,
+                accountId: receiverAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
               dripList: await toResolverDripList(
                 userChain,
-                (await dripListsDataSource.getDripListById(funderDripListId, [
+                (await dripListsDataSource.getDripListById(senderAccountId, [
                   userChain,
                 ])) || shouldNeverHappen(),
               ),

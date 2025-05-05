@@ -1,25 +1,31 @@
-import type { AddressLike } from 'ethers';
 import type {
   InferAttributes,
   InferCreationAttributes,
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import type { CommonDataValues, NftDriverId } from '../common/types';
 import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
+import type {
+  Address,
+  DbSchema,
+  IEventModel,
+  NftDriverId,
+} from '../common/types';
 
-export type TransferEventModelDataValues = TransferEventModel['dataValues'] &
-  CommonDataValues;
+export type TransferEventModelDataValues = TransferEventModel['dataValues'] & {
+  chain: DbSchema;
+};
 
-export default class TransferEventModel extends Model<
-  InferAttributes<TransferEventModel>,
-  InferCreationAttributes<TransferEventModel>
-> {
+export default class TransferEventModel
+  extends Model<
+    InferAttributes<TransferEventModel>,
+    InferCreationAttributes<TransferEventModel>
+  >
+  implements IEventModel
+{
   public declare tokenId: NftDriverId; // The `tokenId` from `Transfer` event.
-  public declare from: AddressLike;
-  public declare to: AddressLike;
-
-  // Common event log properties.
+  public declare from: Address;
+  public declare to: Address;
   public declare logIndex: number;
   public declare blockNumber: number;
   public declare blockTimestamp: Date;
@@ -29,22 +35,24 @@ export default class TransferEventModel extends Model<
     this.init(
       {
         tokenId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         from: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         to: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         ...COMMON_EVENT_INIT_ATTRIBUTES,
       },
       {
         sequelize,
-        tableName: 'TransferEvents',
+        tableName: 'transfer_events',
+        underscored: true,
+        timestamps: true,
       },
     );
   }

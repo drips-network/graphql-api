@@ -27,21 +27,23 @@ export default class DripListsDataSource {
       const dripListIdToDripListMap = dripListDataValues.reduce<
         Record<NftDriverId, DripListDataValues>
       >((mapping, dripList) => {
-        mapping[dripList.id] = dripList; // eslint-disable-line no-param-reassign
+        mapping[dripList.accountId] = dripList; // eslint-disable-line no-param-reassign
 
         return mapping;
       }, {});
 
-      return dripListKeys.map(({ id }) => dripListIdToDripListMap[id] || null);
+      return dripListKeys.map(
+        ({ accountId }) => dripListIdToDripListMap[accountId] || null,
+      );
     },
   );
 
   public async getDripListById(
-    id: NftDriverId,
+    accountId: NftDriverId,
     chains: DbSchema[],
   ): Promise<DripListDataValues | null> {
     return this._batchDripListsByIds.load({
-      id,
+      accountId,
       chains,
     });
   }
@@ -60,7 +62,7 @@ export default class DripListsDataSource {
     return (
       await (this._batchDripListsByIds.loadMany(
         ids.map((id) => ({
-          id,
+          accountId: id,
           chains: [chain],
         })),
       ) as Promise<DripListDataValues[]>)

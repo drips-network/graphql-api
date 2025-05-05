@@ -8,15 +8,14 @@ async function getAccountMetadataEmittedEventsByAccountId(
   chains: DbSchema[],
   accountId: AccountId,
 ) {
-  // TODO: Prevent SQL injection in all queries from schema input.
   const baseSQL = (schema: DbSchema) =>
-    `SELECT *,'${schema}' AS chain FROM "${schema}"."AccountMetadataEmittedEvents"`;
+    `SELECT *,'${schema}' AS chain FROM ${schema}.account_metadata_emitted_events`;
 
   const parameters: { [key: string]: any } = { accountId };
 
-  const whereClause = ` WHERE "accountId" = :accountId`;
+  const whereClause = ` WHERE "account_id" = :accountId`;
 
-  const orderClause = ' ORDER BY "blockNumber" DESC, "logIndex" DESC';
+  const orderClause = ' ORDER BY block_number DESC, "log_index" DESC';
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 

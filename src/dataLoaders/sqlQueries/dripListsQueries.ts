@@ -10,19 +10,18 @@ async function getDripListsByFilter(
   where?: DripListWhereInput,
 ) {
   const baseSQL = (schema: DbSchema) => `
-    SELECT "id", "isValid", "isVisible", "name", "creator", "description", "ownerAddress", "ownerAccountId", "latestVotingRoundId", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
-    FROM "${schema}"."DripLists"
+    SELECT *, '${schema}' AS chain FROM ${schema}.drip_lists
   `;
 
-  const conditions: string[] = ['"isValid" = true', 'name IS NOT NULL'];
+  const conditions: string[] = ['is_valid = true', 'name IS NOT NULL'];
   const parameters: { [key: string]: any } = {};
 
-  if (where?.id) {
-    conditions.push(`"id" = :id`);
-    parameters.id = where.id;
+  if (where?.accountId) {
+    conditions.push(`account_id = :accountId`);
+    parameters.accountId = where.accountId;
   }
   if (where?.ownerAddress) {
-    conditions.push(`"ownerAddress" = :ownerAddress`);
+    conditions.push(`owner_address = :ownerAddress`);
     parameters.ownerAddress = where.ownerAddress;
   }
 
@@ -47,11 +46,12 @@ async function getDripListsByIds(
   dripListIds: NftDriverId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
-    SELECT "id", "isValid", "isVisible", "ownerAddress", "ownerAccountId", "name", "latestVotingRoundId", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain
-    FROM "${schema}"."DripLists"
-  `;
+    SELECT *, '${schema}' AS chain FROM ${schema}.drip_lists`;
 
-  const conditions: string[] = ['"id" IN (:dripListIds)', '"isValid" = true'];
+  const conditions: string[] = [
+    'account_id IN (:dripListIds)',
+    'is_valid = true',
+  ];
   const parameters: { [key: string]: any } = { dripListIds };
 
   const whereClause = ` WHERE ${conditions.join(' AND ')}`;

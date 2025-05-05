@@ -46,7 +46,7 @@ export default class ProjectsDataSource {
       const projectIdToProjectMap = filteredProjectsDataValues.reduce<
         Record<RepoDriverId, ProjectDataValues>
       >((mapping, project) => {
-        mapping[project.id] = project; // eslint-disable-line no-param-reassign
+        mapping[project.accountId] = project; // eslint-disable-line no-param-reassign
 
         return mapping;
       }, {});
@@ -56,11 +56,11 @@ export default class ProjectsDataSource {
   );
 
   public async getProjectByIdOnChain(
-    id: RepoDriverId,
+    accountId: RepoDriverId,
     chain: DbSchema,
   ): Promise<ProjectDataValues | null> {
     const dbProject = await this._batchProjectsByIds.load({
-      id,
+      accountId,
       chains: [chain],
     });
 
@@ -68,18 +68,18 @@ export default class ProjectsDataSource {
   }
 
   public async getProjectById(
-    id: RepoDriverId,
+    accountId: RepoDriverId,
     chains: DbSchema[],
   ): Promise<ProjectDataValues[] | null> {
     const dbProjects = (
-      await this._batchProjectsByIds.loadMany([{ id, chains }])
+      await this._batchProjectsByIds.loadMany([{ accountId, chains }])
     ).filter(Boolean) as ProjectDataValues[];
 
     if (!dbProjects?.length) {
       return null;
     }
 
-    if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
+    if (dbProjects.some((p) => p.accountId !== dbProjects[0].accountId)) {
       shouldNeverHappen(
         'Found same project with different ids on different chains.',
       );
@@ -104,7 +104,7 @@ export default class ProjectsDataSource {
       return [await toProjectRepresentationFromUrl(url, chains)];
     }
 
-    if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
+    if (dbProjects.some((p) => p.accountId !== dbProjects[0].accountId)) {
       shouldNeverHappen(
         'Found same project with different ids on different chains.',
       );
@@ -138,7 +138,7 @@ export default class ProjectsDataSource {
     return (
       await (this._batchProjectsByIds.loadMany(
         ids.map((id) => ({
-          id,
+          accountId: id,
           chains: [chain],
         })),
       ) as Promise<ProjectDataValues[]>)

@@ -22,10 +22,8 @@ import typeDefs from './schema';
 import appSettings from './common/appSettings';
 import ProjectsDataSource from './dataLoaders/ProjectsDataSource';
 import { connectToDatabase } from './database/connectToDatabase';
-import ReceiversOfTypeProjectDataSource from './dataLoaders/ReceiversOfTypeProjectDataSource';
-import ReceiversOfTypeAddressDataSource from './dataLoaders/ReceiversOfTypeAddressDataSource';
+import SplitsReceiversDataSource from './dataLoaders/SplitsReceiversDataSource';
 import DripListsDataSource from './dataLoaders/DripListsDataSource';
-import ReceiversOfTypeDripListDataSource from './dataLoaders/ReceiversOfTypeDripListDataSource';
 import GivenEventsDataSource from './dataLoaders/GivenEventsDataSource';
 import SupportDataSource from './dataLoaders/SupportDataSource';
 import UsersDataSource from './user/UserDataSource';
@@ -38,9 +36,7 @@ export interface Context {
     projectsDataSource: ProjectsDataSource;
     givenEventsDataSource: GivenEventsDataSource;
     dripListsDataSource: DripListsDataSource;
-    receiversOfTypeAddressDataSource: ReceiversOfTypeAddressDataSource;
-    receiversOfTypeProjectDataSource: ReceiversOfTypeProjectDataSource;
-    receiversOfTypeDripListDataSource: ReceiversOfTypeDripListDataSource;
+    splitsReceiversDataSource: SplitsReceiversDataSource;
     supportDataSource: SupportDataSource;
     usersDataSource: UsersDataSource;
     streamsDataSource: StreamsDataSource;
@@ -191,12 +187,7 @@ const startServer = async () => {
             projectsDataSource: new ProjectsDataSource(),
             givenEventsDataSource: new GivenEventsDataSource(),
             dripListsDataSource: new DripListsDataSource(),
-            receiversOfTypeAddressDataSource:
-              new ReceiversOfTypeAddressDataSource(),
-            receiversOfTypeProjectDataSource:
-              new ReceiversOfTypeProjectDataSource(),
-            receiversOfTypeDripListDataSource:
-              new ReceiversOfTypeDripListDataSource(),
+            splitsReceiversDataSource: new SplitsReceiversDataSource(),
             supportDataSource: new SupportDataSource(),
             givesDb: new GivenEventsDataSource(),
             usersDataSource: new UsersDataSource(),

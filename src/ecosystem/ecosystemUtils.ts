@@ -28,12 +28,12 @@ export async function toResolverEcosystems(
 
         return {
           account: {
-            accountId: ecosystem.id,
+            accountId: ecosystem.accountId,
             driver: Driver.NFT,
           },
           chain: dbSchemaToChain[ecosystemChain],
           parentEcosystemInfo: {
-            ecosystemId: ecosystem.id,
+            ecosystemId: ecosystem.accountId,
             ecosystemChain,
             queriedChains: chains,
           },
