@@ -146,11 +146,7 @@ const projectResolvers = {
   },
   ProjectData: {
     __resolveType(parent: ProjectData) {
-      if (
-        'claimedAt' in parent &&
-        !!parent.claimedAt &&
-        parent.verificationStatus === ProjectVerificationStatus.pending_metadata
-      ) {
+      if (parent.verificationStatus === ProjectVerificationStatus.claimed) {
         return 'ClaimedProjectData';
       }
 
@@ -183,7 +179,7 @@ const projectResolvers = {
       }: Context,
     ) => {
       const splitsReceivers =
-        await splitsReceiversDataSource.getSplitsReceiversOnChain(
+        await splitsReceiversDataSource.getSplitsReceiversForSenderOnChain(
           projectId,
           projectChain,
         );
@@ -250,17 +246,13 @@ const projectResolvers = {
 
       const projectsMap = new Map(
         projects
-          .filter(
-            (p): p is ProjectDataValues => p && (p as any).id !== undefined,
-          )
+          .filter((p): p is ProjectDataValues => p.accountId !== undefined)
           .map((p) => [p.accountId, p]),
       );
 
       const dripListsMap = new Map(
         dripLists
-          .filter(
-            (l): l is DripListDataValues => l && (l as any).id !== undefined,
-          )
+          .filter((l): l is DripListDataValues => l.accountId !== undefined)
           .map((l) => [l.accountId, l]),
       );
 

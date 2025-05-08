@@ -175,17 +175,13 @@ const dripListResolvers = {
 
       const projectsMap = new Map(
         projects
-          .filter(
-            (p): p is ProjectDataValues => p && (p as any).id !== undefined,
-          )
+          .filter((p): p is ProjectDataValues => p.accountId !== undefined)
           .map((p) => [p.accountId, p]),
       );
 
       const dripListsMap = new Map(
         dripLists
-          .filter(
-            (l): l is DripListDataValues => l && (l as any).id !== undefined,
-          )
+          .filter((l): l is DripListDataValues => l.accountId !== undefined)
           .map((l) => [l.accountId, l]),
       );
 

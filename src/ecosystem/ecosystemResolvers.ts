@@ -123,14 +123,14 @@ const ecosystemResolvers = {
     // const projectsMap = new Map(
     //   projects
     //     .filter(
-    //       (p): p is ProjectDataValues => p && (p as any).id !== undefined,
+    //       (p): p is ProjectDataValues => p.accountId !== undefined,
     //     )
     //     .map((p) => [p.accountId, p]),
     // );
     // const subListsMap = new Map(
     //   subListsMap
     //     .filter(
-    //       (l): l is SubListDataValues => l && (l as any).id !== undefined,
+    //       (l): l is SubListDataValues => l.accountId !== undefined,
     //     )
     //     .map((l) => [l.accountId, l]),
     // );
