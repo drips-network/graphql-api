@@ -23,6 +23,7 @@ import type dripListResolvers from '../drip-list/dripListResolvers';
 import type ecosystemResolvers from '../ecosystem/ecosystemResolvers';
 import type { SplitsReceiverModelDataValues } from '../models/SplitsReceiverModel';
 import type { RelationshipType } from '../utils/splitRules';
+import { toResolverEcosystems } from '../ecosystem/ecosystemUtils';
 
 async function resolveTotalSplit({
   senderAccountId,
@@ -79,7 +80,7 @@ const commonResolvers = {
       if (
         'dripList' in parent ||
         'project' in parent ||
-        'ecosystem' in parent ||
+        'ecosystemMainAccount' in parent ||
         'subList' in parent
       ) {
         const { relationshipType } = parent as {
@@ -97,15 +98,12 @@ const commonResolvers = {
           return 'DripListSupport';
         }
 
-        if (relationshipType === 'ecosystem_receiver') {
+        if (
+          relationshipType === 'ecosystem_receiver' ||
+          relationshipType === 'sub_list_link'
+        ) {
           return 'EcosystemSupport';
         }
-
-        if (relationshipType === 'sub_list_link') {
-          return 'SubListSupport';
-        }
-
-        return shouldNeverHappen(`Invalid support type: ${relationshipType}`);
       }
 
       if ('timeline' in parent) {
@@ -225,6 +223,63 @@ const commonResolvers = {
     totalSplit: (parent: SplitsReceiverModelDataValues) =>
       resolveTotalSplit(parent),
   },
+  EcosystemSupport: {
+    account: async (
+      parent: {
+        senderAccountId: NftDriverId;
+        chain: DbSchema;
+      },
+      _: any,
+      context: Context,
+    ): Promise<NftDriverAccount> => {
+      const {
+        dataSources: { ecosystemsDataSource },
+      } = context;
+
+      const { senderAccountId, chain } = parent;
+
+      const ecosystemMainAccount = await ecosystemsDataSource.getEcosystemById(
+        senderAccountId,
+        [chain],
+      );
+
+      return {
+        driver: Driver.NFT,
+        accountId: ecosystemMainAccount
+          ? ecosystemMainAccount.accountId
+          : shouldNeverHappen(),
+      };
+    },
+    date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
+    weight: (parent: { weight: number }): number => parent.weight,
+    ecosystemMainAccount: async (
+      parent: { senderAccountId: NftDriverId; chain: DbSchema },
+      _: any,
+      context: Context,
+    ) => {
+      const {
+        dataSources: { ecosystemsDataSource },
+      } = context;
+
+      const { senderAccountId, chain } = parent;
+
+      const ecosystemMainAccountDataValues =
+        (await ecosystemsDataSource.getEcosystemById(senderAccountId, [
+          chain,
+        ])) || shouldNeverHappen();
+
+      const resolverDripLists = await toResolverEcosystems(
+        [chain],
+        [ecosystemMainAccountDataValues],
+      );
+
+      const [ecosystemMainAccounts] = resolverDripLists;
+
+      return ecosystemMainAccounts;
+    },
+    totalSplit: (parent: SplitsReceiverModelDataValues) =>
+      resolveTotalSplit(parent),
+  },
   OneTimeDonationSupport: {
     account: async (
       parent: GivenEventModelDataValues,
@@ -274,6 +329,10 @@ const commonResolvers = {
 
       if (receiver.driver === Driver.ADDRESS) {
         return 'AddressReceiver';
+      }
+
+      if (receiver.driver === Driver.IMMUTABLE_SPLITS) {
+        return 'SubListReceiver';
       }
 
       return shouldNeverHappen();

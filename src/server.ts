@@ -30,6 +30,7 @@ import UsersDataSource from './user/UserDataSource';
 import StreamsDataSource from './stream/StreamsDataSource';
 import TotalEarnedDataSource from './dataLoaders/TotalEarnedDataSource';
 import EcosystemsDataSource from './dataLoaders/EcosystemsDataSource';
+import SubListsDataSource from './dataLoaders/SubListsDataSource';
 
 export interface Context {
   dataSources: {
@@ -42,6 +43,7 @@ export interface Context {
     streamsDataSource: StreamsDataSource;
     totalEarnedDataSource: TotalEarnedDataSource;
     ecosystemsDataSource: EcosystemsDataSource;
+    subListsDataSource: SubListsDataSource;
   };
 }
 
@@ -194,6 +196,7 @@ const startServer = async () => {
             streamsDataSource: new StreamsDataSource(),
             totalEarnedDataSource: new TotalEarnedDataSource(),
             ecosystemsDataSource: new EcosystemsDataSource(),
+            subListsDataSource: new SubListsDataSource(),
           },
         };
       },

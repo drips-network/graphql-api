@@ -42,6 +42,7 @@ import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import getUserAddress from '../utils/getUserAddress';
+import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
 
 const projectResolvers = {
   Query: {
@@ -319,6 +320,7 @@ const projectResolvers = {
           projectsDataSource,
           dripListsDataSource,
           supportDataSource,
+          ecosystemsDataSource,
         },
       }: Context,
     ) => {
@@ -328,7 +330,7 @@ const projectResolvers = {
           projectChain,
         );
 
-      const projectsAndDripListsSupport = await Promise.all(
+      const support = await Promise.all(
         splitReceivers.map(async (receiver) => {
           const {
             senderAccountId,
@@ -376,9 +378,28 @@ const projectResolvers = {
               ),
             };
           }
+          if (senderAccountType === 'ecosystem_main_account') {
+            assertIsNftDriverId(senderAccountId);
+
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              ecosystemMainAccount: await toResolverEcosystem(
+                projectChain,
+                (await ecosystemsDataSource.getEcosystemById(senderAccountId, [
+                  projectChain,
+                ])) || shouldNeverHappen(),
+              ),
+            };
+          }
 
           return shouldNeverHappen(
-            'Supported is neither a Project nor a DripList.',
+            'Supported is neither a Project, a DripList, nor an Ecosystem.',
           );
         }),
       );
@@ -389,7 +410,7 @@ const projectResolvers = {
           projectChain,
         );
 
-      return [...projectsAndDripListsSupport, ...oneTimeDonationSupport];
+      return [...support, ...oneTimeDonationSupport];
     },
     totalEarned: async (
       projectData: ResolverUnClaimedProjectData,
@@ -420,6 +441,7 @@ const projectResolvers = {
           projectsDataSource,
           dripListsDataSource,
           supportDataSource,
+          ecosystemsDataSource,
         },
       }: Context,
     ) => {
@@ -429,7 +451,7 @@ const projectResolvers = {
           projectChain,
         );
 
-      const projectsAndDripListsSupport = await Promise.all(
+      const support = await Promise.all(
         splitsReceivers.map(async (s) => {
           const {
             senderAccountId,
@@ -474,9 +496,28 @@ const projectResolvers = {
               ),
             };
           }
+          if (senderAccountType === 'ecosystem_main_account') {
+            assertIsNftDriverId(senderAccountId);
+
+            return {
+              ...s,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              ecosystemMainAccount: await toResolverEcosystem(
+                projectChain,
+                (await ecosystemsDataSource.getEcosystemById(senderAccountId, [
+                  projectChain,
+                ])) || shouldNeverHappen(),
+              ),
+            };
+          }
 
           return shouldNeverHappen(
-            'Supported is neither a Project nor a DripList.',
+            'Supported is neither a Project, a DripList, nor an Ecosystem.',
           );
         }),
       );
@@ -488,7 +529,7 @@ const projectResolvers = {
           projectChain,
         );
 
-      return [...projectsAndDripListsSupport, ...oneTimeDonationSupport];
+      return [...support, ...oneTimeDonationSupport];
     },
     withdrawableBalances: async ({
       parentProjectInfo: { projectId, projectChain },

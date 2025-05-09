@@ -5,6 +5,7 @@ import type {
   EcosystemMainAccount,
   Give,
   Project,
+  SubList,
   UnClaimedProjectData,
   User,
   UserData,
@@ -102,6 +103,8 @@ export interface MultiChainKey<T = AccountId> {
 }
 export type RepoDriverMultiChainKey = MultiChainKey<RepoDriverId>;
 export type NftDriverMultiChainKey = MultiChainKey<NftDriverId>;
+export type ImmutableSplitsDriverMultiChainKey =
+  MultiChainKey<ImmutableSplitsDriverId>;
 
 export type ResolverDripList = DripList & {
   chainData?: ResolverDripListData[];
@@ -111,6 +114,20 @@ type DripListDataParentDripListInfo = {
   parentDripListInfo: {
     dripListId: NftDriverId;
     dripListChain: DbSchema;
+    queriedChain: DbSchema;
+  };
+};
+
+export type ResolverSubListData = SubList & SubListDataParentSubListInfo;
+
+export type ResolverSubList = SubList & {
+  chainData?: ResolverSubListData[];
+};
+
+type SubListDataParentSubListInfo = {
+  parentDripListInfo: {
+    subListId: NftDriverId;
+    subListChain: DbSchema;
     queriedChain: DbSchema;
   };
 };

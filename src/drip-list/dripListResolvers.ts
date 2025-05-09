@@ -52,8 +52,7 @@ const dripListResolvers = {
         where,
       );
 
-      const s = await toResolverDripLists(dbSchemasToQuery, dbDripLists);
-      return s;
+      return toResolverDripLists(dbSchemasToQuery, dbDripLists);
     },
     dripList: async (
       _: undefined,
@@ -115,7 +114,7 @@ const dripListResolvers = {
       }: Context,
     ) => {
       const splitsReceivers =
-        await splitsReceiversDataSource.getSplitsReceiversOnChain(
+        await splitsReceiversDataSource.getSplitsReceiversForSenderOnChain(
           dripListId,
           dripListChain,
         );

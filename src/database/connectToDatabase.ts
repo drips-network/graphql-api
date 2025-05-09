@@ -10,7 +10,7 @@ import StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel
 import AccountMetadataEmittedEventModel from '../models/AccountMetadataEmittedEventModel';
 import SqueezedStreamsEventModel from '../models/SqueezedStreamsEventModel';
 import EcosystemMainAccountModel from '../ecosystem/EcosystemMainAccountModel';
-import SubListModel from '../models/SubListModel';
+import SubListModel from '../sub-list/SubListModel';
 import SplitsReceiverModel from '../models/SplitsReceiverModel';
 
 export const dbConnection = new Sequelize(
