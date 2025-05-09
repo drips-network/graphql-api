@@ -16,6 +16,7 @@ import type {
   SupportedChain,
   AddressDriverAccount,
   User,
+  EcosystemMainAccount,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
@@ -185,13 +186,13 @@ const userResolvers = {
         dataSources: {
           projectsDataSource,
           dripListsDataSource,
-          projectAndDripListSupportDataSource,
+          supportDataSource,
         },
       }: Context,
     ) => {
       // `RepoDriverSplitReceiver`s that represent the Project as a receiver.
       const dbAddressDriverSplitReceivers =
-        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByAddressDriverIdOnChain(
+        await supportDataSource.getSplitSupportByAddressDriverIdOnChain(
           accountId as AddressDriverId,
           userChain,
         );
@@ -250,13 +251,13 @@ const userResolvers = {
       );
 
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
+        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
           accountId as AccountId,
           userChain,
         );
 
       const streamSupport =
-        await projectAndDripListSupportDataSource.getStreamSupportByAccountIdOnChain(
+        await supportDataSource.getStreamSupportByAccountIdOnChain(
           accountId as AccountId,
           userChain,
         );
@@ -298,9 +299,13 @@ const userResolvers = {
     },
   },
   StreamReceiver: {
-    __resolveType(parent: DripListModel | User) {
+    __resolveType(parent: DripListModel | User | EcosystemMainAccount) {
       if ('account' in parent && parent.account.driver === Driver.NFT) {
         return 'DripList';
+      }
+
+      if ('parentEcosystemInfo' in parent) {
+        return 'EcosystemMainAccount';
       }
 
       return 'User';

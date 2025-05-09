@@ -9,7 +9,7 @@ const streamTypeDef = gql`
     durationSeconds: Int
   }
 
-  union StreamReceiver = User | DripList
+  union StreamReceiver = User | DripList | EcosystemMainAccount
 
   enum TimelineItemType {
     START

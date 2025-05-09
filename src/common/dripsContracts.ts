@@ -14,7 +14,7 @@ import type {
   AddressDriverId,
   DbSchema,
   Forge,
-  ProjectId,
+  RepoDriverId,
 } from './types';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
@@ -194,5 +194,5 @@ export async function getCrossChainRepoDriverAccountIdByAddress(
     await repoDriver.calcAccountId(forgeAsNum, nameAsBytesLike)
   ).toString();
 
-  return accountId as ProjectId;
+  return accountId as RepoDriverId;
 }

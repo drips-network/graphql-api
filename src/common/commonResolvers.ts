@@ -10,7 +10,12 @@ import type {
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { AddressDriverId, DbSchema, DripListId, ProjectId } from './types';
+import type {
+  AddressDriverId,
+  DbSchema,
+  NftDriverId,
+  RepoDriverId,
+} from './types';
 import { DependencyType } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
@@ -25,6 +30,7 @@ import type projectResolvers from '../project/projectResolvers';
 import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import type dripListResolvers from '../drip-list/dripListResolvers';
+import type ecosystemResolvers from '../ecosystem/ecosystemResolvers';
 
 async function resolveTotalSplit(
   parent:
@@ -32,8 +38,8 @@ async function resolveTotalSplit(
     | RepoDriverSplitReceiverModelDataValues
     | AddressDriverSplitReceiverModelDataValues,
 ) {
-  let incomingAccountId: DripListId | ProjectId;
-  let recipientAccountId: DripListId | ProjectId | AddressDriverId;
+  let incomingAccountId: NftDriverId | RepoDriverId;
+  let recipientAccountId: NftDriverId | RepoDriverId | AddressDriverId;
 
   if ('fundeeDripListId' in parent) {
     const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
@@ -96,8 +102,9 @@ const commonResolvers = {
         | Awaited<
             ReturnType<typeof projectResolvers.ClaimedProjectData.support>
           >[number]
+        | Awaited<ReturnType<typeof dripListResolvers.DripList.support>>[number]
         | Awaited<
-            ReturnType<typeof dripListResolvers.DripList.support>
+            ReturnType<typeof ecosystemResolvers.EcosystemMainAccount.support>
           >[number],
     ) {
       if ('dripList' in parent || 'project' in parent) {
@@ -131,7 +138,7 @@ const commonResolvers = {
   ProjectSupport: {
     account: async (
       parent: {
-        funderProjectId: ProjectId;
+        funderProjectId: RepoDriverId;
         chain: DbSchema;
       },
       _: any,
@@ -158,7 +165,7 @@ const commonResolvers = {
     weight: (parent: { weight: number }): number => parent.weight,
     project: async (
       parent: {
-        funderProjectId: ProjectId;
+        funderProjectId: RepoDriverId;
         chain: DbSchema;
         queriedChains: DbSchema[];
       },
@@ -187,7 +194,7 @@ const commonResolvers = {
   DripListSupport: {
     account: async (
       parent: {
-        funderDripListId: DripListId;
+        funderDripListId: NftDriverId;
         chain: DbSchema;
       },
       _: any,
@@ -212,7 +219,7 @@ const commonResolvers = {
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
     dripList: async (
-      parent: { funderDripListId: DripListId; chain: DbSchema },
+      parent: { funderDripListId: NftDriverId; chain: DbSchema },
       _: any,
       context: Context,
     ) => {
