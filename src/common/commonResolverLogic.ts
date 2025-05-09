@@ -8,41 +8,21 @@ import type {
 } from './types';
 import type { Context } from '../server';
 import mergeAmounts from '../utils/mergeAmounts';
-import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
-import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
 import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
+import type SplitsReceiverModel from '../models/SplitsReceiverModel';
 
 export async function resolveTotalSplit(
   chains: DbSchema[],
-  parent: DripListSplitReceiverModel | RepoDriverSplitReceiverModel,
+  { senderAccountId, receiverAccountId }: SplitsReceiverModel,
 ) {
-  let incomingAccountId: NftDriverId | RepoDriverId;
-  let recipientAccountId: NftDriverId | RepoDriverId;
-
-  if (parent instanceof DripListSplitReceiverModel) {
-    const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
-    recipientAccountId = fundeeDripListId;
-    incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
-  } else if (parent instanceof RepoDriverSplitReceiverModel) {
-    const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
-    recipientAccountId = fundeeProjectId;
-    incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
-  } else {
-    shouldNeverHappen('Invalid SupportItem type');
-  }
-
-  const splitEventModelDataValues =
-    await splitEventsQueries.getByAccountIdAndReceiver(
-      chains,
-      incomingAccountId,
-      recipientAccountId,
-    );
+  const splitEvents = await splitEventsQueries.getByAccountIdAndReceiver(
+    chains,
+    senderAccountId,
+    receiverAccountId,
+  );
 
   return mergeAmounts(
-    splitEventModelDataValues.map((splitEvent) => ({
+    splitEvents.map((splitEvent) => ({
       tokenAddress: splitEvent.erc20,
       amount: BigInt(splitEvent.amt),
       chain: splitEvent.chain,

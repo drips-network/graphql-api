@@ -1,22 +1,21 @@
 import { QueryTypes } from 'sequelize';
-import type { DbSchema, NftDriverId } from '../../common/types';
+import type { DbSchema, ImmutableSplitsDriverId } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
-import type { EcosystemDataValues } from '../../ecosystem/EcosystemMainAccountModel';
-import EcosystemMainAccountModel from '../../ecosystem/EcosystemMainAccountModel';
+import type { SubListDataValues } from '../../sub-list/SubListModel';
+import SubListModel from '../../sub-list/SubListModel';
 
-async function getEcosystemsByIds(
+async function getSubListsByIds(
   chains: DbSchema[],
-  ecosystemsIds: NftDriverId[],
+  subListIds: ImmutableSplitsDriverId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
-    SELECT *, '${schema}' AS chain FROM ${schema}.ecosystem_main_accounts
-  `;
+    SELECT *, '${schema}' AS chain FROM ${schema}.sub_lists`;
 
   const conditions: string[] = [
-    'account_id IN (:ecosystemsIds)',
+    'account_id IN (:dripListIds)',
     'is_valid = true',
   ];
-  const parameters: { [key: string]: any } = { ecosystemsIds };
+  const parameters: { [key: string]: any } = { dripListIds: subListIds };
 
   const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
@@ -29,11 +28,11 @@ async function getEcosystemsByIds(
       type: QueryTypes.SELECT,
       replacements: parameters,
       mapToModel: true,
-      model: EcosystemMainAccountModel,
+      model: SubListModel,
     })
-  ).map((p) => p.dataValues as EcosystemDataValues);
+  ).map((p) => p.dataValues as SubListDataValues);
 }
 
 export default {
-  getByIds: getEcosystemsByIds,
+  getByIds: getSubListsByIds,
 };

@@ -8,15 +8,9 @@ import {
 } from '../generated/contracts';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { SupportedChain } from '../generated/graphql';
-import type {
-  AccountId,
-  Address,
-  AddressDriverId,
-  DbSchema,
-  Forge,
-  RepoDriverId,
-} from './types';
+import type { Address, AddressDriverId, DbSchema, RepoDriverId } from './types';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
+import type { Forge } from '../project/ProjectModel';
 
 const chainConfigs: Record<
   SupportedChain,
@@ -164,7 +158,7 @@ export async function getCrossChainRepoDriverAccountIdByAddress(
   forge: Forge,
   project: string,
   chainsToQuery: DbSchema[],
-): Promise<AccountId> {
+): Promise<RepoDriverId> {
   // RepoDriver account IDs are the same across all chains.
   const availableChain = chainsToQuery.find(
     (chain) =>
@@ -182,9 +176,9 @@ export async function getCrossChainRepoDriverAccountIdByAddress(
 
   let forgeAsNum: 0 | 1 | undefined;
 
-  if (forge === 'GitHub') {
+  if (forge === 'github') {
     forgeAsNum = 0;
-  } else if (forge === 'GitLab') {
+  } else if (forge === 'gitlab') {
     forgeAsNum = 1;
   } else {
     return shouldNeverHappen(`Forge ${forge} not supported.`);

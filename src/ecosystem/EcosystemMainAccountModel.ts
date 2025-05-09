@@ -1,77 +1,109 @@
 import type {
+  CreationOptional,
   InferAttributes,
   InferCreationAttributes,
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import type { AddressLike } from 'ethers';
-import type { AccountId, CommonDataValues, NftDriverId } from '../common/types';
+import type {
+  DbSchema,
+  NftDriverId,
+  AccountId,
+  Address,
+} from '../common/types';
 
-export type EcosystemDataValues = EcosystemMainAccountModel['dataValues'] &
-  CommonDataValues;
+export type EcosystemDataValues = EcosystemMainAccountModel['dataValues'] & {
+  chain: DbSchema;
+};
 
 export default class EcosystemMainAccountModel extends Model<
   InferAttributes<EcosystemMainAccountModel>,
   InferCreationAttributes<EcosystemMainAccountModel>
 > {
-  public declare id: NftDriverId;
+  public declare accountId: NftDriverId;
   public declare isValid: boolean;
   public declare name: string | null;
-  public declare creator: AddressLike;
+  public declare creator: Address | null;
   public declare description: string | null;
-  public declare ownerAddress: AddressLike;
+  public declare ownerAddress: Address;
   public declare ownerAccountId: AccountId;
-  public declare previousOwnerAddress: AddressLike;
+  public declare previousOwnerAddress: Address;
   public declare isVisible: boolean;
-  public declare lastProcessedIpfsHash: string | null;
+  public declare lastProcessedIpfsHash: string;
+  public declare lastProcessedVersion: string;
+  public declare createdAt: CreationOptional<Date>;
+  public declare updatedAt: CreationOptional<Date>;
 
   public static initialize(sequelize: Sequelize): void {
     this.init(
       {
-        id: {
-          type: DataTypes.STRING,
+        accountId: {
           primaryKey: true,
+          type: DataTypes.STRING,
         },
         isValid: {
-          type: DataTypes.BOOLEAN,
           allowNull: false,
+          type: DataTypes.BOOLEAN,
         },
         ownerAddress: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         ownerAccountId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         name: {
-          type: DataTypes.STRING,
           allowNull: true,
+          type: DataTypes.STRING,
         },
         description: {
-          type: DataTypes.TEXT,
           allowNull: true,
+          type: DataTypes.TEXT,
         },
         creator: {
+          allowNull: true,
           type: DataTypes.STRING,
-          allowNull: false,
         },
         previousOwnerAddress: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         isVisible: {
-          type: DataTypes.BOOLEAN,
           allowNull: false,
+          type: DataTypes.BOOLEAN,
         },
         lastProcessedIpfsHash: {
+          allowNull: false,
           type: DataTypes.TEXT,
-          allowNull: true,
+        },
+        lastProcessedVersion: {
+          allowNull: false,
+          type: DataTypes.BIGINT,
+        },
+        createdAt: {
+          allowNull: false,
+          type: DataTypes.DATE,
+        },
+        updatedAt: {
+          allowNull: false,
+          type: DataTypes.DATE,
         },
       },
       {
         sequelize,
-        tableName: 'EcosystemMainAccounts',
+        tableName: 'ecosystem_main_accounts',
+        underscored: true,
+        timestamps: true,
+        indexes: [
+          {
+            fields: ['ownerAddress'],
+            name: `idx_ecosystem_main_accounts_owner_address`,
+            where: {
+              isValid: true,
+            },
+          },
+        ],
       },
     );
   }

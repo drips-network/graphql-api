@@ -8,7 +8,7 @@ export default function verifyDripListsInput(
 ) {
   const { where, chains } = dripsListsQueryArgs;
 
-  if (where?.id && !isNftDriverId(where.id)) {
+  if (where?.accountId && !isNftDriverId(where.accountId)) {
     throw new Error('Invalid drip list id.');
   }
 
