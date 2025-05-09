@@ -6,6 +6,7 @@ import givenEventTypeDef from './given-event/givenEventTypeDef';
 import userTypeDef from './user/userTypeDef';
 import streamTypeDef from './stream/streamTypeDef';
 import ecosystemTypeDef from './ecosystem/ecosystemTypeDef';
+import subListTypeDef from './sub-list/subListTypeDef';
 
 const rootTypeDef = gql`
   type Query {
@@ -42,6 +43,7 @@ const typeDefs = [
   givenEventTypeDef,
   userTypeDef,
   streamTypeDef,
+  subListTypeDef,
 ];
 
 export default typeDefs;

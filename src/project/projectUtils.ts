@@ -1,19 +1,17 @@
 import { ZeroAddress } from 'ethers';
 import type {
   DbSchema,
-  Forge,
   ResolverClaimedProjectData,
   ResolverProject,
   ResolverUnClaimedProjectData,
 } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { ProjectDataValues } from './ProjectModel';
-import { ProjectVerificationStatus } from './ProjectModel';
+import type { Forge, ProjectDataValues } from './ProjectModel';
+import type { Splits } from '../generated/graphql';
 import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
 import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
-import type { Forge as GraphQlForge, Splits } from '../generated/graphql';
-import { Driver } from '../generated/graphql';
+import { Driver, Forge as GraphQlForge } from '../generated/graphql';
 import { singleOrDefault } from '../utils/linq';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
@@ -52,22 +50,11 @@ export function toApiProject(project: ProjectDataValues, chains: DbSchema[]) {
     return null;
   }
 
-  if (project.verificationStatus === ProjectVerificationStatus.Claimed) {
+  if (project.verificationStatus === 'claimed') {
     return project;
   }
 
   return toProjectRepresentation(project, chains);
-}
-
-function toForge(forge: string): Forge {
-  switch (forge.toLocaleLowerCase()) {
-    case 'github':
-      return `GitHub`;
-    case 'gitlab':
-      return `GitLab`;
-    default:
-      return shouldNeverHappen(`Forge ${forge} not supported.`);
-  }
 }
 
 export async function toProjectRepresentationFromUrl(
@@ -82,12 +69,12 @@ export async function toProjectRepresentationFromUrl(
     throw new Error(`Unsupported repository url: ${url}.`);
   }
 
-  const forge = toForge(match[1]);
+  const forge = match[1] as Forge;
   const ownerName = match[2];
   const repoName = match[3];
 
   return {
-    id: await getCrossChainRepoDriverAccountIdByAddress(
+    accountId: await getCrossChainRepoDriverAccountIdByAddress(
       forge,
       `${ownerName}/${repoName}`,
       chains,
@@ -95,7 +82,7 @@ export async function toProjectRepresentationFromUrl(
     name: `${ownerName}/${repoName}`,
     forge,
     url,
-    verificationStatus: ProjectVerificationStatus.Unclaimed,
+    verificationStatus: 'unclaimed',
     isValid: true,
     isVisible: true,
   } as ProjectDataValues;
@@ -103,7 +90,7 @@ export async function toProjectRepresentationFromUrl(
 
 function toUrl(forge: Forge, projectName: string): string {
   switch (forge) {
-    case 'GitHub':
+    case 'github':
       return `https://github.com/${projectName}`;
     default:
       throw new Error(`Unsupported forge: ${forge}.`);
@@ -119,12 +106,15 @@ export async function toProjectRepresentation(
   assert(name && forge, 'Project name and forge must be defined.');
 
   return {
-    id: await getCrossChainRepoDriverAccountIdByAddress(forge, name, chains),
+    accountId: await getCrossChainRepoDriverAccountIdByAddress(
+      forge,
+      name,
+      chains,
+    ),
     name,
     forge,
     url: toUrl(forge, name),
-    verificationStatus:
-      project.verificationStatus ?? ProjectVerificationStatus.Unclaimed,
+    verificationStatus: project.verificationStatus ?? 'unclaimed',
     isValid: true,
     isVisible: project.isVisible,
     chain: project.chain,
@@ -150,7 +140,7 @@ function mapClaimedProjectChainData(
   return {
     chain: dbSchemaToChain[projectChain],
     parentProjectInfo: {
-      projectId: project.id,
+      projectId: project.accountId,
       queriedChains,
       projectChain,
     },
@@ -164,7 +154,6 @@ function mapClaimedProjectChainData(
           emoji: project.emoji || '💧',
         },
     splits: {} as Splits, // Will be populated by the resolver.
-    description: project.description,
     owner: {
       driver: Driver.ADDRESS,
       accountId: project.ownerAccountId,
@@ -189,7 +178,7 @@ function mapUnClaimedProjectChainData(
     chain: dbSchemaToChain[projectChain],
     parentProjectInfo: {
       queriedChains,
-      projectId: fakeUnclaimedProject.id,
+      projectId: fakeUnclaimedProject.accountId,
       projectChain,
     },
     verificationStatus: fakeUnclaimedProject.verificationStatus,
@@ -212,15 +201,18 @@ export async function toResolverProjects(
   const duplicates = new Map<string, ProjectDataValues[]>();
 
   projects.forEach((project) => {
-    if (projectsMap.has(project.id)) {
-      if (!duplicates.has(project.id)) {
-        duplicates.set(project.id, [projectsMap.get(project.id)!, project]);
-        projectsMap.delete(project.id);
+    if (projectsMap.has(project.accountId)) {
+      if (!duplicates.has(project.accountId)) {
+        duplicates.set(project.accountId, [
+          projectsMap.get(project.accountId)!,
+          project,
+        ]);
+        projectsMap.delete(project.accountId);
       } else {
-        duplicates.get(project.id)!.push(project);
+        duplicates.get(project.accountId)!.push(project);
       }
     } else {
-      projectsMap.set(project.id, project);
+      projectsMap.set(project.accountId, project);
     }
   });
 
@@ -245,7 +237,7 @@ export async function toResolverProjects(
 
       return {
         account: {
-          accountId: project.id,
+          accountId: project.accountId,
           driver: Driver.REPO,
         },
         source: {
@@ -254,7 +246,7 @@ export async function toResolverProjects(
             .repoName,
           ownerName: splitProjectName(project.name || shouldNeverHappen())
             .ownerName,
-          forge: (project.forge as GraphQlForge) || shouldNeverHappen(),
+          forge: convertToGraphQlForge(project.forge || shouldNeverHappen()),
         },
         isVisible: project.isVisible,
         chainData,
@@ -273,7 +265,7 @@ export async function mergeProjects(
   projects: ProjectDataValues[],
   chains: DbSchema[],
 ) {
-  if (projects.some((p) => p.id !== projects[0].id)) {
+  if (projects.some((p) => p.accountId !== projects[0].accountId)) {
     throw new Error('All projects should have the same id when merging.');
   }
 
@@ -310,7 +302,7 @@ export async function mergeProjects(
 
   return {
     account: {
-      accountId: projectBase.id,
+      accountId: projectBase.accountId,
       driver: Driver.REPO,
     },
     source: {
@@ -319,9 +311,20 @@ export async function mergeProjects(
         .repoName,
       ownerName: splitProjectName(projectBase.name || shouldNeverHappen())
         .ownerName,
-      forge: (projectBase.forge as GraphQlForge) || shouldNeverHappen(),
+      forge: convertToGraphQlForge(projectBase.forge || shouldNeverHappen()),
     },
     isVisible: projectBase.isVisible,
     chainData,
   } as ResolverProject;
+}
+
+export function convertToGraphQlForge(forge: Forge): GraphQlForge | undefined {
+  switch (forge) {
+    case 'github':
+      return GraphQlForge.GitHub;
+    case 'gitlab':
+      return GraphQlForge.GitLab;
+    default:
+      return undefined;
+  }
 }

@@ -4,6 +4,7 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
+import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
 import type {
   AccountId,
   Address,
@@ -11,7 +12,6 @@ import type {
   IEventModel,
   StreamHistoryHashes,
 } from '../common/types';
-import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
 
 export default class SqueezedStreamsEventModel
   extends Model<
@@ -20,14 +20,11 @@ export default class SqueezedStreamsEventModel
   >
   implements IEventModel
 {
-  // Properties from event output.
   public declare accountId: AccountId;
   public declare erc20: Address;
   public declare senderId: AccountId;
   public declare amount: BigIntString;
   public declare streamsHistoryHashes: StreamHistoryHashes;
-
-  // Common event log properties.
   public declare logIndex: number;
   public declare blockNumber: number;
   public declare blockTimestamp: Date;
@@ -43,30 +40,32 @@ export default class SqueezedStreamsEventModel
     this.init(
       {
         accountId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         erc20: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         senderId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         amount: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         streamsHistoryHashes: {
-          type: DataTypes.JSON,
           allowNull: false,
+          type: DataTypes.JSON,
         },
         ...COMMON_EVENT_INIT_ATTRIBUTES,
       },
       {
         sequelize,
-        tableName: 'SqueezedStreamsEvents',
+        tableName: 'squeezed_streams_events',
+        underscored: true,
+        timestamps: true,
       },
     );
   }

@@ -10,60 +10,30 @@ import type {
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type {
-  AddressDriverId,
-  DbSchema,
-  NftDriverId,
-  RepoDriverId,
-} from './types';
-import { DependencyType } from './types';
+import type { DbSchema, NftDriverId, RepoDriverId } from './types';
 import getUserAddress from '../utils/getUserAddress';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import { toResolverProject } from '../project/projectUtils';
 import { toResolverDripLists } from '../drip-list/dripListUtils';
-import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
 import mergeAmounts from '../utils/mergeAmounts';
-import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
-import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
 import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
 import type projectResolvers from '../project/projectResolvers';
-import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import type dripListResolvers from '../drip-list/dripListResolvers';
 import type ecosystemResolvers from '../ecosystem/ecosystemResolvers';
+import type { SplitsReceiverModelDataValues } from '../models/SplitsReceiverModel';
+import type { RelationshipType } from '../utils/splitRules';
+import { toResolverEcosystems } from '../ecosystem/ecosystemUtils';
 
-async function resolveTotalSplit(
-  parent:
-    | DripListSplitReceiverModelDataValues
-    | RepoDriverSplitReceiverModelDataValues
-    | AddressDriverSplitReceiverModelDataValues,
-) {
-  let incomingAccountId: NftDriverId | RepoDriverId;
-  let recipientAccountId: NftDriverId | RepoDriverId | AddressDriverId;
-
-  if ('fundeeDripListId' in parent) {
-    const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
-    recipientAccountId = fundeeDripListId;
-    incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
-  } else if ('fundeeProjectId' in parent) {
-    const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
-    recipientAccountId = fundeeProjectId;
-    incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
-  } else if ('fundeeAccountId' in parent) {
-    const { fundeeAccountId, funderDripListId, funderProjectId } = parent;
-
-    recipientAccountId = fundeeAccountId;
-    incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
-  } else {
-    shouldNeverHappen('Invalid SupportItem type');
-  }
+async function resolveTotalSplit({
+  senderAccountId,
+  receiverAccountId,
+  chain,
+}: SplitsReceiverModelDataValues) {
   const splitEvents = await splitEventsQueries.getByAccountIdAndReceiver(
-    [parent.chain],
-    incomingAccountId,
-    recipientAccountId,
+    [chain],
+    senderAccountId,
+    receiverAccountId,
   );
 
   return mergeAmounts(
@@ -107,25 +77,33 @@ const commonResolvers = {
             ReturnType<typeof ecosystemResolvers.EcosystemMainAccount.support>
           >[number],
     ) {
-      if ('dripList' in parent || 'project' in parent) {
-        const { type } = parent as any;
+      if (
+        'dripList' in parent ||
+        'project' in parent ||
+        'ecosystemMainAccount' in parent ||
+        'subList' in parent
+      ) {
+        const { relationshipType } = parent as {
+          relationshipType: RelationshipType;
+        };
 
         if (
-          type === DependencyType.ProjectDependency ||
-          type === AddressDriverSplitReceiverType.ProjectDependency ||
-          type === AddressDriverSplitReceiverType.ProjectMaintainer
+          relationshipType === 'project_maintainer' ||
+          relationshipType === 'project_dependency'
         ) {
           return 'ProjectSupport';
         }
 
-        if (
-          type === DependencyType.DripListDependency ||
-          type === AddressDriverSplitReceiverType.DripListDependency
-        ) {
+        if (relationshipType === 'drip_list_receiver') {
           return 'DripListSupport';
         }
 
-        return shouldNeverHappen('Invalid SupportItem type');
+        if (
+          relationshipType === 'ecosystem_receiver' ||
+          relationshipType === 'sub_list_link'
+        ) {
+          return 'EcosystemSupport';
+        }
       }
 
       if ('timeline' in parent) {
@@ -138,7 +116,7 @@ const commonResolvers = {
   ProjectSupport: {
     account: async (
       parent: {
-        funderProjectId: RepoDriverId;
+        senderAccountId: RepoDriverId;
         chain: DbSchema;
       },
       _: any,
@@ -148,24 +126,24 @@ const commonResolvers = {
         dataSources: { projectsDataSource },
       } = context;
 
-      const { funderProjectId, chain } = parent;
+      const { senderAccountId, chain } = parent;
 
       const project =
         (await projectsDataSource.getProjectByIdOnChain(
-          funderProjectId,
+          senderAccountId,
           chain,
         )) || shouldNeverHappen();
 
       return {
         driver: Driver.REPO,
-        accountId: project ? project.id : shouldNeverHappen(),
+        accountId: project ? project.accountId : shouldNeverHappen(),
       };
     },
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
     project: async (
       parent: {
-        funderProjectId: RepoDriverId;
+        senderAccountId: RepoDriverId;
         chain: DbSchema;
         queriedChains: DbSchema[];
       },
@@ -176,11 +154,11 @@ const commonResolvers = {
         dataSources: { projectsDataSource },
       } = context;
 
-      const { funderProjectId, chain } = parent;
+      const { senderAccountId, chain } = parent;
 
       const projectDataValues =
         (await projectsDataSource.getProjectByIdOnChain(
-          funderProjectId,
+          senderAccountId,
           chain,
         )) || shouldNeverHappen();
 
@@ -188,13 +166,13 @@ const commonResolvers = {
 
       return project;
     },
-    totalSplit: (parent: RepoDriverSplitReceiverModelDataValues) =>
+    totalSplit: (parent: SplitsReceiverModelDataValues) =>
       resolveTotalSplit(parent),
   },
   DripListSupport: {
     account: async (
       parent: {
-        funderDripListId: NftDriverId;
+        senderAccountId: NftDriverId;
         chain: DbSchema;
       },
       _: any,
@@ -204,22 +182,22 @@ const commonResolvers = {
         dataSources: { dripListsDataSource },
       } = context;
 
-      const { funderDripListId, chain } = parent;
+      const { senderAccountId, chain } = parent;
 
       const dripList = await dripListsDataSource.getDripListById(
-        funderDripListId,
+        senderAccountId,
         [chain],
       );
 
       return {
         driver: Driver.NFT,
-        accountId: dripList ? dripList.id : shouldNeverHappen(),
+        accountId: dripList ? dripList.accountId : shouldNeverHappen(),
       };
     },
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
     weight: (parent: { weight: number }): number => parent.weight,
     dripList: async (
-      parent: { funderDripListId: NftDriverId; chain: DbSchema },
+      parent: { senderAccountId: NftDriverId; chain: DbSchema },
       _: any,
       context: Context,
     ) => {
@@ -227,12 +205,11 @@ const commonResolvers = {
         dataSources: { dripListsDataSource },
       } = context;
 
-      const { funderDripListId, chain } = parent;
+      const { senderAccountId, chain } = parent;
 
       const dripListDataValues =
-        (await dripListsDataSource.getDripListById(funderDripListId, [
-          chain,
-        ])) || shouldNeverHappen();
+        (await dripListsDataSource.getDripListById(senderAccountId, [chain])) ||
+        shouldNeverHappen();
 
       const resolverDripLists = await toResolverDripLists(
         [chain],
@@ -243,7 +220,64 @@ const commonResolvers = {
 
       return dripLists;
     },
-    totalSplit: (parent: DripListSplitReceiverModelDataValues) =>
+    totalSplit: (parent: SplitsReceiverModelDataValues) =>
+      resolveTotalSplit(parent),
+  },
+  EcosystemSupport: {
+    account: async (
+      parent: {
+        senderAccountId: NftDriverId;
+        chain: DbSchema;
+      },
+      _: any,
+      context: Context,
+    ): Promise<NftDriverAccount> => {
+      const {
+        dataSources: { ecosystemsDataSource },
+      } = context;
+
+      const { senderAccountId, chain } = parent;
+
+      const ecosystemMainAccount = await ecosystemsDataSource.getEcosystemById(
+        senderAccountId,
+        [chain],
+      );
+
+      return {
+        driver: Driver.NFT,
+        accountId: ecosystemMainAccount
+          ? ecosystemMainAccount.accountId
+          : shouldNeverHappen(),
+      };
+    },
+    date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
+    weight: (parent: { weight: number }): number => parent.weight,
+    ecosystemMainAccount: async (
+      parent: { senderAccountId: NftDriverId; chain: DbSchema },
+      _: any,
+      context: Context,
+    ) => {
+      const {
+        dataSources: { ecosystemsDataSource },
+      } = context;
+
+      const { senderAccountId, chain } = parent;
+
+      const ecosystemMainAccountDataValues =
+        (await ecosystemsDataSource.getEcosystemById(senderAccountId, [
+          chain,
+        ])) || shouldNeverHappen();
+
+      const resolverDripLists = await toResolverEcosystems(
+        [chain],
+        [ecosystemMainAccountDataValues],
+      );
+
+      const [ecosystemMainAccounts] = resolverDripLists;
+
+      return ecosystemMainAccounts;
+    },
+    totalSplit: (parent: SplitsReceiverModelDataValues) =>
       resolveTotalSplit(parent),
   },
   OneTimeDonationSupport: {
@@ -295,6 +329,10 @@ const commonResolvers = {
 
       if (receiver.driver === Driver.ADDRESS) {
         return 'AddressReceiver';
+      }
+
+      if (receiver.driver === Driver.IMMUTABLE_SPLITS) {
+        return 'SubListReceiver';
       }
 
       return shouldNeverHappen();

@@ -1,113 +1,38 @@
 import DataLoader from 'dataloader';
-import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
-import type {
-  AccountId,
-  AddressDriverId,
-  DbSchema,
-  NftDriverId,
-  NftDriverMultiChainKey,
-  MultiChainKey,
-  RepoDriverId,
-  RepoDriverMultiChainKey,
-} from '../common/types';
+import type { AccountId, DbSchema, MultiChainKey } from '../common/types';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
-import type { RepoDriverSplitReceiverModelDataValues } from '../models/RepoDriverSplitReceiverModel';
 import streams from '../utils/streams';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
-import type { AddressDriverSplitReceiverModelDataValues } from '../models/AddressDriverSplitReceiverModel';
-import addressDriverSplitReceiversQueries from './sqlQueries/addressDriverSplitReceiversQueries';
 import givenEventsQueries from './sqlQueries/givenEventsQueries';
-import dripListSplitReceiversQueries from './sqlQueries/dripListSplitReceiversQueries';
-import repoDriverSplitReceiversQueries from './sqlQueries/repoDriverSplitReceiversQueries';
+import { getSplitsReceivers } from './sqlQueries/splitsReceiversQueries';
+import type { SplitsReceiverModelDataValues } from '../models/SplitsReceiverModel';
 
 export default class SupportDataSource {
-  private readonly _batchSplitSupportByDripListIds = new DataLoader(
-    async (dripListKeys: readonly NftDriverMultiChainKey[]) => {
-      const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
+  private readonly _batchSplitSupportByReceiverIds = new DataLoader(
+    async (dripListKeys: readonly MultiChainKey[]) => {
+      const { chains, ids: receiverAccountIds } =
+        parseMultiChainKeys(dripListKeys);
 
-      const dripListSplitReceiverModelDataValues =
-        await dripListSplitReceiversQueries.getByFundeeDripListIds(
-          chains,
-          dripListIds,
-        );
+      const splitsReceivers = await getSplitsReceivers(
+        chains,
+        receiverAccountIds,
+      );
 
-      const projectAndDripListSupportToDripListMapping =
-        dripListSplitReceiverModelDataValues.reduce<
-          Record<NftDriverId, DripListSplitReceiverModelDataValues[]>
-        >((mapping, receiver) => {
-          if (!mapping[receiver.fundeeDripListId]) {
-            mapping[receiver.fundeeDripListId] = []; // eslint-disable-line no-param-reassign
-          }
+      const projectAndDripListSupportToDripListMapping = splitsReceivers.reduce<
+        Record<AccountId, SplitsReceiverModelDataValues[]>
+      >((mapping, receiver) => {
+        if (!mapping[receiver.receiverAccountId]) {
+          mapping[receiver.receiverAccountId] = []; // eslint-disable-line no-param-reassign
+        }
 
-          mapping[receiver.fundeeDripListId].push(receiver);
+        mapping[receiver.receiverAccountId].push(receiver);
 
-          return mapping;
-        }, {});
+        return mapping;
+      }, {});
 
-      return dripListIds.map(
+      return receiverAccountIds.map(
         (id) => projectAndDripListSupportToDripListMapping[id] || [],
-      );
-    },
-  );
-
-  private readonly _batchSplitSupportByProjectIds = new DataLoader(
-    async (projectKeys: readonly RepoDriverMultiChainKey[]) => {
-      const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
-
-      const repoDriverSplitReceiverModelDataValues =
-        await repoDriverSplitReceiversQueries.getByFundeeProjectIds(
-          chains,
-          projectIds,
-        );
-
-      const projectAndDripListSupportToProjectMapping =
-        repoDriverSplitReceiverModelDataValues.reduce<
-          Record<RepoDriverId, RepoDriverSplitReceiverModelDataValues[]>
-        >((mapping, receiver) => {
-          if (!mapping[receiver.fundeeProjectId]) {
-            mapping[receiver.fundeeProjectId] = []; // eslint-disable-line no-param-reassign
-          }
-
-          mapping[receiver.fundeeProjectId].push(receiver);
-
-          return mapping;
-        }, {});
-
-      return projectIds.map(
-        (id) => projectAndDripListSupportToProjectMapping[id] || [],
-      );
-    },
-  );
-
-  private readonly _batchSplitSupportByAddressDriverIds = new DataLoader(
-    async (addressDriverKeys: readonly MultiChainKey[]) => {
-      const { chains, ids: addressDriverIds } =
-        parseMultiChainKeys(addressDriverKeys);
-
-      const projectAndDripListSupport =
-        await addressDriverSplitReceiversQueries.getByFundeeAccountIds(
-          chains,
-          addressDriverIds,
-        );
-
-      const projectAndDripListSupportToProjectMapping =
-        projectAndDripListSupport.reduce<
-          Record<AddressDriverId, AddressDriverSplitReceiverModelDataValues[]>
-        >((mapping, receiver) => {
-          if (!mapping[receiver.fundeeAccountId]) {
-            mapping[receiver.fundeeAccountId] = []; // eslint-disable-line no-param-reassign
-          }
-
-          mapping[receiver.fundeeAccountId].push(receiver);
-
-          return mapping;
-        }, {});
-
-      return addressDriverIds.map(
-        (id) =>
-          projectAndDripListSupportToProjectMapping[id as AddressDriverId] ||
-          [],
       );
     },
   );
@@ -176,61 +101,37 @@ export default class SupportDataSource {
     },
   );
 
-  public async getSplitSupportByDripListIdOnChain(
-    id: NftDriverId,
+  public async getSplitSupportByReceiverIdOnChain(
+    accountId: AccountId,
     chain: DbSchema,
-  ): Promise<DripListSplitReceiverModelDataValues[]> {
+  ): Promise<SplitsReceiverModelDataValues[]> {
     return (
-      await this._batchSplitSupportByDripListIds.load({
-        id,
-        chains: [chain],
-      })
-    ).filter((receiver) => receiver.chain === chain);
-  }
-
-  public async getSplitSupportByProjectIdOnChain(
-    id: RepoDriverId,
-    chain: DbSchema,
-  ): Promise<RepoDriverSplitReceiverModelDataValues[]> {
-    return (
-      await this._batchSplitSupportByProjectIds.load({
-        id,
-        chains: [chain],
-      })
-    ).filter((receiver) => receiver.chain === chain);
-  }
-
-  public async getSplitSupportByAddressDriverIdOnChain(
-    id: AddressDriverId,
-    chain: DbSchema,
-  ): Promise<AddressDriverSplitReceiverModelDataValues[]> {
-    return (
-      await this._batchSplitSupportByAddressDriverIds.load({
-        id,
+      await this._batchSplitSupportByReceiverIds.load({
+        accountId,
         chains: [chain],
       })
     ).filter((receiver) => receiver.chain === chain);
   }
 
   public async getOneTimeDonationSupportByAccountIdOnChain(
-    id: AccountId,
+    accountId: AccountId,
     chain: DbSchema,
   ): Promise<GivenEventModelDataValues[]> {
     return (
       await this._batchOneTimeDonationSupportByAccountIds.load({
-        id,
+        accountId,
         chains: [chain],
       })
     ).filter((support) => support.chain === chain);
   }
 
   public async getStreamSupportByAccountIdOnChain(
-    id: AccountId,
+    accountId: AccountId,
     chain: DbSchema,
   ) {
     return (
       await this._batchStreamSupportByAccountIds.load({
-        id,
+        accountId,
         chains: [chain],
       })
     ).filter((s) => s.chain === chain);

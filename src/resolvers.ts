@@ -4,6 +4,7 @@ import dripListResolvers from './drip-list/dripListResolvers';
 import ecosystemResolvers from './ecosystem/ecosystemResolvers';
 import projectResolvers from './project/projectResolvers';
 import streamResolvers from './stream/streamResolvers';
+import subListResolvers from './sub-list/subListResolvers';
 import userResolvers from './user/userResolvers';
 
 const resolvers = {
@@ -37,6 +38,8 @@ const resolvers = {
   StreamReceiver: userResolvers.StreamReceiver,
   AddressReceiver: commonResolvers.AddressReceiver,
   EcosystemMainAccount: ecosystemResolvers.EcosystemMainAccount,
+  SubList: subListResolvers.SubList,
+  EcosystemSupport: commonResolvers.EcosystemSupport,
 };
 
 export default resolvers;

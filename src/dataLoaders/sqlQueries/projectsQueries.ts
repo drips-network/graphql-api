@@ -13,11 +13,10 @@ async function getProjectByUrl(
   url: string,
 ): Promise<ProjectDataValues[]> {
   const baseSQL = (schema: DbSchema) => `
-    SELECT "id", "isValid", "isVisible", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain
-    FROM "${schema}"."GitProjects"
+    SELECT *, '${schema}' AS chain FROM ${schema}.projects
   `;
 
-  const conditions: string[] = ['"url" = :url', '"isValid" = true'];
+  const conditions: string[] = ['url = :url', 'is_valid = true'];
   const parameters: { [key: string]: any } = { url };
 
   const whereClause = ` WHERE ${conditions.join(' AND ')}`;
@@ -42,27 +41,25 @@ async function getProjectsByFilter(
   sort?: ProjectSortInput,
 ): Promise<ProjectDataValues[]> {
   const baseSQL = (schema: DbSchema) =>
-    `SELECT 
-      "id", "isValid", "isVisible", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain 
-     FROM "${schema}"."GitProjects" `;
+    `SELECT *, '${schema}' AS chain FROM ${schema}.projects `;
 
-  const conditions: string[] = ['"isValid" = true'];
+  const conditions: string[] = ['is_valid = true'];
   const parameters: { [key: string]: any } = {};
 
-  if (where?.id) {
-    conditions.push(`"id" = :id`);
-    parameters.id = where.id;
+  if (where?.accountId) {
+    conditions.push(`account_id = :accountId`);
+    parameters.accountId = where.accountId;
   }
   if (where?.ownerAddress) {
-    conditions.push(`"ownerAddress" = :ownerAddress`);
+    conditions.push(`owner_address = :ownerAddress`);
     parameters.ownerAddress = where.ownerAddress;
   }
   if (where?.url) {
-    conditions.push(`"url" = :url`);
+    conditions.push(`url = :url`);
     parameters.url = where.url;
   }
   if (where?.verificationStatus) {
-    conditions.push(`"verificationStatus" = :verificationStatus`);
+    conditions.push(`verification_status = :verificationStatus`);
     parameters.verificationStatus = where.verificationStatus;
   }
 
@@ -90,14 +87,12 @@ async function getProjectsByIds(
   chains: DbSchema[],
   projectIds: RepoDriverId[],
 ): Promise<ProjectDataValues[]> {
-  const baseSQL = (schema: DbSchema) => `
-  SELECT "id", "isValid", "isVisible", "name", "verificationStatus"::TEXT, "claimedAt", "forge"::TEXT, "ownerAddress", "ownerAccountId", "url", "emoji", "avatarCid", "color", "description", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain
-  FROM "${schema}"."GitProjects"
-`;
+  const baseSQL = (schema: DbSchema) =>
+    `SELECT *, '${schema}' AS chain FROM ${schema}.projects`;
 
   const parameters: { [key: string]: any } = { projectIds };
 
-  const whereClause = ` WHERE "id" IN (:projectIds) AND "isValid" = true`;
+  const whereClause = ` WHERE "account_id" IN (:projectIds) AND is_valid = true`;
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 

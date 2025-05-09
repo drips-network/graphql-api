@@ -12,6 +12,7 @@ const ecosystemTypeDef = gql`
     owner: AddressDriverAccount!
     previousOwnerAddress: String!
     support: [EcosystemSupportItem!]!
+    splits: [SplitsReceiver!]!
     totalEarned: [Amount!]!
     latestMetadataIpfsHash: String
     isVisible: Boolean!
