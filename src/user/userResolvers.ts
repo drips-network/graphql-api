@@ -55,8 +55,11 @@ const userResolvers = {
         accountId,
         chains,
       }: { accountId: AddressDriverId; chains?: SupportedChain[] },
-    ): ResolverUser => {
-      assert(isAccountId(accountId));
+    ): ResolverUser | null => {
+      if (!isAccountId(accountId)) {
+        return null;
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -70,8 +73,11 @@ const userResolvers = {
     userByAddress: async (
       _: undefined,
       { address, chains }: { address: Address; chains?: SupportedChain[] },
-    ): Promise<ResolverUser> => {
-      assert(isAddress(address));
+    ): Promise<ResolverUser | null> => {
+      if (!isAddress(address)) {
+        return null;
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }

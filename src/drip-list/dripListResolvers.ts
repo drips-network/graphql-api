@@ -18,6 +18,7 @@ import assert, {
   assertIsNftDriverId,
   assertIsRepoDriverId,
   assertMany,
+  isNftDriverId,
 } from '../utils/assert';
 import type { ProjectDataValues } from '../project/ProjectModel';
 import queryableChains from '../common/queryableChains';
@@ -59,7 +60,10 @@ const dripListResolvers = {
       { id, chain }: { id: NftDriverId; chain: SupportedChain },
       { dataSources: { dripListsDataSource } }: Context,
     ): Promise<ResolverDripList | null> => {
-      assertIsNftDriverId(id);
+      if (!isNftDriverId(id)) {
+        return null;
+      }
+
       assert(chain in SupportedChain);
 
       const dbSchemaToQuery = chainToDbSchema[chain];

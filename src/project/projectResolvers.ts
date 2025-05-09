@@ -28,7 +28,7 @@ import queryableChains from '../common/queryableChains';
 import type { ProjectDataValues } from './ProjectModel';
 import validateProjectsInput from './projectValidators';
 import type { DripListDataValues } from '../drip-list/DripListModel';
-import assert, {
+import {
   assertIsNftDriverId,
   assertIsRepoDriverId,
   assertMany,
@@ -76,7 +76,10 @@ const projectResolvers = {
       { id, chains }: { id: RepoDriverId; chains?: SupportedChain[] },
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<ResolverProject | null> => {
-      assert(isRepoDriverId(id));
+      if (!isRepoDriverId(id)) {
+        return null;
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -97,7 +100,10 @@ const projectResolvers = {
       { url, chains }: { url: string; chains?: SupportedChain[] },
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<ResolverProject | null> => {
-      assert(isGitHubUrl(url));
+      if (!isGitHubUrl(url)) {
+        return null;
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -127,7 +133,10 @@ const projectResolvers = {
         chain: SupportedChain;
       }[]
     > => {
-      assert(isRepoDriverId(projectId));
+      if (!isRepoDriverId(projectId)) {
+        return [];
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }

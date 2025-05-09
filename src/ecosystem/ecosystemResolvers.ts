@@ -38,7 +38,10 @@ const ecosystemResolvers = {
       { id, chain }: { id: NftDriverId; chain: SupportedChain },
       { dataSources: { ecosystemsDataSource } }: Context,
     ): Promise<ResolverEcosystem | null> => {
-      assert(isNftDriverId(id));
+      if (!isNftDriverId(id)) {
+        return null;
+      }
+
       assert(chain in SupportedChain);
 
       const dbSchemaToQuery = chainToDbSchema[chain];
