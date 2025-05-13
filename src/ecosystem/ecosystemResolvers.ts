@@ -30,6 +30,7 @@ import type { ProjectDataValues } from '../project/ProjectModel';
 import getUserAddress from '../utils/getUserAddress';
 import groupBy from '../utils/linq';
 import { toResolverSubList } from '../sub-list/subListUtils';
+import { calcParentRepoDriverId } from '../utils/repoSubAccountIdUtils';
 
 const ecosystemResolvers = {
   Query: {
@@ -120,12 +121,28 @@ const ecosystemResolvers = {
       const subListReceivers =
         splitReceiversByReceiverAccountType.get('sub_list') || [];
 
+      const projectIds =
+        projectReceivers.length > 0
+          ? ((await Promise.all(
+              projectReceivers.map(async (r) => {
+                let pId = r.receiverAccountId;
+
+                if (r.splitsToRepoDriverSubAccount) {
+                  pId = await calcParentRepoDriverId(
+                    r.receiverAccountId,
+                    ecosystemChain,
+                  );
+                }
+
+                return pId;
+              }),
+            )) as RepoDriverId[])
+          : [];
+
       const [projects, subLists] = await Promise.all([
         projectReceivers.length > 0
           ? projectsDataSource.getProjectsByIdsOnChain(
-              projectReceivers.map(
-                (r) => r.receiverAccountId,
-              ) as RepoDriverId[],
+              projectIds,
               ecosystemChain,
             )
           : [],
@@ -163,6 +180,7 @@ const ecosystemResolvers = {
               driver: Driver.REPO,
               accountId: s.receiverAccountId,
             },
+            splitsToSubAccount: s.splitsToRepoDriverSubAccount,
             project: project
               ? await toResolverProject(
                   [ecosystemChain],
@@ -270,7 +288,7 @@ const ecosystemResolvers = {
           }
 
           return shouldNeverHappen(
-            'Supported is neither a Project nor a DripList.',
+            'Supporter is neither a Project nor a DripList.',
           );
         }),
       );

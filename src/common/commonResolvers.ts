@@ -65,6 +65,11 @@ const commonResolvers = {
     driver: async ({ driver }: { driver: Driver }) => driver,
     project: async ({ project }: { project: Project }) => project,
     account: async ({ account }: { account: RepoDriverAccount }) => account,
+    splitsToSubAccount: async ({
+      splitsToSubAccount,
+    }: {
+      splitsToSubAccount: boolean;
+    }) => splitsToSubAccount,
   },
   SupportItem: {
     __resolveType(

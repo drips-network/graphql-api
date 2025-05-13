@@ -53,6 +53,7 @@ const commonTypeDef = gql`
     driver: Driver!
     project: Project!
     account: RepoDriverAccount!
+    splitsToSubAccount: Boolean
   }
 
   type DripListReceiver implements Receiver {
