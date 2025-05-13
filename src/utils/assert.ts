@@ -6,6 +6,7 @@ import type {
   AddressDriverId,
   ImmutableSplitsDriverId,
   AccountId,
+  RepoSubAccountDriverId,
 } from '../common/types';
 import { ProjectVerificationStatus } from '../generated/graphql';
 
@@ -61,6 +62,8 @@ export function getContractNameFromAccountId(id: string) {
       return 'immutableSplitsDriver';
     case 3n:
       return 'repoDriver';
+    case 4n:
+      return 'repoSubAccountDriver';
     default:
       throw new Error(`Unknown driver for ID ${id}.`);
   }
@@ -123,6 +126,32 @@ export function convertToNftDriverId(id: bigint | string): NftDriverId {
 export function assertIsNftDriverId(id: string): asserts id is NftDriverId {
   if (!isNftDriverId(id)) {
     throw new Error(`Failed to assert: '${id}' is not a valid NftDriver ID.`);
+  }
+}
+
+// RepoSubAccountDriver
+export function isRepoSubAccountDriverId(
+  id: string | bigint,
+): id is RepoSubAccountDriverId {
+  const idString = typeof id === 'bigint' ? id.toString() : id;
+  const isNaN = Number.isNaN(Number(idString));
+  const isAccountIdOfRepoSubAccountDriver =
+    getContractNameFromAccountId(idString) === 'repoSubAccountDriver';
+
+  if (isNaN || !isAccountIdOfRepoSubAccountDriver) {
+    return false;
+  }
+
+  return true;
+}
+
+export function assertIsRepoSubAccountDriverId(
+  id: string,
+): asserts id is RepoSubAccountDriverId {
+  if (!isRepoSubAccountDriverId(id)) {
+    throw new Error(
+      `Failed to assert: '${id}' is not a valid RepoSubAccountDriverId ID.`,
+    );
   }
 }
 

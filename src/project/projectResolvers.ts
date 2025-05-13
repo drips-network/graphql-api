@@ -43,6 +43,7 @@ import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata'
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import getUserAddress from '../utils/getUserAddress';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
+import { calcParentRepoDriverId } from '../utils/repoSubAccountIdUtils';
 
 const projectResolvers = {
   Query: {
@@ -234,14 +235,27 @@ const projectResolvers = {
       const dripListReceivers =
         splitReceiversByReceiverAccountType.get('drip_list') || [];
 
+      const projectIds =
+        projectReceivers.length > 0
+          ? ((await Promise.all(
+              projectReceivers.map(async (r) => {
+                let pId = r.receiverAccountId;
+
+                if (r.splitsToRepoDriverSubAccount) {
+                  pId = await calcParentRepoDriverId(
+                    r.receiverAccountId,
+                    projectChain,
+                  );
+                }
+
+                return pId;
+              }),
+            )) as RepoDriverId[])
+          : [];
+
       const [projects, dripLists] = await Promise.all([
         projectReceivers.length > 0
-          ? projectsDataSource.getProjectsByIdsOnChain(
-              projectReceivers.map(
-                (r) => r.receiverAccountId,
-              ) as RepoDriverId[],
-              projectChain,
-            )
+          ? projectsDataSource.getProjectsByIdsOnChain(projectIds, projectChain)
           : [],
 
         dripListReceivers.length > 0
@@ -278,6 +292,7 @@ const projectResolvers = {
               driver: Driver.REPO,
               accountId: s.receiverAccountId,
             },
+            splitsToSubAccount: s.splitsToRepoDriverSubAccount,
             project: project
               ? await toResolverProject(
                   [projectChain],
@@ -408,7 +423,7 @@ const projectResolvers = {
           }
 
           return shouldNeverHappen(
-            'Supported is neither a Project, a DripList, nor an Ecosystem.',
+            'Supporter is neither a Project, a DripList, nor an Ecosystem.',
           );
         }),
       );
@@ -478,6 +493,7 @@ const projectResolvers = {
               },
               date: blockTimestamp,
               totalSplit: [],
+              splitsToSubAccount: s.splitsToRepoDriverSubAccount,
               project: await toResolverProject(
                 [projectChain],
                 (await projectsDataSource.getProjectByIdOnChain(
@@ -526,7 +542,7 @@ const projectResolvers = {
           }
 
           return shouldNeverHappen(
-            'Supported is neither a Project, a DripList, nor an Ecosystem.',
+            'Supporter is neither a Project, a DripList, nor an Ecosystem.',
           );
         }),
       );

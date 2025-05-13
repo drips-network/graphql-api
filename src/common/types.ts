@@ -31,12 +31,16 @@ export type ImmutableSplitsDriverId = string & {
 export type RepoDeadlineDriverId = string & {
   __brand: 'RepoDeadlineDriverId';
 };
+export type RepoSubAccountDriverId = string & {
+  __brand: 'RepoSubAccountDriverId';
+};
 export type AccountId =
   | AddressDriverId
   | NftDriverId
   | RepoDriverId
   | ImmutableSplitsDriverId
-  | RepoDeadlineDriverId;
+  | RepoDeadlineDriverId
+  | RepoSubAccountDriverId;
 
 export type Address = string & { __brand: 'Address' };
 
