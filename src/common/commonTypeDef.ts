@@ -176,6 +176,7 @@ const commonTypeDef = gql`
     METIS
     LOCALTESTNET
     OPTIMISM
+    ZKSYNC_ERA_SEPOLIA
   }
 
   type WithdrawableBalance {
