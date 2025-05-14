@@ -51,6 +51,10 @@ export async function toResolverEcosystems(
           totalEarned: [], // Will be populated by the resolver.
           isVisible: ecosystem.isVisible,
           lastProcessedIpfsHash: ecosystem.lastProcessedIpfsHash,
+          color: ecosystem.color,
+          avatar: {
+            emoji: ecosystem.avatar,
+          },
         };
       }),
     )

@@ -17,6 +17,8 @@ const ecosystemTypeDef = gql`
     latestMetadataIpfsHash: String
     isVisible: Boolean!
     lastProcessedIpfsHash: String
+    avatar: Avatar!
+    color: String!
   }
 `;
 
