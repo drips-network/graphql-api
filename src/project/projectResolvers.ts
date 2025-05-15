@@ -43,7 +43,10 @@ import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata'
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import getUserAddress from '../utils/getUserAddress';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
-import { calcParentRepoDriverId } from '../utils/repoSubAccountIdUtils';
+import {
+  calcParentRepoDriverId,
+  calcSubRepoDriverId,
+} from '../utils/repoSubAccountIdUtils';
 
 const projectResolvers = {
   Query: {
@@ -438,17 +441,23 @@ const projectResolvers = {
       return [...support, ...oneTimeDonationSupport];
     },
     totalEarned: async (
-      projectData: ResolverUnClaimedProjectData,
+      projectData: ResolverClaimedProjectData,
       _: {},
       context: Context,
     ) => resolveTotalEarned(projectData, context),
     withdrawableBalances: async ({
       parentProjectInfo: { projectId, projectChain },
-    }: ResolverUnClaimedProjectData) =>
+    }: ResolverClaimedProjectData) =>
       getWithdrawableBalancesOnChain(projectId, projectChain),
+    withdrawableSubAccountBalances: async ({
+      parentProjectInfo: { projectId, projectChain },
+    }: ResolverClaimedProjectData) => {
+      const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
+      return getWithdrawableBalancesOnChain(subAccountId, projectChain);
+    },
     latestMetadataIpfsHash: async ({
       parentProjectInfo: { projectId, projectChain },
-    }: ResolverUnClaimedProjectData) =>
+    }: ResolverClaimedProjectData) =>
       getLatestMetadataHashOnChain(projectId, projectChain),
     lastProcessedIpfsHash: (projectData: ResolverClaimedProjectData) =>
       projectData.lastProcessedIpfsHash,
@@ -561,6 +570,12 @@ const projectResolvers = {
       parentProjectInfo: { projectId, projectChain },
     }: ResolverUnClaimedProjectData) =>
       getWithdrawableBalancesOnChain(projectId, projectChain),
+    withdrawableSubAccountBalances: async ({
+      parentProjectInfo: { projectId, projectChain },
+    }: ResolverUnClaimedProjectData) => {
+      const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
+      return getWithdrawableBalancesOnChain(subAccountId, projectChain);
+    },
     owner: (
       projectData: ResolverClaimedProjectData,
     ): AddressDriverAccount | null => projectData.owner,

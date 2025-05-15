@@ -44,6 +44,7 @@ const projectTypeDef = gql`
     claimedAt: Date!
     totalEarned: [Amount!]!
     withdrawableBalances: [WithdrawableBalance!]!
+    withdrawableSubAccountBalances: [WithdrawableBalance!]!
     latestMetadataIpfsHash: String!
     lastProcessedIpfsHash: String
   }
@@ -53,6 +54,7 @@ const projectTypeDef = gql`
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
     withdrawableBalances: [WithdrawableBalance!]!
+    withdrawableSubAccountBalances: [WithdrawableBalance!]!
     owner: AddressDriverAccount!
   }
 
