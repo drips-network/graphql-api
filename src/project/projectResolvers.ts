@@ -167,7 +167,8 @@ const projectResolvers = {
   ClaimedProjectData: {
     verificationStatus: (projectData: ResolverClaimedProjectData) =>
       projectData.verificationStatus,
-    color: (projectData: any): string => projectData.color,
+    color: (projectData: ResolverClaimedProjectData): string =>
+      projectData.color,
     description: (projectData: ResolverClaimedProjectData) =>
       projectData.description,
     emoji: (projectData: ResolverClaimedProjectData): string =>

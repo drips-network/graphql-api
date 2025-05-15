@@ -7,6 +7,7 @@ import type {
 } from '../common/types';
 import type {
   AddressDriverAccount,
+  Avatar,
   NftDriverAccount,
 } from '../generated/graphql';
 import { Driver, SupportedChain } from '../generated/graphql';
@@ -57,18 +58,19 @@ const ecosystemResolvers = {
     },
   },
   EcosystemMainAccount: {
-    account: (ecosystem: ResolverEcosystem): NftDriverAccount =>
+    account: (ecosystem: ResolverEcosystemData): NftDriverAccount =>
       ecosystem.account,
-    name: (ecosystemData: ResolverEcosystemData) =>
-      ecosystemData.name ?? 'Unnamed Ecosystem',
+    name: (ecosystem: ResolverEcosystemData) =>
+      ecosystem.name ?? 'Unnamed Ecosystem',
     isVisible: ({ isVisible }: ResolverEcosystemData) => isVisible,
-    creator: (dripListData: ResolverEcosystemData) => dripListData.creator,
-    description: (dripListData: ResolverEcosystemData) =>
-      dripListData.description,
-    previousOwnerAddress: (dripListData: ResolverEcosystemData) =>
-      dripListData.previousOwnerAddress,
-    owner: (dripListData: ResolverEcosystemData): AddressDriverAccount =>
-      dripListData.owner,
+    creator: (ecosystem: ResolverEcosystemData) => ecosystem.creator,
+    description: (ecosystem: ResolverEcosystemData) => ecosystem.description,
+    previousOwnerAddress: (ecosystem: ResolverEcosystemData) =>
+      ecosystem.previousOwnerAddress,
+    owner: (ecosystem: ResolverEcosystemData): AddressDriverAccount =>
+      ecosystem.owner,
+    color: (ecosystem: ResolverEcosystemData): string => ecosystem.color,
+    avatar: (ecosystem: ResolverEcosystemData): Avatar => ecosystem.avatar,
     splits: async (
       {
         parentEcosystemInfo: { ecosystemId, ecosystemChain },
