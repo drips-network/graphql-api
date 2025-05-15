@@ -2,6 +2,7 @@ import type {
   DbSchema,
   NftDriverId,
   RepoDriverId,
+  ResolverClaimedProjectData,
   ResolverDripListData,
   ResolverEcosystemData,
   ResolverUnClaimedProjectData,
@@ -35,6 +36,7 @@ export async function resolveTotalSplit(
 
 export async function resolveTotalEarned(
   entityData:
+    | ResolverClaimedProjectData
     | ResolverUnClaimedProjectData
     | ResolverDripListData
     | ResolverEcosystemData,
