@@ -164,6 +164,7 @@ function mapClaimedProjectChainData(
     claimedAt: project.claimedAt,
     totalEarned: [], // Will be populated by the resolver.
     withdrawableBalances: [], // Will be populated by the resolver.
+    withdrawableSubAccountBalances: [], // Will be populated by the resolver.
     latestMetadataIpfsHash: '', // Will be populated by the resolver.
     lastProcessedIpfsHash: project.lastProcessedIpfsHash,
   } as ResolverClaimedProjectData;
@@ -185,6 +186,7 @@ function mapUnClaimedProjectChainData(
     support: [], // Will be populated by the resolver.
     totalEarned: [], // Will be populated by the resolver.
     withdrawableBalances: [], // Will be populated by the resolver.
+    withdrawableSubAccountBalances: [], // Will be populated by the resolver.
     owner: {
       driver: Driver.ADDRESS,
       accountId: fakeUnclaimedProject.ownerAccountId || '0',
