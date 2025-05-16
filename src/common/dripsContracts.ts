@@ -1,4 +1,4 @@
-import { FetchRequest, JsonRpcProvider, ethers } from 'ethers';
+import { FetchRequest, JsonRpcProvider, ZeroAddress, ethers } from 'ethers';
 import appSettings from './appSettings';
 import type {
   AddressDriver,
@@ -24,20 +24,20 @@ const chainConfigs: Record<
     dripsAddress: string;
     addressDriverAddress: string;
     repoDriverAddress: string;
-    repoSubAccountDriverAddress: string | undefined;
+    repoSubAccountDriverAddress: string;
   }
 > = {
   MAINNET: {
     dripsAddress: '0xd0Dd053392db676D57317CD4fe96Fc2cCf42D0b4',
     addressDriverAddress: '0x1455d9bD6B98f95dd8FEB2b3D60ed825fcef0610',
     repoDriverAddress: '0x770023d55D09A9C110694827F1a6B32D5c2b373E',
-    repoSubAccountDriverAddress: undefined,
+    repoSubAccountDriverAddress: ZeroAddress,
   },
   SEPOLIA: {
     dripsAddress: '0x74A32a38D945b9527524900429b083547DeB9bF4',
     addressDriverAddress: '0x70E1E1437AeFe8024B6780C94490662b45C3B567',
     repoDriverAddress: '0xa71bdf410D48d4AA9aE1517A69D7E1Ef0c179b2B',
-    repoSubAccountDriverAddress: undefined,
+    repoSubAccountDriverAddress: ZeroAddress,
   },
   OPTIMISM_SEPOLIA: {
     dripsAddress: '0x74A32a38D945b9527524900429b083547DeB9bF4',
@@ -49,25 +49,25 @@ const chainConfigs: Record<
     dripsAddress: '0xeebCd570e50fa31bcf6eF10f989429C87C3A6981',
     addressDriverAddress: '0x004310a6d47893Dd6e443cbE471c24aDA1e6c619',
     repoDriverAddress: '0x54372850Db72915Fd9C5EC745683EB607b4a8642',
-    repoSubAccountDriverAddress: undefined,
+    repoSubAccountDriverAddress: ZeroAddress,
   },
   BASE_SEPOLIA: {
     dripsAddress: '0xeebCd570e50fa31bcf6eF10f989429C87C3A6981',
     addressDriverAddress: '0x004310a6d47893Dd6e443cbE471c24aDA1e6c619',
     repoDriverAddress: '0x54372850Db72915Fd9C5EC745683EB607b4a8642',
-    repoSubAccountDriverAddress: undefined,
+    repoSubAccountDriverAddress: ZeroAddress,
   },
   FILECOIN: {
     dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
     addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
-    repoSubAccountDriverAddress: undefined,
+    repoSubAccountDriverAddress: ZeroAddress,
   },
   METIS: {
     dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
     addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
-    repoSubAccountDriverAddress: undefined,
+    repoSubAccountDriverAddress: ZeroAddress,
   },
   LOCALTESTNET: {
     dripsAddress: '0x7CBbD3FdF9E5eb359E6D9B12848c5Faa81629944',
@@ -79,13 +79,13 @@ const chainConfigs: Record<
     dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
     addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
-    repoSubAccountDriverAddress: undefined,
+    repoSubAccountDriverAddress: ZeroAddress,
   },
   ZKSYNC_ERA_SEPOLIA: {
     dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
     addressDriverAddress: '0x0557b6BA791A24df0Fa6167E1Dc304F403ee777A',
     repoDriverAddress: '0x8bDC23877A23Ce59fEF1712A1486810d9A6E2B94',
-    repoSubAccountDriverAddress: undefined,
+    repoSubAccountDriverAddress: ZeroAddress,
   },
 };
 
@@ -126,7 +126,7 @@ const dripsContracts: {
     drips: Drips;
     addressDriver: AddressDriver;
     repoDriver: RepoDriver;
-    repoSubAccountDriver: RepoSubAccountDriver | undefined; // TODO: make required when RepoSubAccountDriver is deployed on all chains.
+    repoSubAccountDriver: RepoSubAccountDriver;
   };
 } = {};
 
@@ -148,13 +148,10 @@ Object.entries(providers).forEach(([network, provider]) => {
   );
   const repoDriver = RepoDriver__factory.connect(repoDriverAddress, provider);
 
-  let repoSubAccountDriver: RepoSubAccountDriver | undefined;
-  if (repoSubAccountDriverAddress) {
-    repoSubAccountDriver = RepoSubAccountDriver__factory.connect(
-      repoSubAccountDriverAddress,
-      provider,
-    );
-  }
+  const repoSubAccountDriver = RepoSubAccountDriver__factory.connect(
+    repoSubAccountDriverAddress,
+    provider,
+  );
 
   const drips = Drips__factory.connect(dripsAddress, provider);
 

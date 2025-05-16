@@ -17,8 +17,9 @@ export async function transformRepoDriverId(
 
   const { repoSubAccountDriver } = dripsContracts[dbSchemaToChain[chain]]!;
 
-  const transformedId = (await repoSubAccountDriver!.calcAccountId(id)) // TODO: Remove non-null assertion operator when RepoSubAccountDriver is deployed in all chains.
-    .toString();
+  const transformedId = (
+    await repoSubAccountDriver.calcAccountId(id)
+  ).toString();
 
   if (direction === 'toParent') {
     assertIsRepoDriverId(transformedId);
@@ -27,9 +28,8 @@ export async function transformRepoDriverId(
   }
 
   const recalculatedId = (
-    await repoSubAccountDriver!.calcAccountId(transformedId)
-  ) // TODO: Remove non-null assertion operator when RepoSubAccountDriver is deployed in all chains.
-    .toString();
+    await repoSubAccountDriver.calcAccountId(transformedId)
+  ).toString();
 
   if (recalculatedId !== id) {
     shouldNeverHappen(

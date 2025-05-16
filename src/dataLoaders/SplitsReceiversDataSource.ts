@@ -7,84 +7,60 @@ import {
 } from './sqlQueries/splitsReceiversQueries';
 import type { SplitsReceiverModelDataValues } from '../models/SplitsReceiverModel';
 
+type ReceiverFetcher = (
+  chains: DbSchema[],
+  accountIds: AccountId[],
+) => Promise<SplitsReceiverModelDataValues[]>;
+
 export default class SplitsReceiversDataSource {
-  private readonly _batchSplitsReceiversIds = new DataLoader(
-    async (projectKeys: readonly MultiChainKey[]) => {
-      const { chains, ids: receiverAccountIds } =
-        parseMultiChainKeys(projectKeys);
+  private readonly _batchSplitsReceiversIds =
+    this.createBatchLoader(getSplitsReceivers);
 
-      const splitsReceivers = await getSplitsReceivers(
-        chains,
-        receiverAccountIds,
-      );
-
-      const splitsReceiversToAccountMapping = splitsReceivers.reduce<
-        Record<AccountId, SplitsReceiverModelDataValues[]>
-      >((mapping, receiver) => {
-        if (!mapping[receiver.senderAccountId]) {
-          mapping[receiver.senderAccountId] = []; // eslint-disable-line no-param-reassign
-        }
-
-        mapping[receiver.senderAccountId].push(receiver);
-
-        return mapping;
-      }, {});
-
-      return receiverAccountIds.map(
-        (id) => splitsReceiversToAccountMapping[id] || [],
-      );
-    },
+  private readonly _batchSplitsReceiversForSenderIds = this.createBatchLoader(
+    getSplitsReceiversForSenderIds,
   );
 
   public async getSplitsReceiversOnChain(
     accountId: AccountId,
     chain: DbSchema,
   ): Promise<SplitsReceiverModelDataValues[]> {
-    return (
-      await this._batchSplitsReceiversIds.load({
-        accountId,
-        chains: [chain],
-      })
-    ).filter((receiver) => receiver.chain === chain);
+    const receivers = await this._batchSplitsReceiversIds.load({
+      accountId,
+      chains: [chain],
+    });
+
+    return receivers.filter((receiver) => receiver.chain === chain);
   }
-
-  private readonly _batchSplitsReceiversForSenderIds = new DataLoader(
-    async (projectKeys: readonly MultiChainKey[]) => {
-      const { chains, ids: senderAccountIds } =
-        parseMultiChainKeys(projectKeys);
-
-      const splitsReceivers = await getSplitsReceiversForSenderIds(
-        chains,
-        senderAccountIds,
-      );
-
-      const splitsReceiversToAccountMapping = splitsReceivers.reduce<
-        Record<AccountId, SplitsReceiverModelDataValues[]>
-      >((mapping, receiver) => {
-        if (!mapping[receiver.senderAccountId]) {
-          mapping[receiver.senderAccountId] = []; // eslint-disable-line no-param-reassign
-        }
-
-        mapping[receiver.senderAccountId].push(receiver);
-
-        return mapping;
-      }, {});
-
-      return senderAccountIds.map(
-        (id) => splitsReceiversToAccountMapping[id] || [],
-      );
-    },
-  );
 
   public async getSplitsReceiversForSenderOnChain(
     accountId: AccountId,
     chain: DbSchema,
   ): Promise<SplitsReceiverModelDataValues[]> {
-    return (
-      await this._batchSplitsReceiversForSenderIds.load({
-        accountId,
-        chains: [chain],
-      })
-    ).filter((receiver) => receiver.chain === chain);
+    const receivers = await this._batchSplitsReceiversForSenderIds.load({
+      accountId,
+      chains: [chain],
+    });
+
+    return receivers.filter((receiver) => receiver.chain === chain);
+  }
+
+  private createBatchLoader(
+    fetchFn: ReceiverFetcher,
+  ): DataLoader<MultiChainKey, SplitsReceiverModelDataValues[]> {
+    return new DataLoader(async (projectKeys: readonly MultiChainKey[]) => {
+      const { chains, ids: accountIds } = parseMultiChainKeys(projectKeys);
+      const splitsReceivers = await fetchFn(chains, accountIds);
+
+      const receiverMap = splitsReceivers.reduce<
+        Record<AccountId, SplitsReceiverModelDataValues[]>
+      >((acc, receiver) => {
+        const key = receiver.senderAccountId;
+        acc[key] = acc[key] || [];
+        acc[key].push(receiver);
+        return acc;
+      }, {});
+
+      return accountIds.map((id) => receiverMap[id] || []);
+    });
   }
 }
