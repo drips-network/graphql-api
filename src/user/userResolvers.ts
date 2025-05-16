@@ -348,12 +348,14 @@ const userResolvers = {
   },
   StreamReceiver: {
     __resolveType(parent: DripListModel | User | EcosystemMainAccount) {
-      if ('account' in parent && parent.account.driver === Driver.NFT) {
-        return 'DripList';
-      }
+      // Order matters.
 
       if ('parentEcosystemInfo' in parent) {
         return 'EcosystemMainAccount';
+      }
+
+      if ('account' in parent && parent.account.driver === Driver.NFT) {
+        return 'DripList';
       }
 
       return 'User';
