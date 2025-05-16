@@ -1,32 +1,25 @@
 import gql from 'graphql-tag';
 
-const dripListTypeDef = gql`
-  type DripList {
+const ecosystemTypeDef = gql`
+  union EcosystemSupportItem = OneTimeDonationSupport | StreamSupport
+
+  type EcosystemMainAccount {
     account: NftDriverAccount!
     chain: SupportedChain!
     name: String!
     creator: String!
     description: String
-    splits: [SplitsReceiver!]!
     owner: AddressDriverAccount!
     previousOwnerAddress: String!
-    support: [SupportItem!]!
-    latestVotingRoundId: String
+    support: [EcosystemSupportItem!]!
+    splits: [SplitsReceiver!]!
     totalEarned: [Amount!]!
     latestMetadataIpfsHash: String
     isVisible: Boolean!
     lastProcessedIpfsHash: String
-  }
-
-  input DripListWhereInput {
-    accountId: String
-    ownerAddress: String
-  }
-
-  type MintedTokens {
-    chain: SupportedChain!
-    total: Int!
+    avatar: Avatar!
+    color: String!
   }
 `;
 
-export default dripListTypeDef;
+export default ecosystemTypeDef;

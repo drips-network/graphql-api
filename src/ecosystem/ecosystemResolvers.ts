@@ -1,66 +1,45 @@
-import { isAddress } from 'ethers';
 import type {
-  Address,
+  ImmutableSplitsDriverId,
   NftDriverId,
   RepoDriverId,
-  ResolverDripList,
-  ResolverDripListData,
+  ResolverEcosystem,
+  ResolverEcosystemData,
 } from '../common/types';
 import type {
   AddressDriverAccount,
-  DripListWhereInput,
+  Avatar,
   NftDriverAccount,
 } from '../generated/graphql';
-import { SupportedChain, Driver } from '../generated/graphql';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
+import { Driver, SupportedChain } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, {
+  assertIsImmutableSplitsDriverId,
   assertIsNftDriverId,
   assertIsRepoDriverId,
   assertMany,
   isNftDriverId,
 } from '../utils/assert';
-import type { ProjectDataValues } from '../project/ProjectModel';
-import queryableChains from '../common/queryableChains';
-import { toResolverDripList, toResolverDripLists } from './dripListUtils';
-import verifyDripListsInput from './dripListValidators';
-import type { DripListDataValues } from './DripListModel';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
-import { toResolverProject } from '../project/projectUtils';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
-import groupBy from '../utils/linq';
+import { toResolverEcosystem } from './ecosystemUtils';
+import { toResolverDripList } from '../drip-list/dripListUtils';
+import { toResolverProject } from '../project/projectUtils';
+import shouldNeverHappen from '../utils/shouldNeverHappen';
+import type { SubListDataValues } from '../sub-list/SubListModel';
+import type { ProjectDataValues } from '../project/ProjectModel';
 import getUserAddress from '../utils/getUserAddress';
+import groupBy from '../utils/linq';
+import { toResolverSubList } from '../sub-list/subListUtils';
 import { calcParentRepoDriverId } from '../utils/repoSubAccountIdUtils';
 
-const dripListResolvers = {
+const ecosystemResolvers = {
   Query: {
-    dripLists: async (
-      _: undefined,
-      {
-        chains,
-        where,
-      }: { chains?: SupportedChain[]; where?: DripListWhereInput },
-      { dataSources: { dripListsDataSource } }: Context,
-    ): Promise<ResolverDripList[]> => {
-      verifyDripListsInput({ chains, where });
-
-      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
-        (chain) => chainToDbSchema[chain],
-      );
-
-      const dbDripLists = await dripListsDataSource.getDripListsByFilter(
-        dbSchemasToQuery,
-        where,
-      );
-
-      return toResolverDripLists(dbSchemasToQuery, dbDripLists);
-    },
-    dripList: async (
+    ecosystemMainAccount: async (
       _: undefined,
       { id, chain }: { id: NftDriverId; chain: SupportedChain },
-      { dataSources: { dripListsDataSource } }: Context,
-    ): Promise<ResolverDripList | null> => {
+      { dataSources: { ecosystemsDataSource } }: Context,
+    ): Promise<ResolverEcosystem | null> => {
       if (!isNftDriverId(id)) {
         return null;
       }
@@ -69,69 +48,56 @@ const dripListResolvers = {
 
       const dbSchemaToQuery = chainToDbSchema[chain];
 
-      const dbDripList = await dripListsDataSource.getDripListById(id, [
+      const dbEcosystem = await ecosystemsDataSource.getEcosystemById(id, [
         dbSchemaToQuery,
       ]);
 
-      return dbDripList
-        ? toResolverDripList(dbSchemaToQuery, dbDripList)
+      return dbEcosystem
+        ? toResolverEcosystem(dbSchemaToQuery, dbEcosystem)
         : null;
     },
-    mintedTokensCountByOwnerAddress: async (
-      _: undefined,
-      { ownerAddress, chain }: { ownerAddress: Address; chain: SupportedChain },
-      { dataSources: { dripListsDataSource } }: Context,
-    ): Promise<{ chain: SupportedChain; total: number }> => {
-      assert(isAddress(ownerAddress));
-      assert(chain in SupportedChain);
-
-      const dbSchemaToQuery = chainToDbSchema[chain];
-
-      return dripListsDataSource.getMintedTokensCountByAccountId(
-        dbSchemaToQuery,
-        ownerAddress,
-      );
-    },
   },
-  DripList: {
-    account: (dripList: ResolverDripList): NftDriverAccount => dripList.account,
-    name: (dripListData: ResolverDripListData) =>
-      dripListData.name ?? 'Unnamed Drip List',
-    isVisible: ({ isVisible }: ResolverDripListData) => isVisible,
-    creator: (dripListData: ResolverDripListData) => dripListData.creator,
-    description: (dripListData: ResolverDripListData) =>
-      dripListData.description,
-    previousOwnerAddress: (dripListData: ResolverDripListData) =>
-      dripListData.previousOwnerAddress,
-    owner: (dripListData: ResolverDripListData): AddressDriverAccount =>
-      dripListData.owner,
+  EcosystemMainAccount: {
+    account: (ecosystem: ResolverEcosystemData): NftDriverAccount =>
+      ecosystem.account,
+    name: (ecosystem: ResolverEcosystemData) =>
+      ecosystem.name ?? 'Unnamed Ecosystem',
+    isVisible: ({ isVisible }: ResolverEcosystemData) => isVisible,
+    creator: (ecosystem: ResolverEcosystemData) => ecosystem.creator,
+    description: (ecosystem: ResolverEcosystemData) => ecosystem.description,
+    previousOwnerAddress: (ecosystem: ResolverEcosystemData) =>
+      ecosystem.previousOwnerAddress,
+    owner: (ecosystem: ResolverEcosystemData): AddressDriverAccount =>
+      ecosystem.owner,
+    color: (ecosystem: ResolverEcosystemData): string => ecosystem.color,
+    avatar: (ecosystem: ResolverEcosystemData): Avatar => ecosystem.avatar,
     splits: async (
       {
-        parentDripListInfo: { dripListId, dripListChain },
-      }: ResolverDripListData,
+        parentEcosystemInfo: { ecosystemId, ecosystemChain },
+      }: ResolverEcosystemData,
       _: {},
       {
         dataSources: {
           projectsDataSource,
-          dripListsDataSource,
+          subListsDataSource,
           splitsReceiversDataSource,
         },
       }: Context,
     ) => {
       const splitsReceivers =
         await splitsReceiversDataSource.getSplitsReceiversForSenderOnChain(
-          dripListId,
-          dripListChain,
+          ecosystemId,
+          ecosystemChain,
         );
 
       assertMany(
         splitsReceivers.map((s) => s.relationshipType),
-        (s) => s === 'drip_list_receiver',
+        (s) => s === 'ecosystem_receiver',
       );
 
       assertMany(
         splitsReceivers.map((s) => s.receiverAccountType),
-        (s) => s === 'address' || s === 'project' || s === 'drip_list',
+        (s) => s === 'project' || s === 'sub_list',
       );
 
       const splitReceiversByReceiverAccountType = groupBy(
@@ -154,54 +120,52 @@ const dripListResolvers = {
       const projectReceivers =
         splitReceiversByReceiverAccountType.get('project') || [];
 
-      const dripListReceivers =
-        splitReceiversByReceiverAccountType.get('drip_list') || [];
+      const subListReceivers =
+        splitReceiversByReceiverAccountType.get('sub_list') || [];
 
       const projectIds =
         projectReceivers.length > 0
           ? ((await Promise.all(
               projectReceivers.map(async (r) => {
-                let projectId = r.receiverAccountId;
+                let pId = r.receiverAccountId;
 
                 if (r.splitsToRepoDriverSubAccount) {
-                  projectId = await calcParentRepoDriverId(
+                  pId = await calcParentRepoDriverId(
                     r.receiverAccountId,
-                    dripListChain,
+                    ecosystemChain,
                   );
                 }
 
-                return projectId;
+                return pId;
               }),
             )) as RepoDriverId[])
           : [];
 
-      const [projects, dripLists] = await Promise.all([
+      const [projects, subLists] = await Promise.all([
         projectReceivers.length > 0
           ? projectsDataSource.getProjectsByIdsOnChain(
               projectIds,
-              dripListChain,
+              ecosystemChain,
             )
           : [],
 
-        dripListReceivers.length > 0
-          ? dripListsDataSource.getDripListsByIdsOnChain(
-              dripListReceivers.map(
+        subListReceivers.length > 0
+          ? subListsDataSource.getSubListsByIdsOnChain(
+              subListReceivers.map(
                 (r) => r.receiverAccountId,
-              ) as NftDriverId[],
-              dripListChain,
+              ) as ImmutableSplitsDriverId[],
+              ecosystemChain,
             )
           : [],
       ]);
-
       const projectsMap = new Map(
         projects
           .filter((p): p is ProjectDataValues => p.accountId !== undefined)
           .map((p) => [p.accountId, p]),
       );
-
-      const dripListsMap = new Map(
-        dripLists
-          .filter((l): l is DripListDataValues => l.accountId !== undefined)
+      const subListsMap = new Map(
+        subLists
+          .filter((l): l is SubListDataValues => l.accountId !== undefined)
           .map((l) => [l.accountId, l]),
       );
 
@@ -210,6 +174,7 @@ const dripListResolvers = {
           assertIsRepoDriverId(s.receiverAccountId);
 
           const project = projectsMap.get(s.receiverAccountId);
+
           return {
             ...s,
             driver: Driver.REPO,
@@ -220,31 +185,30 @@ const dripListResolvers = {
             splitsToSubAccount: s.splitsToRepoDriverSubAccount,
             project: project
               ? await toResolverProject(
-                  [dripListChain],
+                  [ecosystemChain],
                   project as unknown as ProjectDataValues,
                 )
               : undefined,
           };
         }),
       );
+      const subListDependencies = await Promise.all(
+        subListReceivers.map(async (s) => {
+          assertIsImmutableSplitsDriverId(s.receiverAccountId);
 
-      const dripListDependencies = await Promise.all(
-        dripListReceivers.map(async (s) => {
-          assertIsNftDriverId(s.receiverAccountId);
-
-          const dripList = dripListsMap.get(s.receiverAccountId);
+          const subList = subListsMap.get(s.receiverAccountId);
 
           return {
             ...s,
-            driver: Driver.NFT,
+            driver: Driver.IMMUTABLE_SPLITS,
             account: {
-              driver: Driver.NFT,
+              driver: Driver.IMMUTABLE_SPLITS,
               accountId: s.receiverAccountId,
             },
-            dripList: dripList
-              ? await toResolverDripList(
-                  dripListChain,
-                  dripList as unknown as DripListDataValues,
+            subList: subList
+              ? await toResolverSubList(
+                  ecosystemChain,
+                  subList as unknown as SubListDataValues,
                 )
               : shouldNeverHappen(),
           };
@@ -254,13 +218,13 @@ const dripListResolvers = {
       return [
         ...addressDependencies,
         ...projectDependencies,
-        ...dripListDependencies,
+        ...subListDependencies,
       ];
     },
     support: async (
       {
-        parentDripListInfo: { dripListId, dripListChain },
-      }: ResolverDripListData,
+        parentEcosystemInfo: { ecosystemId, ecosystemChain },
+      }: ResolverEcosystemData,
       _: {},
       {
         dataSources: {
@@ -272,8 +236,8 @@ const dripListResolvers = {
     ) => {
       const splitReceivers =
         await supportDataSource.getSplitSupportByReceiverIdOnChain(
-          dripListId,
-          dripListChain,
+          ecosystemId,
+          ecosystemChain,
         );
 
       const projectsAndDripListsSupport = await Promise.all(
@@ -297,10 +261,10 @@ const dripListResolvers = {
               date: blockTimestamp,
               totalSplit: [],
               project: await toResolverProject(
-                [dripListChain],
+                [ecosystemChain],
                 (await projectsDataSource.getProjectByIdOnChain(
                   senderAccountId,
-                  dripListChain,
+                  ecosystemChain,
                 )) || shouldNeverHappen(),
               ),
             };
@@ -317,30 +281,30 @@ const dripListResolvers = {
               date: blockTimestamp,
               totalSplit: [],
               dripList: await toResolverDripList(
-                dripListChain,
+                ecosystemChain,
                 (await dripListsDataSource.getDripListById(senderAccountId, [
-                  dripListChain,
+                  ecosystemChain,
                 ])) || shouldNeverHappen(),
               ),
             };
           }
 
           return shouldNeverHappen(
-            'Supported is neither a Project nor a DripList.',
+            'Supporter is neither a Project nor a DripList.',
           );
         }),
       );
 
       const oneTimeDonationSupport =
         await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
-          dripListId,
-          dripListChain,
+          ecosystemId,
+          ecosystemChain,
         );
 
       const streamSupport =
         await supportDataSource.getStreamSupportByAccountIdOnChain(
-          dripListId,
-          dripListChain,
+          ecosystemId,
+          ecosystemChain,
         );
 
       return [
@@ -350,17 +314,17 @@ const dripListResolvers = {
       ];
     },
     totalEarned: async (
-      dripListData: ResolverDripListData,
+      ecosystemData: ResolverEcosystemData,
       _: {},
       context: Context,
-    ) => resolveTotalEarned(dripListData, context),
+    ) => resolveTotalEarned(ecosystemData, context),
     latestMetadataIpfsHash: async ({
-      parentDripListInfo: { dripListChain, dripListId },
-    }: ResolverDripListData) =>
-      getLatestMetadataHashOnChain(dripListId, dripListChain),
-    lastProcessedIpfsHash: (dripListData: ResolverDripListData) =>
-      dripListData.lastProcessedIpfsHash,
+      parentEcosystemInfo: { ecosystemChain, ecosystemId },
+    }: ResolverEcosystemData) =>
+      getLatestMetadataHashOnChain(ecosystemId, ecosystemChain),
+    lastProcessedIpfsHash: (ecosystemData: ResolverEcosystemData) =>
+      ecosystemData.lastProcessedIpfsHash,
   },
 };
 
-export default dripListResolvers;
+export default ecosystemResolvers;

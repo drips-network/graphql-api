@@ -1,14 +1,17 @@
 import commonResolvers from './common/commonResolvers';
 import dateScalar from './common/date';
 import dripListResolvers from './drip-list/dripListResolvers';
+import ecosystemResolvers from './ecosystem/ecosystemResolvers';
 import projectResolvers from './project/projectResolvers';
 import streamResolvers from './stream/streamResolvers';
+import subListResolvers from './sub-list/subListResolvers';
 import userResolvers from './user/userResolvers';
 
 const resolvers = {
   Query: {
     ...projectResolvers.Query,
     ...dripListResolvers.Query,
+    ...ecosystemResolvers.Query,
     ...userResolvers.Query,
     ...streamResolvers.Query,
   },
@@ -21,6 +24,7 @@ const resolvers = {
   DripListReceiver: commonResolvers.DripListReceiver,
   SplitsReceiver: commonResolvers.SplitsReceiver,
   SupportItem: commonResolvers.SupportItem,
+  EcosystemSupportItem: commonResolvers.SupportItem,
   Avatar: projectResolvers.Avatar,
   ProjectSupport: commonResolvers.ProjectSupport,
   DripListSupport: commonResolvers.DripListSupport,
@@ -33,6 +37,9 @@ const resolvers = {
   Stream: streamResolvers.Stream,
   StreamReceiver: userResolvers.StreamReceiver,
   AddressReceiver: commonResolvers.AddressReceiver,
+  EcosystemMainAccount: ecosystemResolvers.EcosystemMainAccount,
+  SubList: subListResolvers.SubList,
+  EcosystemSupport: commonResolvers.EcosystemSupport,
 };
 
 export default resolvers;

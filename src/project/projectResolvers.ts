@@ -1,5 +1,6 @@
 import type {
-  ProjectId,
+  NftDriverId,
+  RepoDriverId,
   ResolverClaimedProjectData,
   ResolverProject,
   ResolverUnClaimedProjectData,
@@ -15,7 +16,6 @@ import type {
   Source,
   RepoDriverAccount,
   AddressDriverAccount,
-  AddressReceiver,
   ProjectWhereInput,
   ProjectSortInput,
   Avatar,
@@ -23,19 +23,30 @@ import type {
   ProjectData,
 } from '../generated/graphql';
 import type { Context } from '../server';
-import { AddressDriverSplitReceiverType } from '../models/AddressDriverSplitReceiverModel';
 import groupBy from '../utils/linq';
 import queryableChains from '../common/queryableChains';
 import type { ProjectDataValues } from './ProjectModel';
 import validateProjectsInput from './projectValidators';
 import type { DripListDataValues } from '../drip-list/DripListModel';
-import assert, { isGitHubUrl, isProjectId } from '../utils/assert';
+import {
+  assertIsNftDriverId,
+  assertIsRepoDriverId,
+  assertMany,
+  isGitHubUrl,
+  isRepoDriverId,
+} from '../utils/assert';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import { toResolverDripList } from '../drip-list/dripListUtils';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
+import getUserAddress from '../utils/getUserAddress';
+import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
+import {
+  calcParentRepoDriverId,
+  calcSubRepoDriverId,
+} from '../utils/repoSubAccountIdUtils';
 
 const projectResolvers = {
   Query: {
@@ -66,10 +77,13 @@ const projectResolvers = {
     },
     projectById: async (
       _: undefined,
-      { id, chains }: { id: ProjectId; chains?: SupportedChain[] },
+      { id, chains }: { id: RepoDriverId; chains?: SupportedChain[] },
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<ResolverProject | null> => {
-      assert(isProjectId(id));
+      if (!isRepoDriverId(id)) {
+        return null;
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -90,7 +104,10 @@ const projectResolvers = {
       { url, chains }: { url: string; chains?: SupportedChain[] },
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<ResolverProject | null> => {
-      assert(isGitHubUrl(url));
+      if (!isGitHubUrl(url)) {
+        return null;
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -111,7 +128,7 @@ const projectResolvers = {
       {
         projectId,
         chains,
-      }: { projectId: ProjectId; chains?: SupportedChain[] },
+      }: { projectId: RepoDriverId; chains?: SupportedChain[] },
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<
       {
@@ -120,7 +137,10 @@ const projectResolvers = {
         chain: SupportedChain;
       }[]
     > => {
-      assert(isProjectId(projectId));
+      if (!isRepoDriverId(projectId)) {
+        return [];
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -140,11 +160,7 @@ const projectResolvers = {
   },
   ProjectData: {
     __resolveType(parent: ProjectData) {
-      if (
-        'claimedAt' in parent &&
-        !!parent.claimedAt &&
-        parent.verificationStatus === ProjectVerificationStatus.Claimed
-      ) {
+      if (parent.verificationStatus === ProjectVerificationStatus.claimed) {
         return 'ClaimedProjectData';
       }
 
@@ -154,7 +170,8 @@ const projectResolvers = {
   ClaimedProjectData: {
     verificationStatus: (projectData: ResolverClaimedProjectData) =>
       projectData.verificationStatus,
-    color: (projectData: any): string => projectData.color,
+    color: (projectData: ResolverClaimedProjectData): string =>
+      projectData.color,
     description: (projectData: ResolverClaimedProjectData) =>
       projectData.description,
     emoji: (projectData: ResolverClaimedProjectData): string =>
@@ -172,116 +189,152 @@ const projectResolvers = {
         dataSources: {
           projectsDataSource,
           dripListsDataSource,
-          receiversOfTypeAddressDataSource,
-          receiversOfTypeProjectDataSource,
-          receiversOfTypeDripListDataSource,
+          splitsReceiversDataSource,
         },
       }: Context,
     ) => {
-      const receiversOfTypeAddressModels =
-        await receiversOfTypeAddressDataSource.getReceiversOfTypeAddressByProjectIdOnChain(
+      const splitsReceivers =
+        await splitsReceiversDataSource.getSplitsReceiversForSenderOnChain(
           projectId,
           projectChain,
         );
 
-      const maintainersAndAddressDependencies = groupBy(
-        receiversOfTypeAddressModels.map((receiver) => ({
+      assertMany(
+        splitsReceivers.map((s) => s.relationshipType),
+        (s) => s === 'project_maintainer' || s === 'project_dependency',
+      );
+
+      assertMany(
+        splitsReceivers.map((s) => s.receiverAccountType),
+        (s) => s === 'address' || s === 'project' || s === 'drip_list',
+      );
+
+      const splitReceiversByReceiverAccountType = groupBy(
+        splitsReceivers,
+        (s) => s.receiverAccountType,
+      );
+
+      const addressReceivers = groupBy(
+        (splitReceiversByReceiverAccountType.get('address') || []).map((s) => ({
           driver: Driver.ADDRESS,
-          weight: receiver.weight,
-          receiverType: receiver.type,
+          weight: s.weight,
+          receiverType: s.receiverAccountType,
+          relationshipType: s.relationshipType,
           account: {
             driver: Driver.ADDRESS,
-            accountId: receiver.fundeeAccountId,
-            address: receiver.fundeeAccountAddress,
+            accountId: s.receiverAccountId,
+            address: getUserAddress(s.receiverAccountId),
           },
         })),
-        (receiver) => receiver.receiverType,
+        (s) => s.relationshipType,
       );
 
-      const maintainers =
-        (maintainersAndAddressDependencies.get(
-          AddressDriverSplitReceiverType.ProjectMaintainer,
-        ) as AddressReceiver[]) || [];
+      const maintainers = addressReceivers.get('project_maintainer') || [];
+      const addressDependencies =
+        addressReceivers.get('project_dependency') || [];
 
-      const dependenciesOfTypeAddress =
-        (maintainersAndAddressDependencies.get(
-          AddressDriverSplitReceiverType.ProjectDependency,
-        ) as AddressReceiver[]) || [];
+      const projectReceivers =
+        splitReceiversByReceiverAccountType.get('project') || [];
 
-      const receiversOfTypeProjectModels =
-        await receiversOfTypeProjectDataSource.getReceiversOfTypeProjectByProjectIdOnChain(
-          projectId,
-          projectChain,
-        );
+      const dripListReceivers =
+        splitReceiversByReceiverAccountType.get('drip_list') || [];
 
-      const splitsOfTypeProjectModels =
-        await projectsDataSource.getProjectsByIdsOnChain(
-          receiversOfTypeProjectModels.map((r) => r.fundeeProjectId),
-          projectChain,
-        );
+      const projectIds =
+        projectReceivers.length > 0
+          ? ((await Promise.all(
+              projectReceivers.map(async (r) => {
+                let pId = r.receiverAccountId;
 
-      const dependenciesOfTypeProject = await Promise.all(
-        receiversOfTypeProjectModels.map(async (receiver) => ({
-          driver: Driver.REPO,
-          weight: receiver.weight,
-          receiverType: receiver.type,
-          account: {
+                if (r.splitsToRepoDriverSubAccount) {
+                  pId = await calcParentRepoDriverId(
+                    r.receiverAccountId,
+                    projectChain,
+                  );
+                }
+
+                return pId;
+              }),
+            )) as RepoDriverId[])
+          : [];
+
+      const [projects, dripLists] = await Promise.all([
+        projectReceivers.length > 0
+          ? projectsDataSource.getProjectsByIdsOnChain(projectIds, projectChain)
+          : [],
+
+        dripListReceivers.length > 0
+          ? dripListsDataSource.getDripListsByIdsOnChain(
+              dripListReceivers.map(
+                (r) => r.receiverAccountId,
+              ) as NftDriverId[],
+              projectChain,
+            )
+          : [],
+      ]);
+
+      const projectsMap = new Map(
+        projects
+          .filter((p): p is ProjectDataValues => p.accountId !== undefined)
+          .map((p) => [p.accountId, p]),
+      );
+
+      const dripListsMap = new Map(
+        dripLists
+          .filter((l): l is DripListDataValues => l.accountId !== undefined)
+          .map((l) => [l.accountId, l]),
+      );
+
+      const projectDependencies = await Promise.all(
+        projectReceivers.map(async (s) => {
+          assertIsRepoDriverId(s.receiverAccountId);
+
+          const project = projectsMap.get(s.receiverAccountId);
+          return {
+            ...s,
             driver: Driver.REPO,
-            accountId: receiver.fundeeProjectId,
-          },
-          project: await toResolverProject(
-            [projectChain],
-            splitsOfTypeProjectModels
-              .filter(
-                (p): p is ProjectDataValues => p && (p as any).id !== undefined,
-              )
-              .find(
-                (p) => p.id === receiver.fundeeProjectId,
-              ) as unknown as ProjectDataValues,
-          ),
-        })),
+            account: {
+              driver: Driver.REPO,
+              accountId: s.receiverAccountId,
+            },
+            splitsToSubAccount: s.splitsToRepoDriverSubAccount,
+            project: project
+              ? await toResolverProject(
+                  [projectChain],
+                  project as unknown as ProjectDataValues,
+                )
+              : undefined,
+          };
+        }),
       );
 
-      const receiversOfTypeDripListModels =
-        await receiversOfTypeDripListDataSource.getReceiversOfTypeDripListByProjectIdOnChain(
-          projectId,
-          projectChain,
-        );
+      const dripListDependencies = await Promise.all(
+        dripListReceivers.map(async (s) => {
+          assertIsNftDriverId(s.receiverAccountId);
 
-      const splitsOfTypeDripListModels =
-        await dripListsDataSource.getDripListsByIdsOnChain(
-          receiversOfTypeDripListModels.map((r) => r.fundeeDripListId),
-          projectChain,
-        );
-
-      const dripListReceivers = await Promise.all(
-        receiversOfTypeDripListModels.map(async (receiver) => ({
-          driver: Driver.NFT,
-          weight: receiver.weight,
-          account: {
+          const dripList = dripListsMap.get(s.receiverAccountId);
+          return {
+            ...s,
             driver: Driver.NFT,
-            accountId: receiver.fundeeDripListId,
-          },
-          dripList: await toResolverDripList(
-            projectChain,
-            (splitsOfTypeDripListModels
-              .filter(
-                (l): l is DripListDataValues =>
-                  l && (l as any).id !== undefined,
-              )
-              .find(
-                (p) => (p as any).id === receiver.fundeeDripListId,
-              ) as unknown as DripListDataValues) || shouldNeverHappen(),
-          ),
-        })),
+            account: {
+              driver: Driver.NFT,
+              accountId: s.receiverAccountId,
+            },
+            dripList: dripList
+              ? await toResolverDripList(
+                  projectChain,
+                  dripList as unknown as DripListDataValues,
+                )
+              : shouldNeverHappen(),
+          };
+        }),
       );
 
       return {
         maintainers,
         dependencies: [
-          ...dependenciesOfTypeAddress,
-          ...dependenciesOfTypeProject,
-          ...dripListReceivers,
+          ...addressDependencies,
+          ...projectDependencies,
+          ...dripListDependencies,
         ],
       };
     },
@@ -294,58 +347,79 @@ const projectResolvers = {
         dataSources: {
           projectsDataSource,
           dripListsDataSource,
-          projectAndDripListSupportDataSource,
+          supportDataSource,
+          ecosystemsDataSource,
         },
       }: Context,
     ) => {
-      // `RepoDriverSplitReceiver`s that represent the Project as a receiver.
-      const dbRepoDriverSplitReceivers =
-        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByProjectIdOnChain(
+      const splitReceivers =
+        await supportDataSource.getSplitSupportByReceiverIdOnChain(
           projectId,
           projectChain,
         );
 
-      const projectsAndDripListsSupport = await Promise.all(
-        dbRepoDriverSplitReceivers.map(async (receiver) => {
+      const support = await Promise.all(
+        splitReceivers.map(async (receiver) => {
           const {
-            funderProjectId,
-            funderDripListId,
-            fundeeProjectId,
+            senderAccountId,
+            receiverAccountId,
             blockTimestamp,
+            senderAccountType,
           } = receiver;
 
-          // Support is a Project.
-          if (funderProjectId && !funderDripListId) {
+          if (senderAccountType === 'project') {
+            assertIsRepoDriverId(senderAccountId);
+
             return {
               ...receiver,
               account: {
                 driver: Driver.NFT,
-                accountId: fundeeProjectId,
+                accountId: receiverAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
               project: await toResolverProject(
                 [projectChain],
                 (await projectsDataSource.getProjectByIdOnChain(
-                  funderProjectId,
+                  senderAccountId,
                   projectChain,
                 )) || shouldNeverHappen(),
               ),
             };
-            // Support is a DripList.
           }
-          if (funderDripListId && !funderProjectId) {
+          if (senderAccountType === 'drip_list') {
+            assertIsNftDriverId(senderAccountId);
+
             return {
               ...receiver,
               account: {
                 driver: Driver.NFT,
-                accountId: fundeeProjectId,
+                accountId: receiverAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
               dripList: await toResolverDripList(
                 projectChain,
-                (await dripListsDataSource.getDripListById(funderDripListId, [
+                (await dripListsDataSource.getDripListById(senderAccountId, [
+                  projectChain,
+                ])) || shouldNeverHappen(),
+              ),
+            };
+          }
+          if (senderAccountType === 'ecosystem_main_account') {
+            assertIsNftDriverId(senderAccountId);
+
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              ecosystemMainAccount: await toResolverEcosystem(
+                projectChain,
+                (await ecosystemsDataSource.getEcosystemById(senderAccountId, [
                   projectChain,
                 ])) || shouldNeverHappen(),
               ),
@@ -353,32 +427,37 @@ const projectResolvers = {
           }
 
           return shouldNeverHappen(
-            'Supported is neither a Project nor a DripList.',
+            'Supporter is neither a Project, a DripList, nor an Ecosystem.',
           );
         }),
       );
 
-      // `GivenEventModelDataValues`s that represent one time donations to the Project.
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
+        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
           projectId,
           projectChain,
         );
 
-      return [...projectsAndDripListsSupport, ...oneTimeDonationSupport];
+      return [...support, ...oneTimeDonationSupport];
     },
     totalEarned: async (
-      projectData: ResolverUnClaimedProjectData,
+      projectData: ResolverClaimedProjectData,
       _: {},
       context: Context,
     ) => resolveTotalEarned(projectData, context),
     withdrawableBalances: async ({
       parentProjectInfo: { projectId, projectChain },
-    }: ResolverUnClaimedProjectData) =>
+    }: ResolverClaimedProjectData) =>
       getWithdrawableBalancesOnChain(projectId, projectChain),
+    withdrawableSubAccountBalances: async ({
+      parentProjectInfo: { projectId, projectChain },
+    }: ResolverClaimedProjectData) => {
+      const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
+      return getWithdrawableBalancesOnChain(subAccountId, projectChain);
+    },
     latestMetadataIpfsHash: async ({
       parentProjectInfo: { projectId, projectChain },
-    }: ResolverUnClaimedProjectData) =>
+    }: ResolverClaimedProjectData) =>
       getLatestMetadataHashOnChain(projectId, projectChain),
     lastProcessedIpfsHash: (projectData: ResolverClaimedProjectData) =>
       projectData.lastProcessedIpfsHash,
@@ -395,58 +474,77 @@ const projectResolvers = {
         dataSources: {
           projectsDataSource,
           dripListsDataSource,
-          projectAndDripListSupportDataSource,
+          supportDataSource,
+          ecosystemsDataSource,
         },
       }: Context,
     ) => {
-      // `RepoDriverSplitReceiver`s that represent the Project as a receiver.
-      const dbRepoDriverSplitReceivers =
-        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByProjectIdOnChain(
+      const splitsReceivers =
+        await supportDataSource.getSplitSupportByReceiverIdOnChain(
           projectId,
           projectChain,
         );
 
-      const projectsAndDripListsSupport = await Promise.all(
-        dbRepoDriverSplitReceivers.map(async (receiver) => {
+      const support = await Promise.all(
+        splitsReceivers.map(async (s) => {
           const {
-            funderProjectId,
-            funderDripListId,
-            fundeeProjectId,
+            senderAccountId,
+            receiverAccountId,
+            senderAccountType,
             blockTimestamp,
-          } = receiver;
+          } = s;
 
-          // Support is a Project.
-          if (funderProjectId && !funderDripListId) {
+          if (senderAccountType === 'project') {
             return {
-              ...receiver,
+              ...s,
               account: {
                 driver: Driver.NFT,
-                accountId: fundeeProjectId,
+                accountId: receiverAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
+              splitsToSubAccount: s.splitsToRepoDriverSubAccount,
               project: await toResolverProject(
                 [projectChain],
                 (await projectsDataSource.getProjectByIdOnChain(
-                  funderProjectId,
+                  senderAccountId as RepoDriverId,
                   projectChain,
                 )) || shouldNeverHappen(),
               ),
             };
-            // Support is a DripList.
           }
-          if (funderDripListId && !funderProjectId) {
+          if (senderAccountType === 'drip_list') {
             return {
-              ...receiver,
+              ...s,
               account: {
                 driver: Driver.NFT,
-                accountId: fundeeProjectId,
+                accountId: receiverAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
               dripList: await toResolverDripList(
                 projectChain,
-                (await dripListsDataSource.getDripListById(funderDripListId, [
+                (await dripListsDataSource.getDripListById(
+                  senderAccountId as NftDriverId,
+                  [projectChain],
+                )) || shouldNeverHappen(),
+              ),
+            };
+          }
+          if (senderAccountType === 'ecosystem_main_account') {
+            assertIsNftDriverId(senderAccountId);
+
+            return {
+              ...s,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              ecosystemMainAccount: await toResolverEcosystem(
+                projectChain,
+                (await ecosystemsDataSource.getEcosystemById(senderAccountId, [
                   projectChain,
                 ])) || shouldNeverHappen(),
               ),
@@ -454,24 +552,30 @@ const projectResolvers = {
           }
 
           return shouldNeverHappen(
-            'Supported is neither a Project nor a DripList.',
+            'Supporter is neither a Project, a DripList, nor an Ecosystem.',
           );
         }),
       );
 
       // `GivenEventModelDataValues`s that represent one time donations to the Project.
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
+        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
           projectId,
           projectChain,
         );
 
-      return [...projectsAndDripListsSupport, ...oneTimeDonationSupport];
+      return [...support, ...oneTimeDonationSupport];
     },
     withdrawableBalances: async ({
       parentProjectInfo: { projectId, projectChain },
     }: ResolverUnClaimedProjectData) =>
       getWithdrawableBalancesOnChain(projectId, projectChain),
+    withdrawableSubAccountBalances: async ({
+      parentProjectInfo: { projectId, projectChain },
+    }: ResolverUnClaimedProjectData) => {
+      const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
+      return getWithdrawableBalancesOnChain(subAccountId, projectChain);
+    },
     owner: (
       projectData: ResolverClaimedProjectData,
     ): AddressDriverAccount | null => projectData.owner,

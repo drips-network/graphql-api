@@ -5,21 +5,20 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import type { UUID } from 'crypto';
 import type {
-  AccountId,
-  Address,
   DbSchema,
   NftDriverId,
+  AccountId,
+  Address,
 } from '../common/types';
 
-export type DripListDataValues = DripListModel['dataValues'] & {
+export type EcosystemDataValues = EcosystemMainAccountModel['dataValues'] & {
   chain: DbSchema;
 };
 
-export default class DripListModel extends Model<
-  InferAttributes<DripListModel>,
-  InferCreationAttributes<DripListModel>
+export default class EcosystemMainAccountModel extends Model<
+  InferAttributes<EcosystemMainAccountModel>,
+  InferCreationAttributes<EcosystemMainAccountModel>
 > {
   public declare accountId: NftDriverId;
   public declare isValid: boolean;
@@ -28,11 +27,12 @@ export default class DripListModel extends Model<
   public declare description: string | null;
   public declare ownerAddress: Address;
   public declare ownerAccountId: AccountId;
-  public declare previousOwnerAddress: Address | null;
-  public declare latestVotingRoundId: UUID | null;
+  public declare previousOwnerAddress: Address;
   public declare isVisible: boolean;
   public declare lastProcessedIpfsHash: string;
   public declare lastProcessedVersion: string;
+  public declare avatar: string;
+  public declare color: string;
   public declare createdAt: CreationOptional<Date>;
   public declare updatedAt: CreationOptional<Date>;
 
@@ -59,10 +59,6 @@ export default class DripListModel extends Model<
           allowNull: true,
           type: DataTypes.STRING,
         },
-        latestVotingRoundId: {
-          allowNull: true,
-          type: DataTypes.UUID,
-        },
         description: {
           allowNull: true,
           type: DataTypes.TEXT,
@@ -72,7 +68,7 @@ export default class DripListModel extends Model<
           type: DataTypes.STRING,
         },
         previousOwnerAddress: {
-          allowNull: true,
+          allowNull: false,
           type: DataTypes.STRING,
         },
         isVisible: {
@@ -87,6 +83,14 @@ export default class DripListModel extends Model<
           allowNull: false,
           type: DataTypes.BIGINT,
         },
+        avatar: {
+          allowNull: false,
+          type: DataTypes.STRING,
+        },
+        color: {
+          allowNull: false,
+          type: DataTypes.STRING,
+        },
         createdAt: {
           allowNull: false,
           type: DataTypes.DATE,
@@ -98,13 +102,13 @@ export default class DripListModel extends Model<
       },
       {
         sequelize,
-        tableName: 'drip_lists',
+        tableName: 'ecosystem_main_accounts',
         underscored: true,
         timestamps: true,
         indexes: [
           {
             fields: ['ownerAddress'],
-            name: `idx_drip_lists_owner_address`,
+            name: `idx_ecosystem_main_accounts_owner_address`,
             where: {
               isValid: true,
             },
