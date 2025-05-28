@@ -10,9 +10,8 @@ import type { SplitsReceiverModelDataValues } from '../models/SplitsReceiverMode
 
 export default class SupportDataSource {
   private readonly _batchSplitSupportByReceiverIds = new DataLoader(
-    async (dripListKeys: readonly MultiChainKey[]) => {
-      const { chains, ids: receiverAccountIds } =
-        parseMultiChainKeys(dripListKeys);
+    async (keys: readonly MultiChainKey[]) => {
+      const { chains, ids: receiverAccountIds } = parseMultiChainKeys(keys);
 
       const splitsReceivers = await getSplitsReceivers(
         chains,
