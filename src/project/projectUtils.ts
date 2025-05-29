@@ -106,7 +106,7 @@ export async function toProjectRepresentation(
     isVisible: project.isVisible,
     chain: project.chain,
     ownerAddress: project.ownerAddress || ZeroAddress,
-    ownerAccountId: project.ownerAccountId || '0',
+    ownerAccountId: project.ownerAccountId,
   } as ProjectDataValues;
 }
 
@@ -227,16 +227,12 @@ export async function toResolverProjects(
           accountId: project.accountId,
           driver: Driver.REPO,
         },
-        source: project.forge
+        source: hasSource(project)
           ? {
-              url: project.url || shouldNeverHappen(),
-              repoName: splitProjectName(project.name || shouldNeverHappen())
-                .repoName,
-              ownerName: splitProjectName(project.name || shouldNeverHappen())
-                .ownerName,
-              forge: convertToGraphQlForge(
-                project.forge || shouldNeverHappen(),
-              ),
+              url: project.url,
+              repoName: splitProjectName(project.name).repoName,
+              ownerName: splitProjectName(project.name).ownerName,
+              forge: convertToGraphQlForge(project.forge),
             }
           : undefined,
         isVisible: project.isVisible,
@@ -296,14 +292,14 @@ export async function mergeProjects(
       accountId: projectBase.accountId,
       driver: Driver.REPO,
     },
-    source: {
-      url: projectBase.url || shouldNeverHappen(),
-      repoName: splitProjectName(projectBase.name || shouldNeverHappen())
-        .repoName,
-      ownerName: splitProjectName(projectBase.name || shouldNeverHappen())
-        .ownerName,
-      forge: convertToGraphQlForge(projectBase.forge || shouldNeverHappen()),
-    },
+    source: hasSource(projectBase)
+      ? {
+          url: projectBase.url,
+          repoName: splitProjectName(projectBase.name).repoName,
+          ownerName: splitProjectName(projectBase.name).ownerName,
+          forge: convertToGraphQlForge(projectBase.forge),
+        }
+      : undefined,
     isVisible: projectBase.isVisible,
     chainData,
   } as ResolverProject;
@@ -318,4 +314,12 @@ export function convertToGraphQlForge(forge: Forge): GraphQlForge | undefined {
     default:
       return undefined;
   }
+}
+
+function hasSource(project: ProjectDataValues): project is ProjectDataValues & {
+  forge: Forge;
+  name: string;
+  url: string;
+} {
+  return Boolean(project.forge && project.name && project.url);
 }
