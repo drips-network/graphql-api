@@ -8,7 +8,6 @@ import type {
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Forge, ProjectDataValues } from './ProjectModel';
 import type { Splits } from '../generated/graphql';
-import assert from '../utils/assert';
 import appSettings from '../common/appSettings';
 import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
 import { Driver, Forge as GraphQlForge } from '../generated/graphql';
@@ -36,7 +35,7 @@ export async function doesRepoExists(url: string) {
   return res.status === 200;
 }
 
-export function toApiProject(project: ProjectDataValues, chains: DbSchema[]) {
+export function toApiProject(project: ProjectDataValues) {
   if (!project) {
     return null;
   }
@@ -45,16 +44,11 @@ export function toApiProject(project: ProjectDataValues, chains: DbSchema[]) {
     throw new Error('Project not valid.');
   }
 
-  if (!(project.name && project.forge)) {
-    // Means that the relevant `OwnerUpdateRequested` event has not been processed yet.
-    return null;
-  }
-
   if (project.verificationStatus === 'claimed') {
     return project;
   }
 
-  return toProjectRepresentation(project, chains);
+  return toProjectRepresentation(project);
 }
 
 export async function toProjectRepresentationFromUrl(
@@ -99,27 +93,20 @@ function toUrl(forge: Forge, projectName: string): string {
 
 export async function toProjectRepresentation(
   project: ProjectDataValues,
-  chains: DbSchema[],
 ): Promise<ProjectDataValues> {
-  const { name, forge } = project;
-
-  assert(name && forge, 'Project name and forge must be defined.');
+  const { name, forge, accountId } = project;
 
   return {
-    accountId: await getCrossChainRepoDriverAccountIdByAddress(
-      forge,
-      name,
-      chains,
-    ),
+    accountId: accountId || shouldNeverHappen('Project accountId is missing.'),
     name,
     forge,
-    url: toUrl(forge, name),
+    url: forge && name ? toUrl(forge, name) : null,
     verificationStatus: project.verificationStatus ?? 'unclaimed',
     isValid: true,
     isVisible: project.isVisible,
     chain: project.chain,
     ownerAddress: project.ownerAddress || ZeroAddress,
-    ownerAccountId: project.ownerAccountId || '0',
+    ownerAccountId: project.ownerAccountId,
   } as ProjectDataValues;
 }
 
@@ -225,9 +212,7 @@ export async function toResolverProjects(
           if (project.chain === chain) {
             return mapClaimedProjectChainData(project, chain, chains);
           }
-          const fakeUnclaimedProject = await toProjectRepresentation(project, [
-            chain,
-          ]);
+          const fakeUnclaimedProject = await toProjectRepresentation(project);
 
           return mapUnClaimedProjectChainData(
             fakeUnclaimedProject,
@@ -242,14 +227,14 @@ export async function toResolverProjects(
           accountId: project.accountId,
           driver: Driver.REPO,
         },
-        source: {
-          url: project.url || shouldNeverHappen(),
-          repoName: splitProjectName(project.name || shouldNeverHappen())
-            .repoName,
-          ownerName: splitProjectName(project.name || shouldNeverHappen())
-            .ownerName,
-          forge: convertToGraphQlForge(project.forge || shouldNeverHappen()),
-        },
+        source: hasSource(project)
+          ? {
+              url: project.url,
+              repoName: splitProjectName(project.name).repoName,
+              ownerName: splitProjectName(project.name).ownerName,
+              forge: convertToGraphQlForge(project.forge),
+            }
+          : undefined,
         isVisible: project.isVisible,
         chainData,
       } as ResolverProject;
@@ -307,14 +292,14 @@ export async function mergeProjects(
       accountId: projectBase.accountId,
       driver: Driver.REPO,
     },
-    source: {
-      url: projectBase.url || shouldNeverHappen(),
-      repoName: splitProjectName(projectBase.name || shouldNeverHappen())
-        .repoName,
-      ownerName: splitProjectName(projectBase.name || shouldNeverHappen())
-        .ownerName,
-      forge: convertToGraphQlForge(projectBase.forge || shouldNeverHappen()),
-    },
+    source: hasSource(projectBase)
+      ? {
+          url: projectBase.url,
+          repoName: splitProjectName(projectBase.name).repoName,
+          ownerName: splitProjectName(projectBase.name).ownerName,
+          forge: convertToGraphQlForge(projectBase.forge),
+        }
+      : undefined,
     isVisible: projectBase.isVisible,
     chainData,
   } as ResolverProject;
@@ -329,4 +314,12 @@ export function convertToGraphQlForge(forge: Forge): GraphQlForge | undefined {
     default:
       return undefined;
   }
+}
+
+function hasSource(project: ProjectDataValues): project is ProjectDataValues & {
+  forge: Forge;
+  name: string;
+  url: string;
+} {
+  return Boolean(project.forge && project.name && project.url);
 }

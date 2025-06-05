@@ -13,7 +13,6 @@ import {
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { Driver, ProjectVerificationStatus } from '../generated/graphql';
 import type {
-  Source,
   RepoDriverAccount,
   AddressDriverAccount,
   ProjectWhereInput,
@@ -153,7 +152,7 @@ const projectResolvers = {
     },
   },
   Project: {
-    source: (project: ResolverProject): Source => project.source,
+    source: (project: ResolverProject) => project.source,
     account: (project: ResolverProject): RepoDriverAccount => project.account,
     chainData: (project: ResolverProject): ProjectData[] => project.chainData,
     isVisible: (project: ResolverProject): boolean => project.isVisible,

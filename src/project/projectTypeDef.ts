@@ -23,7 +23,7 @@ const projectTypeDef = gql`
   union Avatar = EmojiAvatar | ImageAvatar
 
   type Project {
-    source: Source!
+    source: Source
     account: RepoDriverAccount!
     chainData: [ProjectData!]!
     isVisible: Boolean!
