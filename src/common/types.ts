@@ -18,7 +18,6 @@ import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 
 export type KnownAny = any;
 export type ValuesOf<T> = T[keyof T];
-export type IpfsHash = string & { __brand: 'IpfsHash' };
 
 export type AddressDriverId = string & {
   __brand: 'AddressDriverId';
