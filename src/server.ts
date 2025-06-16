@@ -172,34 +172,21 @@ const startServer = async () => {
     cors<cors.CorsRequest>(),
     bodyParser.json({ limit: '50mb' }),
     expressMiddleware(server, {
-      context: async ({ req }) => {
-        const apiKey = req.headers.authorization?.split(' ')[1];
-
-        if (
-          !apiKey ||
-          (!appSettings.publicApiKeys.includes(apiKey) &&
-            apiKey !== appSettings.dripsApiKey)
-        ) {
-          console.log('Unauthorized');
-          throw new Error('Unauthorized');
-        }
-
-        return {
-          dataSources: {
-            projectsDataSource: new ProjectsDataSource(),
-            givenEventsDataSource: new GivenEventsDataSource(),
-            dripListsDataSource: new DripListsDataSource(),
-            splitsReceiversDataSource: new SplitsReceiversDataSource(),
-            supportDataSource: new SupportDataSource(),
-            givesDb: new GivenEventsDataSource(),
-            usersDataSource: new UsersDataSource(),
-            streamsDataSource: new StreamsDataSource(),
-            totalEarnedDataSource: new TotalEarnedDataSource(),
-            ecosystemsDataSource: new EcosystemsDataSource(),
-            subListsDataSource: new SubListsDataSource(),
-          },
-        };
-      },
+      context: async () => ({
+        dataSources: {
+          projectsDataSource: new ProjectsDataSource(),
+          givenEventsDataSource: new GivenEventsDataSource(),
+          dripListsDataSource: new DripListsDataSource(),
+          splitsReceiversDataSource: new SplitsReceiversDataSource(),
+          supportDataSource: new SupportDataSource(),
+          givesDb: new GivenEventsDataSource(),
+          usersDataSource: new UsersDataSource(),
+          streamsDataSource: new StreamsDataSource(),
+          totalEarnedDataSource: new TotalEarnedDataSource(),
+          ecosystemsDataSource: new EcosystemsDataSource(),
+          subListsDataSource: new SubListsDataSource(),
+        },
+      }),
     }),
   );
 
