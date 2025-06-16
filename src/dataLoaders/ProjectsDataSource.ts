@@ -85,7 +85,9 @@ export default class ProjectsDataSource {
       );
     }
 
-    return dbProjects;
+    // Filter out projects that don't have a name and forge (yet).
+    // This can happen if `OwnerUpdated` event processed but `AccountMetadataEmitted` not yet.
+    return dbProjects.filter((p) => p.name && p.forge);
   }
 
   public async getProjectByUrl(

@@ -13,6 +13,7 @@ import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContra
 import { Driver, Forge as GraphQlForge } from '../generated/graphql';
 import { singleOrDefault } from '../utils/linq';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
+import assert from '../utils/assert';
 
 export function splitProjectName(projectName: string): {
   ownerName: string;
@@ -42,6 +43,10 @@ export function toApiProject(project: ProjectDataValues) {
 
   if (!project.isValid) {
     throw new Error('Project not valid.');
+  }
+
+  if (!(project.name && project.forge)) {
+    return null;
   }
 
   if (project.verificationStatus === 'claimed') {
@@ -96,11 +101,13 @@ export async function toProjectRepresentation(
 ): Promise<ProjectDataValues> {
   const { name, forge, accountId } = project;
 
+  assert(name && forge, 'Project name and forge must be defined.');
+
   return {
     accountId: accountId || shouldNeverHappen('Project accountId is missing.'),
     name,
     forge,
-    url: forge && name ? toUrl(forge, name) : null,
+    url: toUrl(forge, name),
     verificationStatus: project.verificationStatus ?? 'unclaimed',
     isValid: true,
     isVisible: project.isVisible,
@@ -227,14 +234,18 @@ export async function toResolverProjects(
           accountId: project.accountId,
           driver: Driver.REPO,
         },
-        source: hasSource(project)
-          ? {
-              url: project.url,
-              repoName: splitProjectName(project.name).repoName,
-              ownerName: splitProjectName(project.name).ownerName,
-              forge: convertToGraphQlForge(project.forge),
-            }
-          : undefined,
+        source: {
+          url: project.url || shouldNeverHappen('Project URL is missing.'),
+          repoName: splitProjectName(
+            project.name || shouldNeverHappen('Project repo name is missing.'),
+          ).repoName,
+          ownerName: splitProjectName(
+            project.name || shouldNeverHappen('Project owner name is missing.'),
+          ).ownerName,
+          forge: convertToGraphQlForge(
+            project.forge || shouldNeverHappen('Project forge is missing.'),
+          ),
+        },
         isVisible: project.isVisible,
         chainData,
       } as ResolverProject;
@@ -292,14 +303,18 @@ export async function mergeProjects(
       accountId: projectBase.accountId,
       driver: Driver.REPO,
     },
-    source: hasSource(projectBase)
-      ? {
-          url: projectBase.url,
-          repoName: splitProjectName(projectBase.name).repoName,
-          ownerName: splitProjectName(projectBase.name).ownerName,
-          forge: convertToGraphQlForge(projectBase.forge),
-        }
-      : undefined,
+    source: {
+      url: projectBase.url || shouldNeverHappen('Project URL is missing.'),
+      repoName: splitProjectName(
+        projectBase.name || shouldNeverHappen('Project repo name is missing.'),
+      ).repoName,
+      ownerName: splitProjectName(
+        projectBase.name || shouldNeverHappen('Project owner name is missing.'),
+      ).ownerName,
+      forge: convertToGraphQlForge(
+        projectBase.forge || shouldNeverHappen('Project forge is missing.'),
+      ),
+    },
     isVisible: projectBase.isVisible,
     chainData,
   } as ResolverProject;
@@ -314,12 +329,4 @@ export function convertToGraphQlForge(forge: Forge): GraphQlForge | undefined {
     default:
       return undefined;
   }
-}
-
-function hasSource(project: ProjectDataValues): project is ProjectDataValues & {
-  forge: Forge;
-  name: string;
-  url: string;
-} {
-  return Boolean(project.forge && project.name && project.url);
 }
