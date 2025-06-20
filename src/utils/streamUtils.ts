@@ -15,10 +15,9 @@ import type {
   AddressDriverAccount,
   StreamConfig,
 } from '../generated/graphql';
-import getContractNameByAccountId from './getContractNameByAccountId';
 import getUserAddress from './getUserAddress';
 import toBigIntString from './toBigIntString';
-import assert from './assert';
+import assert, { getContractNameFromAccountId } from './assert';
 import { streamTotalStreamedTimeline } from '../balances/estimate-reloaded';
 import type { AssetConfigHistoryItem, ProtoStream } from './buildAssetConfigs';
 
@@ -93,7 +92,7 @@ export function matchMetadataStreamToReceiver(
 export default function buildStreamReceiver(
   receiverAccountId: AccountId,
 ): AddressDriverAccount | NftDriverAccount {
-  const receiverDriver = getContractNameByAccountId(receiverAccountId);
+  const receiverDriver = getContractNameFromAccountId(receiverAccountId);
 
   switch (receiverDriver) {
     case 'addressDriver':
