@@ -6,14 +6,23 @@ import type {
   ResolverUnClaimedProjectData,
 } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { Forge, ProjectDataValues } from './ProjectModel';
+import type {
+  Forge,
+  ProjectDataValues,
+  ProjectVerificationStatus as DbProjectVerificationStatus,
+} from './ProjectModel';
 import type { Splits } from '../generated/graphql';
+import {
+  ProjectVerificationStatus,
+  Driver,
+  Forge as GraphQlForge,
+} from '../generated/graphql';
 import appSettings from '../common/appSettings';
 import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
-import { Driver, Forge as GraphQlForge } from '../generated/graphql';
 import { singleOrDefault } from '../utils/linq';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 import assert from '../utils/assert';
+import type { projectSortFields } from './projectValidators';
 
 export function splitProjectName(projectName: string): {
   ownerName: string;
@@ -76,6 +85,51 @@ export function toApiProject(project: ProjectDataValues) {
   }
 
   return toProjectRepresentation(project);
+}
+
+function toApiVerificationStatus(
+  verificationStatus: ProjectDataValues['verificationStatus'],
+): ProjectVerificationStatus {
+  switch (verificationStatus) {
+    case 'claimed':
+      return ProjectVerificationStatus.Claimed;
+    case 'unclaimed':
+      return ProjectVerificationStatus.Unclaimed;
+    case 'pending_metadata':
+      return ProjectVerificationStatus.PendingMetadata;
+    default:
+      throw new Error(
+        `Unsupported verification status: ${verificationStatus}.`,
+      );
+  }
+}
+
+export function toDbVerificationStatus(
+  verificationStatus: ProjectVerificationStatus,
+): DbProjectVerificationStatus {
+  switch (verificationStatus) {
+    case ProjectVerificationStatus.Claimed:
+      return 'claimed';
+    case ProjectVerificationStatus.Unclaimed:
+      return 'unclaimed';
+    case ProjectVerificationStatus.PendingMetadata:
+      return 'pending_metadata';
+    default:
+      throw new Error(
+        `Unsupported verification status: ${verificationStatus}.`,
+      );
+  }
+}
+
+export function toDbProjectSortField(
+  field: (typeof projectSortFields)[number],
+): string {
+  switch (field) {
+    case 'claimedAt':
+      return 'claimed_at';
+    default:
+      throw new Error(`Unsupported project sort field: ${field}.`);
+  }
 }
 
 export async function toProjectRepresentationFromUrl(
@@ -200,7 +254,7 @@ function mapClaimedProjectChainData(
       accountId: project.ownerAccountId,
       address: project.ownerAddress as string,
     },
-    verificationStatus: project.verificationStatus,
+    verificationStatus: toApiVerificationStatus(project.verificationStatus),
     support: [], // Will be populated by the resolver.
     claimedAt: project.claimedAt,
     totalEarned: [], // Will be populated by the resolver.
@@ -223,7 +277,9 @@ function mapUnClaimedProjectChainData(
       projectId: fakeUnclaimedProject.accountId,
       projectChain,
     },
-    verificationStatus: fakeUnclaimedProject.verificationStatus,
+    verificationStatus: toApiVerificationStatus(
+      fakeUnclaimedProject.verificationStatus,
+    ),
     support: [], // Will be populated by the resolver.
     totalEarned: [], // Will be populated by the resolver.
     withdrawableBalances: [], // Will be populated by the resolver.

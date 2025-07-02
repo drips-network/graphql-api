@@ -159,7 +159,7 @@ const projectResolvers = {
   },
   ProjectData: {
     __resolveType(parent: ProjectData) {
-      if (parent.verificationStatus === ProjectVerificationStatus.claimed) {
+      if (parent.verificationStatus === ProjectVerificationStatus.Claimed) {
         return 'ClaimedProjectData';
       }
 

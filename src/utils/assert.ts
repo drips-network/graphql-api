@@ -278,9 +278,9 @@ export function isProjectVerificationStatus(
   status: string,
 ): status is ProjectVerificationStatus {
   return (
-    status === ProjectVerificationStatus.claimed ||
-    status === ProjectVerificationStatus.pending_metadata ||
-    status === ProjectVerificationStatus.unclaimed
+    status === ProjectVerificationStatus.Claimed ||
+    status === ProjectVerificationStatus.PendingMetadata ||
+    status === ProjectVerificationStatus.Unclaimed
   );
 }
 

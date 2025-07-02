@@ -7,6 +7,10 @@ import type {
 import type { ProjectDataValues } from '../../project/ProjectModel';
 import ProjectModel from '../../project/ProjectModel';
 import type { DbSchema, RepoDriverId } from '../../common/types';
+import {
+  toDbProjectSortField,
+  toDbVerificationStatus,
+} from '../../project/projectUtils';
 
 async function getProjectByUrl(
   chains: DbSchema[],
@@ -60,13 +64,15 @@ async function getProjectsByFilter(
   }
   if (where?.verificationStatus) {
     conditions.push(`verification_status = :verificationStatus`);
-    parameters.verificationStatus = where.verificationStatus;
+    parameters.verificationStatus = toDbVerificationStatus(
+      where.verificationStatus,
+    );
   }
 
   const whereClause = ` WHERE ${conditions.join(' AND ')}`;
 
   const orderClause = sort
-    ? ` ORDER BY "${sort.field}" ${sort.direction || 'DESC'}`
+    ? ` ORDER BY "${toDbProjectSortField(sort.field)}" ${sort.direction || 'DESC'}`
     : '';
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);

@@ -8,8 +8,11 @@ import {
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import type projectResolvers from './projectResolvers';
 
+export const projectSortFields = ['claimedAt'] as const;
 function isSortableProjectField(field: string): boolean {
-  return ['claimed_at'].includes(field);
+  return projectSortFields.includes(
+    field as (typeof projectSortFields)[number],
+  );
 }
 
 export default function validateProjectsInput(

@@ -2,9 +2,9 @@ import gql from 'graphql-tag';
 
 const projectTypeDef = gql`
   enum ProjectVerificationStatus {
-    claimed
-    unclaimed
-    pending_metadata
+    Claimed
+    Unclaimed
+    PendingMetadata
   }
 
   type Splits {
@@ -71,7 +71,7 @@ const projectTypeDef = gql`
   }
 
   enum ProjectSortField {
-    claimed_at
+    claimedAt
   }
 `;
 
