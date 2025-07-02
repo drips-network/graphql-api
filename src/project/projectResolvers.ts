@@ -42,10 +42,7 @@ import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata'
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import getUserAddress from '../utils/getUserAddress';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
-import {
-  calcParentRepoDriverId,
-  calcSubRepoDriverId,
-} from '../utils/repoSubAccountIdUtils';
+import { calcSubRepoDriverId } from '../utils/repoSubAccountIdUtils';
 
 const projectResolvers = {
   Query: {
@@ -240,20 +237,7 @@ const projectResolvers = {
 
       const projectIds =
         projectReceivers.length > 0
-          ? ((await Promise.all(
-              projectReceivers.map(async (r) => {
-                let pId = r.receiverAccountId;
-
-                if (r.splitsToRepoDriverSubAccount) {
-                  pId = await calcParentRepoDriverId(
-                    r.receiverAccountId,
-                    projectChain,
-                  );
-                }
-
-                return pId;
-              }),
-            )) as RepoDriverId[])
+          ? (projectReceivers.map((r) => r.receiverAccountId) as RepoDriverId[]) // Events processors ensure that all project IDs are RepoDriverIds.
           : [];
 
       const [projects, dripLists] = await Promise.all([

@@ -31,7 +31,6 @@ import type { ProjectDataValues } from '../project/ProjectModel';
 import getUserAddress from '../utils/getUserAddress';
 import groupBy from '../utils/linq';
 import { toResolverSubList } from '../sub-list/subListUtils';
-import { calcParentRepoDriverId } from '../utils/repoSubAccountIdUtils';
 
 const ecosystemResolvers = {
   Query: {
@@ -125,20 +124,7 @@ const ecosystemResolvers = {
 
       const projectIds =
         projectReceivers.length > 0
-          ? ((await Promise.all(
-              projectReceivers.map(async (r) => {
-                let pId = r.receiverAccountId;
-
-                if (r.splitsToRepoDriverSubAccount) {
-                  pId = await calcParentRepoDriverId(
-                    r.receiverAccountId,
-                    ecosystemChain,
-                  );
-                }
-
-                return pId;
-              }),
-            )) as RepoDriverId[])
+          ? (projectReceivers.map((r) => r.receiverAccountId) as RepoDriverId[]) // Events processors ensure that all project IDs are RepoDriverIds.
           : [];
 
       const [projects, subLists] = await Promise.all([

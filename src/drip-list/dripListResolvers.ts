@@ -31,7 +31,6 @@ import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
 import groupBy from '../utils/linq';
 import getUserAddress from '../utils/getUserAddress';
-import { calcParentRepoDriverId } from '../utils/repoSubAccountIdUtils';
 
 const dripListResolvers = {
   Query: {
@@ -159,20 +158,7 @@ const dripListResolvers = {
 
       const projectIds =
         projectReceivers.length > 0
-          ? ((await Promise.all(
-              projectReceivers.map(async (r) => {
-                let projectId = r.receiverAccountId;
-
-                if (r.splitsToRepoDriverSubAccount) {
-                  projectId = await calcParentRepoDriverId(
-                    r.receiverAccountId,
-                    dripListChain,
-                  );
-                }
-
-                return projectId;
-              }),
-            )) as RepoDriverId[])
+          ? (projectReceivers.map((r) => r.receiverAccountId) as RepoDriverId[]) // Events processors ensure that all project IDs are RepoDriverIds.
           : [];
 
       const [projects, dripLists] = await Promise.all([

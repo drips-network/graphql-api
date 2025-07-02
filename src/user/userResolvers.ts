@@ -47,7 +47,6 @@ import getWithdrawableBalancesOnChain, {
   getRelevantTokens,
 } from '../utils/getWithdrawableBalances';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
-import { calcParentRepoDriverId } from '../utils/repoSubAccountIdUtils';
 
 const userResolvers = {
   Query: {
@@ -228,15 +227,6 @@ const userResolvers = {
           if (senderAccountType === 'project') {
             assertIsRepoDriverId(senderAccountId);
 
-            let projectId = senderAccountId;
-
-            if (receiver.splitsToRepoDriverSubAccount) {
-              projectId = await calcParentRepoDriverId(
-                senderAccountId,
-                userChain,
-              );
-            }
-
             return {
               ...receiver,
               account: {
@@ -249,7 +239,7 @@ const userResolvers = {
               project: await toResolverProject(
                 [userChain],
                 (await projectsDataSource.getProjectByIdOnChain(
-                  projectId,
+                  senderAccountId,
                   userChain,
                 )) || shouldNeverHappen(),
               ),
