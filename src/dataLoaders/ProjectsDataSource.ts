@@ -10,6 +10,7 @@ import {
   doesRepoExists,
   toApiProject,
   toProjectRepresentationFromUrl,
+  toProjectRepresentationFromUrlWithDbFallback,
 } from '../project/projectUtils';
 import type {
   ProjectSortInput,
@@ -112,7 +113,23 @@ export default class ProjectsDataSource {
       );
     }
 
-    return dbProjects;
+    // Check if any projects have name and forge
+    const validProjects = dbProjects.filter((p) => p.name && p.forge);
+
+    if (validProjects.length > 0) {
+      // We have complete projects, return them
+      return validProjects;
+    }
+
+    // We have incomplete projects (missing name/forge) but potentially with owner info
+    // Create representation from URL but merge with DB owner data
+    return [
+      await toProjectRepresentationFromUrlWithDbFallback(
+        url,
+        chains,
+        dbProjects,
+      ),
+    ];
   }
 
   public async getProjectsByFilter(

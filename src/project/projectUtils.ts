@@ -87,6 +87,52 @@ export async function toProjectRepresentationFromUrl(
   } as ProjectDataValues;
 }
 
+export async function toProjectRepresentationFromUrlWithDbFallback(
+  url: string,
+  chains: DbSchema[],
+  dbProjects?: ProjectDataValues[],
+): Promise<ProjectDataValues> {
+  const pattern =
+    /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
+  const match = url.match(pattern);
+
+  if (!match) {
+    throw new Error(`Unsupported repository url: ${url}.`);
+  }
+
+  const forge = match[1] as Forge;
+  const ownerName = match[2];
+  const repoName = match[3];
+  const projectName = `${ownerName}/${repoName}`;
+
+  const accountId = await getCrossChainRepoDriverAccountIdByAddress(
+    forge,
+    projectName,
+    chains,
+  );
+
+  const matchingDbProject = dbProjects?.find((p) => p.accountId === accountId);
+
+  return {
+    // Always use calculated/URL-derived values
+    accountId,
+    name: projectName,
+    forge,
+    url,
+
+    // Preserve database values when available, with fallbacks
+    ownerAddress: matchingDbProject?.ownerAddress || ZeroAddress,
+    ownerAccountId: matchingDbProject?.ownerAccountId || undefined,
+    verificationStatus: matchingDbProject?.verificationStatus || 'unclaimed',
+    claimedAt: matchingDbProject?.claimedAt || null,
+    isVisible: matchingDbProject?.isVisible ?? true,
+    isValid: matchingDbProject?.isValid ?? true,
+
+    // Chain info (if available from DB project)
+    chain: matchingDbProject?.chain,
+  } as ProjectDataValues;
+}
+
 function toUrl(forge: Forge, projectName: string): string {
   switch (forge) {
     case 'github':
@@ -285,9 +331,10 @@ export async function mergeProjects(
         );
       } else {
         if (!projectOnChain) {
-          projectOnChain = await toProjectRepresentationFromUrl(
+          projectOnChain = await toProjectRepresentationFromUrlWithDbFallback(
             projectBase.url!,
             chains,
+            projects,
           );
         }
 
