@@ -11,7 +11,9 @@ import {
   toApiProject,
   toProjectRepresentationFromUrl,
   toProjectRepresentationFromUrlWithDbFallback,
+  extractProjectInfoFromUrl,
 } from '../project/projectUtils';
+import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
 import type {
   ProjectSortInput,
   ProjectWhereInput,
@@ -101,10 +103,25 @@ export default class ProjectsDataSource {
       return null;
     }
 
-    const dbProjects = await projectsQueries.getByUrl(chains, url);
+    // First, try to find projects by URL (for projects that have URL populated)
+    let dbProjects = await projectsQueries.getByUrl(chains, url);
 
+    // If no projects found by URL, try to find by calculated accountId
+    // This handles the case where projects exist in DB but don't have URL populated yet
     if (!dbProjects?.length) {
-      return [await toProjectRepresentationFromUrl(url, chains)];
+      const { forge, projectName } = extractProjectInfoFromUrl(url);
+      const accountId = await getCrossChainRepoDriverAccountIdByAddress(
+        forge,
+        projectName,
+        chains,
+      );
+
+      dbProjects = await projectsQueries.getByIds(chains, [accountId]);
+
+      // If still no projects found, create from URL
+      if (!dbProjects?.length) {
+        return [await toProjectRepresentationFromUrl(url, chains)];
+      }
     }
 
     if (dbProjects.some((p) => p.accountId !== dbProjects[0].accountId)) {
