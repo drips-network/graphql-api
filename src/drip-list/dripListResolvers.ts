@@ -32,7 +32,12 @@ const dripListResolvers = {
       {
         chains,
         where,
-      }: { chains?: SupportedChain[]; where?: DripListWhereInput },
+        limit,
+      }: {
+        chains?: SupportedChain[];
+        where?: DripListWhereInput;
+        limit?: number;
+      },
       { dataSources: { dripListsDataSource } }: Context,
     ): Promise<ResolverDripList[]> => {
       verifyDripListsInput({ chains, where });
@@ -44,6 +49,7 @@ const dripListResolvers = {
       const dbDripLists = await dripListsDataSource.getDripListsByFilter(
         dbSchemasToQuery,
         where,
+        limit,
       );
 
       return toResolverDripLists(dbSchemasToQuery, dbDripLists);

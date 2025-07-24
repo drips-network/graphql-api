@@ -40,6 +40,7 @@ async function getProjectsByFilter(
   chains: DbSchema[],
   where?: ProjectWhereInput,
   sort?: ProjectSortInput,
+  limit?: number,
 ): Promise<ProjectDataValues[]> {
   const baseSQL = (schema: DbSchema) =>
     `SELECT 
@@ -74,7 +75,8 @@ async function getProjectsByFilter(
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${queries.join(' UNION ')}${orderClause} LIMIT 1000`;
+  const limitValue = Math.min(Math.max(limit || 100, 1), 1000);
+  const multiChainQuery = `${queries.join(' UNION ')}${orderClause} LIMIT ${limitValue}`;
 
   return (
     await dbConnection.query(multiChainQuery, {

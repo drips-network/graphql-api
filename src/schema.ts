@@ -12,6 +12,7 @@ const rootTypeDef = gql`
       chains: [SupportedChain!]
       where: ProjectWhereInput
       sort: ProjectSortInput
+      limit: Int = 100
     ): [Project!]!
     projectById(id: ID!, chains: [SupportedChain!]): Project
     projectByUrl(url: String!, chains: [SupportedChain!]): Project
@@ -19,6 +20,7 @@ const rootTypeDef = gql`
     dripLists(
       chains: [SupportedChain!]
       where: DripListWhereInput
+      limit: Int = 100
     ): [DripList!]!
     dripList(id: ID!, chain: SupportedChain!): DripList
     mintedTokensCountByOwnerAddress(

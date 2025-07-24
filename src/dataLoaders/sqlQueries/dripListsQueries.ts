@@ -8,6 +8,7 @@ import type { DripListWhereInput } from '../../generated/graphql';
 async function getDripListsByFilter(
   chains: DbSchema[],
   where?: DripListWhereInput,
+  limit?: number,
 ) {
   const baseSQL = (schema: DbSchema) => `
     SELECT "id", "isValid", "isVisible", "name", "creator", "description", "ownerAddress", "ownerAccountId", "latestVotingRoundId", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
@@ -30,7 +31,8 @@ async function getDripListsByFilter(
 
   const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
-  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
+  const limitValue = Math.min(Math.max(limit || 100, 1), 1000);
+  const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT ${limitValue}`;
 
   return (
     await dbConnection.query(multiChainQuery, {

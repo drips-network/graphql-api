@@ -49,8 +49,9 @@ export default class DripListsDataSource {
   public async getDripListsByFilter(
     chains: DbSchema[],
     where?: DripListWhereInput,
+    limit?: number,
   ): Promise<DripListDataValues[]> {
-    return dripListsQueries.getByFilter(chains, where);
+    return dripListsQueries.getByFilter(chains, where, limit);
   }
 
   public async getDripListsByIdsOnChain(
