@@ -1,5 +1,9 @@
 import { describe, test, beforeEach, expect, vi } from 'vitest';
-import { SupportedChain } from '../../src/generated/graphql';
+import {
+  SupportedChain,
+  SortDirection,
+  DripListSortField,
+} from '../../src/generated/graphql';
 import DripListsDataSource from '../../src/dataLoaders/DripListsDataSource';
 import dripListResolvers from '../../src/drip-list/dripListResolvers';
 
@@ -31,6 +35,7 @@ describe('dripListResolvers', () => {
       expect(dataSource.getDripListsByFilter).toHaveBeenCalledWith(
         ['mainnet'],
         undefined,
+        undefined,
         args.limit,
       );
     });
@@ -50,7 +55,49 @@ describe('dripListResolvers', () => {
       expect(dataSource.getDripListsByFilter).toHaveBeenCalledWith(
         ['mainnet'],
         undefined,
+        undefined,
         args.limit,
+      );
+    });
+
+    test('should pass sort parameter to data source', async () => {
+      const sortInput = {
+        field: DripListSortField.mintedAt,
+        direction: SortDirection.DESC,
+      };
+      const args = {
+        chains: [SupportedChain.MAINNET],
+        sort: sortInput,
+        limit: 50,
+      };
+
+      await dripListResolvers.Query.dripLists(undefined, args, {
+        dataSources: { dripListsDataSource: dataSource } as any,
+      });
+
+      expect(dataSource.getDripListsByFilter).toHaveBeenCalledWith(
+        ['mainnet'],
+        undefined,
+        sortInput,
+        50,
+      );
+    });
+
+    test('should handle undefined sort parameter', async () => {
+      const args = {
+        chains: [SupportedChain.MAINNET],
+        sort: undefined,
+      };
+
+      await dripListResolvers.Query.dripLists(undefined, args, {
+        dataSources: { dripListsDataSource: dataSource } as any,
+      });
+
+      expect(dataSource.getDripListsByFilter).toHaveBeenCalledWith(
+        ['mainnet'],
+        undefined,
+        undefined,
+        undefined,
       );
     });
   });

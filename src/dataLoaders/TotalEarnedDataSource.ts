@@ -71,8 +71,8 @@ export default class TotalEarnedDataSource {
     const key = isDripListId(id)
       ? { id, chains }
       : isProjectId(id)
-      ? { id, chains }
-      : shouldNeverHappen();
+        ? { id, chains }
+        : shouldNeverHappen();
 
     return this._batchTotalEarnedByProjectIds.load(key);
   }

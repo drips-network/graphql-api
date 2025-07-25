@@ -20,6 +20,7 @@ const rootTypeDef = gql`
     dripLists(
       chains: [SupportedChain!]
       where: DripListWhereInput
+      sort: DripListSortInput
       limit: Int = 100
     ): [DripList!]!
     dripList(id: ID!, chain: SupportedChain!): DripList
