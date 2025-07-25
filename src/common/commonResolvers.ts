@@ -6,6 +6,7 @@ import type {
   Project,
   RepoDriverAccount,
   SplitsReceiver,
+  SupportedChain,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
@@ -25,6 +26,9 @@ import type projectResolvers from '../project/projectResolvers';
 import type { DripListSplitReceiverModelDataValues } from '../models/DripListSplitReceiverModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 import type dripListResolvers from '../drip-list/dripListResolvers';
+import chainStatsQueries from '../dataLoaders/sqlQueries/chainStatsQueries';
+import { dbSchemaToChain, chainToDbSchema } from '../utils/chainSchemaMappings';
+import queryableChains from './queryableChains';
 
 async function resolveTotalSplit(
   parent:
@@ -73,6 +77,36 @@ async function resolveTotalSplit(
 }
 
 const commonResolvers = {
+  Query: {
+    chainStats: async (_: any, { chains }: { chains?: SupportedChain[] }) => {
+      let targetChains: DbSchema[];
+
+      if (chains) {
+        // User specified specific chains - validate each one and throw error for unsupported chains.
+        targetChains = chains.map((chain) => {
+          const dbSchema = chainToDbSchema[chain];
+          if (!dbSchema) {
+            throw new Error(`Chain ${chain} is not supported for statistics`);
+          }
+          return dbSchema;
+        });
+      } else {
+        // No chains specified - use all queryable chains, silently filtering any without mappings.
+        targetChains = queryableChains
+          .map((chain) => chainToDbSchema[chain])
+          .filter(Boolean);
+      }
+
+      const stats = await chainStatsQueries.getChainStats(targetChains);
+
+      return stats.map((stat) => ({
+        chain: dbSchemaToChain[stat.chain],
+        dripListsCount: stat.dripListsCount,
+        claimedProjectsCount: stat.claimedProjectsCount,
+        receiversCount: stat.receiversCount,
+      }));
+    },
+  },
   AddressReceiver: {
     weight: async ({ weight }: { weight: number }) => weight,
     driver: async ({ driver }: { driver: Driver }) => driver,

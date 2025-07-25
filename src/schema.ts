@@ -31,6 +31,7 @@ const rootTypeDef = gql`
     userById(accountId: ID!, chains: [SupportedChain!]): User!
     userByAddress(address: String!, chains: [SupportedChain!]): User!
     streams(where: StreamWhereInput, chains: [SupportedChain!]): [Stream!]!
+    chainStats(chains: [SupportedChain!]): [ChainStats!]!
   }
 `;
 
