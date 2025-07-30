@@ -11,7 +11,7 @@ function isSortableDripListField(field: string): boolean {
 export default function verifyDripListsInput(
   dripsListsQueryArgs: Parameters<typeof dripListResolvers.Query.dripLists>[1],
 ) {
-  const { where, sort, chains } = dripsListsQueryArgs;
+  const { where, sort, chains, limit } = dripsListsQueryArgs;
 
   if (where?.id && !isDripListId(where.id)) {
     throw new Error('Invalid drip list id.');
@@ -34,5 +34,14 @@ export default function verifyDripListsInput(
 
   if (chains?.length) {
     validateChainsQueryArg(chains);
+  }
+
+  if (limit) {
+    if (!Number.isInteger(limit) || limit < 1) {
+      throw new Error('Limit must be a positive integer.');
+    }
+    if (limit > 1000) {
+      throw new Error('Limit cannot exceed 1000.');
+    }
   }
 }

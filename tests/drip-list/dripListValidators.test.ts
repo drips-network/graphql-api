@@ -79,6 +79,56 @@ describe('dripListValidators', () => {
     });
   });
 
+  describe('limit validation', () => {
+    it('should accept valid positive integer limit', () => {
+      expect(() => {
+        verifyDripListsInput({
+          limit: 10,
+        });
+      }).not.toThrow();
+    });
+
+    it('should accept limit of 1000', () => {
+      expect(() => {
+        verifyDripListsInput({
+          limit: 1000,
+        });
+      }).not.toThrow();
+    });
+
+    it('should accept limit of 0 (falsy value)', () => {
+      expect(() => {
+        verifyDripListsInput({
+          limit: 0,
+        });
+      }).not.toThrow();
+    });
+
+    it('should reject negative limit', () => {
+      expect(() => {
+        verifyDripListsInput({
+          limit: -5,
+        });
+      }).toThrow('Limit must be a positive integer.');
+    });
+
+    it('should reject limit exceeding 1000', () => {
+      expect(() => {
+        verifyDripListsInput({
+          limit: 1001,
+        });
+      }).toThrow('Limit cannot exceed 1000.');
+    });
+
+    it('should accept input without limit parameter', () => {
+      expect(() => {
+        verifyDripListsInput({
+          sort: { field: DripListSortField.mintedAt },
+        });
+      }).not.toThrow();
+    });
+  });
+
   describe('existing validation compatibility', () => {
     it('should still validate where input correctly', () => {
       expect(() => {
