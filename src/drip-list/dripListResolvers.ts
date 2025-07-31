@@ -9,6 +9,7 @@ import type {
 import type {
   AddressDriverAccount,
   DripListWhereInput,
+  DripListSortInput,
   NftDriverAccount,
 } from '../generated/graphql';
 import { SupportedChain, Driver } from '../generated/graphql';
@@ -39,10 +40,17 @@ const dripListResolvers = {
       {
         chains,
         where,
-      }: { chains?: SupportedChain[]; where?: DripListWhereInput },
+        sort,
+        limit,
+      }: {
+        chains?: SupportedChain[];
+        where?: DripListWhereInput;
+        sort?: DripListSortInput;
+        limit?: number;
+      },
       { dataSources: { dripListsDataSource } }: Context,
     ): Promise<ResolverDripList[]> => {
-      verifyDripListsInput({ chains, where });
+      verifyDripListsInput({ chains, where, sort });
 
       const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
         (chain) => chainToDbSchema[chain],
@@ -51,6 +59,8 @@ const dripListResolvers = {
       const dbDripLists = await dripListsDataSource.getDripListsByFilter(
         dbSchemasToQuery,
         where,
+        sort,
+        limit,
       );
 
       return toResolverDripLists(dbSchemasToQuery, dbDripLists);

@@ -5,7 +5,11 @@ import type {
   NftDriverId,
   NftDriverMultiChainKey,
 } from '../common/types';
-import type { DripListWhereInput, SupportedChain } from '../generated/graphql';
+import type {
+  DripListWhereInput,
+  DripListSortInput,
+  SupportedChain,
+} from '../generated/graphql';
 import type { DripListDataValues } from '../drip-list/DripListModel';
 import TransferEventModel from '../drip-list/TransferEventModel';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
@@ -51,8 +55,10 @@ export default class DripListsDataSource {
   public async getDripListsByFilter(
     chains: DbSchema[],
     where?: DripListWhereInput,
+    sort?: DripListSortInput,
+    limit?: number,
   ): Promise<DripListDataValues[]> {
-    return dripListsQueries.getByFilter(chains, where);
+    return dripListsQueries.getByFilter(chains, where, sort, limit);
   }
 
   public async getDripListsByIdsOnChain(

@@ -153,11 +153,13 @@ export default class ProjectsDataSource {
     chains: DbSchema[],
     where?: ProjectWhereInput,
     sort?: ProjectSortInput,
+    limit?: number,
   ): Promise<ProjectDataValues[]> {
     const projectsDataValues = await projectsQueries.getByFilter(
       chains,
       where,
       sort,
+      limit,
     );
 
     return Promise.all(

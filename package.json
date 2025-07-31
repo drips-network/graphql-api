@@ -4,7 +4,8 @@
   "private": true,
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepare": "husky install",
     "lint": "prettier --check . && eslint src/**/*.ts",
     "commit": "npx cz",
@@ -45,7 +46,8 @@
     "nodemon": "^3.0.1",
     "prettier": "^3.0.3",
     "typechain": "^8.3.2",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^3.2.4"
   },
   "dependencies": {
     "@apollo/server": "^4.9.3",

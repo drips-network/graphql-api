@@ -185,6 +185,13 @@ const commonTypeDef = gql`
     receivableAmount: String!
     collectableAmount: String!
   }
+
+  type ChainStats {
+    chain: SupportedChain!
+    dripListsCount: Int!
+    claimedProjectsCount: Int!
+    receiversCount: Int!
+  }
 `;
 
 export default commonTypeDef;

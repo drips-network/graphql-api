@@ -23,6 +23,15 @@ const dripListTypeDef = gql`
     ownerAddress: String
   }
 
+  input DripListSortInput {
+    field: DripListSortField!
+    direction: SortDirection
+  }
+
+  enum DripListSortField {
+    mintedAt
+  }
+
   type MintedTokens {
     chain: SupportedChain!
     total: Int!

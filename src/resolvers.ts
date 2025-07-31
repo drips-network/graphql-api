@@ -14,6 +14,7 @@ const resolvers = {
     ...ecosystemResolvers.Query,
     ...userResolvers.Query,
     ...streamResolvers.Query,
+    ...commonResolvers.Query,
   },
   Project: projectResolvers.Project,
   ProjectReceiver: commonResolvers.ProjectReceiver,

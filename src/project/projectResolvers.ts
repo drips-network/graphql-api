@@ -52,12 +52,13 @@ const projectResolvers = {
         chains?: SupportedChain[];
         where?: ProjectWhereInput;
         sort?: ProjectSortInput;
+        limit?: number;
       },
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<ResolverProject[]> => {
       validateProjectsInput(args);
 
-      const { chains, where, sort } = args;
+      const { chains, where, sort, limit } = args;
 
       const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
         (chain) => chainToDbSchema[chain],
@@ -67,6 +68,7 @@ const projectResolvers = {
         dbSchemasToQuery,
         where,
         sort,
+        limit,
       );
 
       return toResolverProjects(dbSchemasToQuery, dbProjects);

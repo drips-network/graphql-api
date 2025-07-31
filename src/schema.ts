@@ -14,6 +14,7 @@ const rootTypeDef = gql`
       chains: [SupportedChain!]
       where: ProjectWhereInput
       sort: ProjectSortInput
+      limit: Int = 100
     ): [Project!]!
     projectById(id: ID!, chains: [SupportedChain!]): Project
     projectByUrl(url: String!, chains: [SupportedChain!]): Project
@@ -21,6 +22,8 @@ const rootTypeDef = gql`
     dripLists(
       chains: [SupportedChain!]
       where: DripListWhereInput
+      sort: DripListSortInput
+      limit: Int = 100
     ): [DripList!]!
     dripList(id: ID!, chain: SupportedChain!): DripList
     mintedTokensCountByOwnerAddress(
@@ -31,6 +34,7 @@ const rootTypeDef = gql`
     userByAddress(address: String!, chains: [SupportedChain!]): User!
     streams(where: StreamWhereInput, chains: [SupportedChain!]): [Stream!]!
     ecosystemMainAccount(id: ID!, chain: SupportedChain!): EcosystemMainAccount
+    chainStats(chains: [SupportedChain!]): [ChainStats!]!
   }
 `;
 
