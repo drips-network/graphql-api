@@ -3,10 +3,7 @@ import gql from 'graphql-tag';
 const projectTypeDef = gql`
   enum ProjectVerificationStatus {
     Claimed
-    OwnerUpdateRequested
-    OwnerUpdated
     Unclaimed
-    PendingOwner
     PendingMetadata
   }
 
@@ -47,6 +44,7 @@ const projectTypeDef = gql`
     claimedAt: Date!
     totalEarned: [Amount!]!
     withdrawableBalances: [WithdrawableBalance!]!
+    withdrawableSubAccountBalances: [WithdrawableBalance!]!
     latestMetadataIpfsHash: String!
     lastProcessedIpfsHash: String
   }
@@ -56,11 +54,12 @@ const projectTypeDef = gql`
     verificationStatus: ProjectVerificationStatus!
     support: [SupportItem!]!
     withdrawableBalances: [WithdrawableBalance!]!
+    withdrawableSubAccountBalances: [WithdrawableBalance!]!
     owner: AddressDriverAccount!
   }
 
   input ProjectWhereInput {
-    id: String
+    accountId: String
     url: String
     ownerAddress: String
     verificationStatus: ProjectVerificationStatus
