@@ -12,6 +12,7 @@ import SqueezedStreamsEventModel from '../models/SqueezedStreamsEventModel';
 import EcosystemMainAccountModel from '../ecosystem/EcosystemMainAccountModel';
 import SubListModel from '../sub-list/SubListModel';
 import SplitsReceiverModel from '../models/SplitsReceiverModel';
+import LinkedIdentityModel from '../linked-identity/LinkedIdentityModel';
 
 export const dbConnection = new Sequelize(
   `${appSettings.postgresConnectionString}`,
@@ -27,6 +28,7 @@ export async function connectToDatabase() {
   GivenEventModel.initialize(dbConnection);
   SplitEventModel.initialize(dbConnection);
   TransferEventModel.initialize(dbConnection);
+  LinkedIdentityModel.initialize(dbConnection);
   SplitsReceiverModel.initialize(dbConnection);
   StreamsSetEventModel.initialize(dbConnection);
   SqueezedStreamsEventModel.initialize(dbConnection);

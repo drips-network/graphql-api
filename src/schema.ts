@@ -7,6 +7,7 @@ import userTypeDef from './user/userTypeDef';
 import streamTypeDef from './stream/streamTypeDef';
 import ecosystemTypeDef from './ecosystem/ecosystemTypeDef';
 import subListTypeDef from './sub-list/subListTypeDef';
+import linkedIdentityTypeDef from './linked-identity/linkedIdentityTypeDef';
 
 const rootTypeDef = gql`
   type Query {
@@ -48,6 +49,7 @@ const typeDefs = [
   userTypeDef,
   streamTypeDef,
   subListTypeDef,
+  linkedIdentityTypeDef,
 ];
 
 export default typeDefs;

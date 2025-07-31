@@ -10,6 +10,7 @@ import type {
   ResolverUser,
   ResolverUserData,
   UserDataParentDripListInfo,
+  RepoDriverId,
 } from '../common/types';
 import type DripListModel from '../drip-list/DripListModel';
 import type {
@@ -17,6 +18,7 @@ import type {
   AddressDriverAccount,
   User,
   EcosystemMainAccount,
+  LinkedIdentity,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
@@ -47,6 +49,8 @@ import getWithdrawableBalancesOnChain, {
   getRelevantTokens,
 } from '../utils/getWithdrawableBalances';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
+import { toLinkedIdentity } from '../linked-identity/linkedIdentityResolvers';
+import type { LinkedIdentityDataValues } from '../linked-identity/LinkedIdentityModel';
 
 const userResolvers = {
   Query: {
@@ -309,6 +313,36 @@ const userResolvers = {
     latestMetadataIpfsHash: async ({
       parentUserInfo: { accountId, userChain },
     }: ResolverUserData) => getLatestMetadataHashOnChain(accountId, userChain),
+    linkedIdentities: async (
+      { parentUserInfo: { accountId, userChain } }: ResolverUserData,
+      _: {},
+      { dataSources: { linkedIdentitiesDataSource } }: Context,
+    ) => {
+      const linkedIdentityDataValues =
+        await linkedIdentitiesDataSource.getLinkedIdentitiesByOwnerAddress(
+          [userChain],
+          getUserAddress(accountId),
+        );
+
+      // Group by accountId
+      const groupedIdentities = linkedIdentityDataValues.reduce<
+        Record<RepoDriverId, LinkedIdentityDataValues[]>
+      >(
+        (acc, identity) => {
+          if (!acc[identity.accountId]) {
+            acc[identity.accountId] = [];
+          }
+          acc[identity.accountId].push(identity);
+          return acc;
+        },
+        {} as Record<RepoDriverId, LinkedIdentityDataValues[]>,
+      );
+
+      // Convert each group to a LinkedIdentity
+      return Object.values(groupedIdentities)
+        .map((group) => toLinkedIdentity(group))
+        .filter(Boolean) as LinkedIdentity[];
+    },
   },
   UserStreams: {
     outgoing: async (

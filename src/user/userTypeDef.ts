@@ -28,6 +28,7 @@ const userTypeDef = gql`
     streams: UserStreams!
     projects: [Project]!
     dripLists: [DripList]!
+    linkedIdentities: [LinkedIdentity!]!
     balances: [UserBalances!]!
     support: [SupportItem!]!
     latestMetadataIpfsHash: String
