@@ -17,8 +17,9 @@ import type {
   AddressDriverAccount,
   User,
   EcosystemMainAccount,
+  LinkedIdentity,
 } from '../generated/graphql';
-import { Driver } from '../generated/graphql';
+import { Driver, LinkedIdentityType } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, {
   assertIsNftDriverId,
@@ -309,6 +310,35 @@ const userResolvers = {
     latestMetadataIpfsHash: async ({
       parentUserInfo: { accountId, userChain },
     }: ResolverUserData) => getLatestMetadataHashOnChain(accountId, userChain),
+    linkedIdentities: async (
+      { parentUserInfo: { accountId, userChain } }: ResolverUserData,
+      _: {},
+      { dataSources: { linkedIdentitiesDataSource } }: Context,
+    ) => {
+      const linkedIdentityDataValues =
+        await linkedIdentitiesDataSource.getLinkedIdentitiesByOwnerAddress(
+          [userChain],
+          getUserAddress(accountId),
+        );
+
+      return linkedIdentityDataValues.map(
+        (identity): LinkedIdentity => ({
+          account: {
+            driver: Driver.REPO,
+            accountId: identity.accountId,
+          },
+          identityType: LinkedIdentityType.ORCID,
+          owner: {
+            driver: Driver.ADDRESS,
+            accountId: identity.ownerAccountId,
+            address: identity.ownerAddress,
+          },
+          isLinked: identity.isLinked,
+          createdAt: identity.createdAt,
+          updatedAt: identity.updatedAt,
+        }),
+      );
+    },
   },
   UserStreams: {
     outgoing: async (
