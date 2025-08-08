@@ -7,23 +7,11 @@ const linkedIdentityTypeDef = gql`
 
   type LinkedIdentity {
     account: RepoDriverAccount!
-    chainData: [LinkedIdentityData!]!
-  }
-
-  type LinkedIdentityData {
-    chain: SupportedChain!
     identityType: LinkedIdentityType!
     owner: AddressDriverAccount!
     isLinked: Boolean!
     createdAt: Date!
     updatedAt: Date!
-  }
-
-  extend type Query {
-    linkedIdentitiesByOwner(
-      ownerAddress: String!
-      chains: [SupportedChain!]
-    ): [LinkedIdentity!]!
   }
 `;
 
