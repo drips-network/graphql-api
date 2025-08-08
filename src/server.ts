@@ -22,28 +22,30 @@ import typeDefs from './schema';
 import appSettings from './common/appSettings';
 import ProjectsDataSource from './dataLoaders/ProjectsDataSource';
 import { connectToDatabase } from './database/connectToDatabase';
-import ReceiversOfTypeProjectDataSource from './dataLoaders/ReceiversOfTypeProjectDataSource';
-import ReceiversOfTypeAddressDataSource from './dataLoaders/ReceiversOfTypeAddressDataSource';
+import SplitsReceiversDataSource from './dataLoaders/SplitsReceiversDataSource';
 import DripListsDataSource from './dataLoaders/DripListsDataSource';
-import ReceiversOfTypeDripListDataSource from './dataLoaders/ReceiversOfTypeDripListDataSource';
 import GivenEventsDataSource from './dataLoaders/GivenEventsDataSource';
-import ProjectAndDripListSupportDataSource from './dataLoaders/ProjectAndDripListSupportDataSource';
+import SupportDataSource from './dataLoaders/SupportDataSource';
 import UsersDataSource from './user/UserDataSource';
 import StreamsDataSource from './stream/StreamsDataSource';
 import TotalEarnedDataSource from './dataLoaders/TotalEarnedDataSource';
+import EcosystemsDataSource from './dataLoaders/EcosystemsDataSource';
+import SubListsDataSource from './dataLoaders/SubListsDataSource';
+import LinkedIdentityDataSource from './dataLoaders/LinkedIdentityDataSource';
 
 export interface Context {
   dataSources: {
     projectsDataSource: ProjectsDataSource;
     givenEventsDataSource: GivenEventsDataSource;
     dripListsDataSource: DripListsDataSource;
-    receiversOfTypeAddressDataSource: ReceiversOfTypeAddressDataSource;
-    receiversOfTypeProjectDataSource: ReceiversOfTypeProjectDataSource;
-    receiversOfTypeDripListDataSource: ReceiversOfTypeDripListDataSource;
-    projectAndDripListSupportDataSource: ProjectAndDripListSupportDataSource;
+    splitsReceiversDataSource: SplitsReceiversDataSource;
+    supportDataSource: SupportDataSource;
     usersDataSource: UsersDataSource;
     streamsDataSource: StreamsDataSource;
     totalEarnedDataSource: TotalEarnedDataSource;
+    ecosystemsDataSource: EcosystemsDataSource;
+    subListsDataSource: SubListsDataSource;
+    linkedIdentitiesDataSource: LinkedIdentityDataSource;
   };
 }
 
@@ -172,38 +174,22 @@ const startServer = async () => {
     cors<cors.CorsRequest>(),
     bodyParser.json({ limit: '50mb' }),
     expressMiddleware(server, {
-      context: async ({ req }) => {
-        const apiKey = req.headers.authorization?.split(' ')[1];
-
-        if (
-          !apiKey ||
-          (!appSettings.publicApiKeys.includes(apiKey) &&
-            apiKey !== appSettings.dripsApiKey)
-        ) {
-          console.log('Unauthorized');
-          throw new Error('Unauthorized');
-        }
-
-        return {
-          dataSources: {
-            projectsDataSource: new ProjectsDataSource(),
-            givenEventsDataSource: new GivenEventsDataSource(),
-            dripListsDataSource: new DripListsDataSource(),
-            receiversOfTypeAddressDataSource:
-              new ReceiversOfTypeAddressDataSource(),
-            receiversOfTypeProjectDataSource:
-              new ReceiversOfTypeProjectDataSource(),
-            receiversOfTypeDripListDataSource:
-              new ReceiversOfTypeDripListDataSource(),
-            projectAndDripListSupportDataSource:
-              new ProjectAndDripListSupportDataSource(),
-            givesDb: new GivenEventsDataSource(),
-            usersDataSource: new UsersDataSource(),
-            streamsDataSource: new StreamsDataSource(),
-            totalEarnedDataSource: new TotalEarnedDataSource(),
-          },
-        };
-      },
+      context: async () => ({
+        dataSources: {
+          projectsDataSource: new ProjectsDataSource(),
+          givenEventsDataSource: new GivenEventsDataSource(),
+          dripListsDataSource: new DripListsDataSource(),
+          splitsReceiversDataSource: new SplitsReceiversDataSource(),
+          supportDataSource: new SupportDataSource(),
+          givesDb: new GivenEventsDataSource(),
+          usersDataSource: new UsersDataSource(),
+          streamsDataSource: new StreamsDataSource(),
+          totalEarnedDataSource: new TotalEarnedDataSource(),
+          ecosystemsDataSource: new EcosystemsDataSource(),
+          subListsDataSource: new SubListsDataSource(),
+          linkedIdentitiesDataSource: new LinkedIdentityDataSource(),
+        },
+      }),
     }),
   );
 

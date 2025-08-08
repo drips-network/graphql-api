@@ -4,11 +4,13 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
-import type { CommonDataValues, IEventModel } from '../common/types';
-import getCommonEventAttributes from '../utils/getCommonEventAttributes';
+import type { IEventModel, AccountId, DbSchema } from '../common/types';
+import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
 
 export type AccountMetadataEmittedEventModelDataValues =
-  AccountMetadataEmittedEventModel['dataValues'] & CommonDataValues;
+  AccountMetadataEmittedEventModel['dataValues'] & {
+    chain: DbSchema;
+  };
 
 export default class AccountMetadataEmittedEventModel
   extends Model<
@@ -17,12 +19,9 @@ export default class AccountMetadataEmittedEventModel
   >
   implements IEventModel
 {
-  // Properties from event output.
   public declare key: string;
   public declare value: string;
-  public declare accountId: string;
-
-  // Common event log properties.
+  public declare accountId: AccountId;
   public declare logIndex: number;
   public declare blockNumber: number;
   public declare blockTimestamp: Date;
@@ -32,22 +31,30 @@ export default class AccountMetadataEmittedEventModel
     this.init(
       {
         key: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         value: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         accountId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
-        ...getCommonEventAttributes(),
+        ...COMMON_EVENT_INIT_ATTRIBUTES,
       },
       {
         sequelize,
-        tableName: 'AccountMetadataEmittedEvents',
+        tableName: 'account_metadata_emitted_events',
+        underscored: true,
+        timestamps: true,
+        indexes: [
+          {
+            fields: ['accountId'],
+            name: 'idx_account_metadata_emitted_events_accountId',
+          },
+        ],
       },
     );
   }
