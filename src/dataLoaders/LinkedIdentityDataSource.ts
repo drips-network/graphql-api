@@ -39,9 +39,6 @@ export default class LinkedIdentityDataSource {
         return identity;
       });
     },
-    {
-      cacheKeyFn: (key) => `${key.chains.join(',')}-${key.accountId}`,
-    },
   );
 
   public async getLinkedIdentitiesByOwnerAddress(

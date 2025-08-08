@@ -14,6 +14,7 @@ const linkedIdentityTypeDef = gql`
     chain: SupportedChain!
     identityType: LinkedIdentityType!
     owner: AddressDriverAccount!
+    isLinked: Boolean!
     createdAt: Date!
     updatedAt: Date!
   }

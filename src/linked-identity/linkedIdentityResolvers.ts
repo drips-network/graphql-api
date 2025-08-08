@@ -13,6 +13,7 @@ export const toLinkedIdentity = (
     return null;
   }
 
+  // All items share the same accountId, so use first item to extract it.
   const firstIdentity = linkedIdentityDataValues[0];
 
   return {
@@ -28,6 +29,7 @@ export const toLinkedIdentity = (
         accountId: identity.ownerAccountId,
         address: identity.ownerAddress,
       },
+      isLinked: identity.isLinked,
       createdAt: identity.createdAt,
       updatedAt: identity.updatedAt,
     })),

@@ -27,6 +27,7 @@ export default class LinkedIdentityModel extends Model<
   public declare identityType: LinkedIdentityType;
   public declare ownerAddress: Address;
   public declare ownerAccountId: AddressDriverId;
+  public declare isLinked: boolean;
   public declare lastProcessedVersion: string;
   public declare createdAt: CreationOptional<Date>;
   public declare updatedAt: CreationOptional<Date>;
@@ -49,6 +50,10 @@ export default class LinkedIdentityModel extends Model<
         ownerAccountId: {
           allowNull: false,
           type: DataTypes.STRING,
+        },
+        isLinked: {
+          allowNull: false,
+          type: DataTypes.BOOLEAN,
         },
         lastProcessedVersion: {
           allowNull: false,
