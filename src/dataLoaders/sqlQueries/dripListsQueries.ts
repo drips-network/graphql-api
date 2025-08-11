@@ -21,7 +21,7 @@ async function getDripListsByFilter(
           SELECT DISTINCT ON ("tokenId") 
             "tokenId", 
             "blockTimestamp" as "mintedAt"
-          FROM "${schema}"."TransferEvents" 
+          FROM "${schema}"."transfer_events" 
           WHERE "from" = '0x0000000000000000000000000000000000000000'
           ORDER BY "tokenId", "blockTimestamp" ASC
         )
