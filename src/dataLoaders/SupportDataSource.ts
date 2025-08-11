@@ -135,4 +135,16 @@ export default class SupportDataSource {
       })
     ).filter((s) => s.chain === chain);
   }
+
+  public async getAllSupportByAccountIdOnChain(
+    accountId: AccountId,
+    chain: DbSchema,
+  ) {
+    const [splitSupport, donationSupport] = await Promise.all([
+      this.getSplitSupportByReceiverIdOnChain(accountId, chain),
+      this.getOneTimeDonationSupportByAccountIdOnChain(accountId, chain),
+    ]);
+
+    return [...splitSupport, ...donationSupport];
+  }
 }

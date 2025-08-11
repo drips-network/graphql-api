@@ -1,11 +1,14 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
 import type {
+  ClaimedOrcidAccountData,
   ClaimedProjectData,
   DripList,
   EcosystemMainAccount,
   Give,
+  OrcidAccount,
   Project,
   SubList,
+  UnClaimedOrcidAccountData,
   UnClaimedProjectData,
   User,
   UserData,
@@ -100,6 +103,32 @@ export type ResolverClaimedProjectData = ClaimedProjectData &
 
 export type ResolverUnClaimedProjectData = UnClaimedProjectData &
   ProjectDataParentProjectInfo;
+
+export type OrcidSource = {
+  forge: 'Orcid';
+  url: string;
+};
+
+export type ResolverOrcidAccount = Omit<OrcidAccount, 'source'> & {
+  source: OrcidSource;
+  chainData: (
+    | ResolverClaimedOrcidAccountData
+    | ResolverUnClaimedOrcidAccountData
+  )[];
+};
+
+type OrcidAccountDataParentOrcidAccountInfo = {
+  parentOrcidAccountInfo: {
+    accountId: RepoDriverId;
+    accountChain: DbSchema;
+  };
+};
+
+export type ResolverClaimedOrcidAccountData = ClaimedOrcidAccountData &
+  OrcidAccountDataParentOrcidAccountInfo;
+
+export type ResolverUnClaimedOrcidAccountData = UnClaimedOrcidAccountData &
+  OrcidAccountDataParentOrcidAccountInfo;
 
 export interface MultiChainKey<T = AccountId> {
   accountId: T;

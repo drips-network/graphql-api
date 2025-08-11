@@ -40,10 +40,10 @@ const chainConfigs: Record<
     repoSubAccountDriverAddress: ZeroAddress,
   },
   OPTIMISM_SEPOLIA: {
-    dripsAddress: '0x74A32a38D945b9527524900429b083547DeB9bF4',
-    addressDriverAddress: '0x70E1E1437AeFe8024B6780C94490662b45C3B567',
-    repoDriverAddress: '0xa71bdf410D48d4AA9aE1517A69D7E1Ef0c179b2B',
-    repoSubAccountDriverAddress: '0x5cEB4E59A1f91caC75017163B4D0663F155e9B77',
+    dripsAddress: '0xa15f3ebCf1e9c83442ddFa92A2A44A3d1643E406',
+    addressDriverAddress: '0xA2B5b1ACaF088d6AF2e289EF54DbF48058429eA8',
+    repoDriverAddress: '0x808e5C413BB085284D18e17BDF9682A66A0097D5',
+    repoSubAccountDriverAddress: '0xe077e0D50fB60b900467F4a44DF7b49deB41097d',
   },
   POLYGON_AMOY: {
     dripsAddress: '0xeebCd570e50fa31bcf6eF10f989429C87C3A6981',
@@ -189,7 +189,7 @@ export async function getCrossChainAddressDriverAccountIdByAddress(
 
 export async function getCrossChainRepoDriverAccountIdByAddress(
   forge: Forge,
-  project: string,
+  projectOrOrcid: string,
   chainsToQuery: DbSchema[],
 ): Promise<RepoDriverId> {
   // RepoDriver account IDs are the same across all chains.
@@ -205,14 +205,16 @@ export async function getCrossChainRepoDriverAccountIdByAddress(
 
   const { repoDriver } = dripsContracts[dbSchemaToChain[availableChain]]!;
 
-  const nameAsBytesLike = ethers.toUtf8Bytes(project);
+  const nameAsBytesLike = ethers.toUtf8Bytes(projectOrOrcid);
 
-  let forgeAsNum: 0 | 1 | undefined;
+  let forgeAsNum: 0 | 1 | 2 | undefined;
 
   if (forge === 'github') {
     forgeAsNum = 0;
   } else if (forge === 'gitlab') {
     forgeAsNum = 1;
+  } else if (forge === 'orcid') {
+    forgeAsNum = 2;
   } else {
     return shouldNeverHappen(`Forge ${forge} not supported.`);
   }

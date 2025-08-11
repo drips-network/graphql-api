@@ -18,16 +18,16 @@ async function getDripListsByFilter(
     if (sort?.field === 'mintedAt') {
       return `
         WITH mint_events AS (
-          SELECT DISTINCT ON ("tokenId") 
-            "tokenId", 
-            "blockTimestamp" as "mintedAt"
-          FROM "${schema}"."TransferEvents" 
+          SELECT DISTINCT ON ("token_id") 
+            "token_id", 
+            "block_timestamp" as "mintedAt"
+          FROM "${schema}"."transfer_events" 
           WHERE "from" = '0x0000000000000000000000000000000000000000'
-          ORDER BY "tokenId", "blockTimestamp" ASC
+          ORDER BY "token_id", "block_timestamp" ASC
         )
         SELECT dl."account_id", dl."is_valid", dl."is_visible", dl."name", dl."creator", dl."description", dl."owner_address", dl."owner_account_id", dl."latest_voting_round_id", dl."previous_owner_address", dl."created_at", dl."updated_at", '${schema}' AS chain
         FROM "${schema}"."drip_lists" dl
-        INNER JOIN mint_events me ON dl."id" = me."tokenId"
+        INNER JOIN mint_events me ON dl."account_id" = me."token_id"
       `;
     }
     return `

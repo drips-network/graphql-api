@@ -292,3 +292,10 @@ export function isAccountId(id: string): boolean {
     isImmutableSplitsDriverId(id)
   );
 }
+
+// ORCID
+export function isOrcidId(id: string): boolean {
+  // ORCID ID format: 0000-0000-0000-000X where X can be 0-9 or X
+  const orcidPattern = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
+  return orcidPattern.test(id);
+}
