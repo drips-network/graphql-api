@@ -27,7 +27,7 @@ async function getDripListsByFilter(
         )
         SELECT dl."account_id", dl."is_valid", dl."is_visible", dl."name", dl."creator", dl."description", dl."owner_address", dl."owner_account_id", dl."latest_voting_round_id", dl."previous_owner_address", dl."created_at", dl."updated_at", '${schema}' AS chain
         FROM "${schema}"."drip_lists" dl
-        INNER JOIN mint_events me ON dl."id" = me."token_id"
+        INNER JOIN mint_events me ON dl."account_id" = me."token_id"
       `;
     }
     return `
