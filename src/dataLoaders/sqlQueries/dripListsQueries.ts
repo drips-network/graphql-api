@@ -20,10 +20,10 @@ async function getDripListsByFilter(
         WITH mint_events AS (
           SELECT DISTINCT ON ("token_id") 
             "token_id", 
-            "blockTimestamp" as "mintedAt"
+            "block_timestamp" as "mintedAt"
           FROM "${schema}"."transfer_events" 
           WHERE "from" = '0x0000000000000000000000000000000000000000'
-          ORDER BY "token_id", "blockTimestamp" ASC
+          ORDER BY "token_id", "block_timestamp" ASC
         )
         SELECT dl."account_id", dl."is_valid", dl."is_visible", dl."name", dl."creator", dl."description", dl."owner_address", dl."owner_account_id", dl."latest_voting_round_id", dl."previous_owner_address", dl."created_at", dl."updated_at", '${schema}' AS chain
         FROM "${schema}"."drip_lists" dl
