@@ -23,7 +23,7 @@ import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import { isOrcidId } from '../utils/assert';
 
 import validateOrcidExists from './validateOrcidExists';
-import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
+import { getCrossChainOrcidAccountIdByAddress } from '../common/dripsContracts';
 
 const orcidAccountResolvers = {
   Query: {
@@ -79,8 +79,7 @@ const orcidAccountResolvers = {
         return null;
       }
 
-      const repoDriverId = await getCrossChainRepoDriverAccountIdByAddress(
-        'orcid',
+      const repoDriverId = await getCrossChainOrcidAccountIdByAddress(
         id,
         dbSchemasToQuery,
       );

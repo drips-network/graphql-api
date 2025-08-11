@@ -2,6 +2,9 @@ import { describe, test, beforeEach, expect, vi } from 'vitest';
 import { SupportedChain } from '../../src/generated/graphql';
 import orcidAccountResolvers from '../../src/orcid-account/orcidAccountResolvers';
 import LinkedIdentityDataSource from '../../src/dataLoaders/LinkedIdentityDataSource';
+import { isOrcidId } from '../../src/utils/assert';
+import validateOrcidExists from '../../src/orcid-account/validateOrcidExists';
+import { getCrossChainOrcidAccountIdByAddress } from '../../src/common/dripsContracts';
 
 vi.mock('../../src/orcid-account/orcidAccountValidators');
 vi.mock('../../src/orcid-account/orcidAccountUtils');
@@ -112,7 +115,6 @@ describe('orcidAccountResolvers Query', () => {
 
   describe('orcidAccountById', () => {
     test('should throw error for invalid ORCID ID', async () => {
-      const { isOrcidId } = await import('../../src/utils/assert');
       vi.mocked(isOrcidId).mockReturnValue(false);
 
       const args = {
@@ -132,11 +134,6 @@ describe('orcidAccountResolvers Query', () => {
     });
 
     test('should return null when ORCID does not exist', async () => {
-      const { isOrcidId } = await import('../../src/utils/assert');
-      const { validateOrcidExists } = await import(
-        '../../src/orcid-account/validateOrcidExists'
-      );
-
       vi.mocked(isOrcidId).mockReturnValue(true);
       vi.mocked(validateOrcidExists).mockResolvedValue(false);
 
@@ -159,19 +156,9 @@ describe('orcidAccountResolvers Query', () => {
     });
 
     test('should call data source with correct parameters', async () => {
-      const { isOrcidId } = await import('../../src/utils/assert');
-      const { validateOrcidExists } = await import(
-        '../../src/orcid-account/validateOrcidExists'
-      );
-      const { getCrossChainRepoDriverAccountIdByAddress } = await import(
-        '../../src/common/dripsContracts'
-      );
-
       vi.mocked(isOrcidId).mockReturnValue(true);
       vi.mocked(validateOrcidExists).mockResolvedValue(true);
-      vi.mocked(getCrossChainRepoDriverAccountIdByAddress).mockResolvedValue(
-        '123',
-      );
+      vi.mocked(getCrossChainOrcidAccountIdByAddress).mockResolvedValue('123');
 
       linkedIdentitiesDataSource.getOrcidAccountById = vi
         .fn()
@@ -194,19 +181,9 @@ describe('orcidAccountResolvers Query', () => {
     });
 
     test('should use all queryable chains when no chains provided', async () => {
-      const { isOrcidId } = await import('../../src/utils/assert');
-      const { validateOrcidExists } = await import(
-        '../../src/orcid-account/validateOrcidExists'
-      );
-      const { getCrossChainRepoDriverAccountIdByAddress } = await import(
-        '../../src/common/dripsContracts'
-      );
-
       vi.mocked(isOrcidId).mockReturnValue(true);
       vi.mocked(validateOrcidExists).mockResolvedValue(true);
-      vi.mocked(getCrossChainRepoDriverAccountIdByAddress).mockResolvedValue(
-        '123',
-      );
+      vi.mocked(getCrossChainOrcidAccountIdByAddress).mockResolvedValue('123');
 
       linkedIdentitiesDataSource.getOrcidAccountById = vi
         .fn()

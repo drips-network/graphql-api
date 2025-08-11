@@ -27,7 +27,7 @@ export type ProjectVerificationStatus =
 
 export type ProjectName = `${string}/${string}`;
 
-export const FORGES = ['github', 'gitlab', 'orcid'] as const;
+export const FORGES = ['github', 'gitlab'] as const;
 export type Forge = (typeof FORGES)[number];
 
 export default class ProjectModel extends Model<

@@ -49,7 +49,6 @@ describe('orcidAccountUtils', () => {
       const chains: DbSchema[] = ['mainnet'];
       const result = toResolverOrcidAccount(chains, mockLinkedIdentity);
 
-      expect(result.source.forge).toBe('Orcid');
       expect(result.source.url).toContain('https://orcid.org/');
       expect(result.account.driver).toBe(Driver.REPO);
       expect(result.account.accountId).toBe(mockLinkedIdentity.accountId);
@@ -64,7 +63,6 @@ describe('orcidAccountUtils', () => {
         mockLinkedIdentityWithOwner,
       );
 
-      expect(result.source.forge).toBe('Orcid');
       expect(result.account.driver).toBe(Driver.REPO);
       expect(result.chainData).toHaveLength(1);
       expect(result.chainData[0].linkedTo).not.toBeNull();

@@ -51,7 +51,6 @@ export function toResolverOrcidAccount(
   return {
     source: {
       url: `https://orcid.org/${orcidIdentifier}`,
-      forge: 'Orcid',
     },
     account: {
       driver: Driver.REPO,
@@ -129,7 +128,6 @@ export function mergeOrcidAccounts(
   return {
     source: {
       url: `https://orcid.org/${orcidIdentifier}`,
-      forge: 'Orcid',
     },
     account: {
       driver: Driver.REPO,

@@ -16,7 +16,6 @@ import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { SupportedChain } from '../generated/graphql';
 import type { Address, AddressDriverId, DbSchema, RepoDriverId } from './types';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
-import type { Forge } from '../project/ProjectModel';
 
 const chainConfigs: Record<
   SupportedChain,
@@ -188,8 +187,8 @@ export async function getCrossChainAddressDriverAccountIdByAddress(
 }
 
 export async function getCrossChainRepoDriverAccountIdByAddress(
-  forge: Forge,
-  projectOrOrcid: string,
+  forge: 'github' | 'gitlab',
+  projectName: string,
   chainsToQuery: DbSchema[],
 ): Promise<RepoDriverId> {
   // RepoDriver account IDs are the same across all chains.
@@ -205,19 +204,46 @@ export async function getCrossChainRepoDriverAccountIdByAddress(
 
   const { repoDriver } = dripsContracts[dbSchemaToChain[availableChain]]!;
 
-  const nameAsBytesLike = ethers.toUtf8Bytes(projectOrOrcid);
+  const nameAsBytesLike = ethers.toUtf8Bytes(projectName);
 
-  let forgeAsNum: 0 | 1 | 2 | undefined;
+  let forgeAsNum: 0 | 1;
 
   if (forge === 'github') {
     forgeAsNum = 0;
   } else if (forge === 'gitlab') {
     forgeAsNum = 1;
-  } else if (forge === 'orcid') {
-    forgeAsNum = 2;
   } else {
     return shouldNeverHappen(`Forge ${forge} not supported.`);
   }
+
+  const accountId = (
+    await repoDriver.calcAccountId(forgeAsNum, nameAsBytesLike)
+  ).toString();
+
+  return accountId as RepoDriverId;
+}
+
+export async function getCrossChainOrcidAccountIdByAddress(
+  orcidId: string,
+  chainsToQuery: DbSchema[],
+): Promise<RepoDriverId> {
+  // RepoDriver account IDs are the same across all chains.
+  const availableChain = chainsToQuery.find(
+    (chain) =>
+      dripsContracts[dbSchemaToChain[chain]] &&
+      dripsContracts[dbSchemaToChain[chain]]!.repoDriver,
+  );
+
+  if (!availableChain) {
+    throw new Error('No available chain with initialized contracts.');
+  }
+
+  const { repoDriver } = dripsContracts[dbSchemaToChain[availableChain]]!;
+
+  const nameAsBytesLike = ethers.toUtf8Bytes(orcidId);
+
+  // ORCID forge is always 2
+  const forgeAsNum = 2;
 
   const accountId = (
     await repoDriver.calcAccountId(forgeAsNum, nameAsBytesLike)

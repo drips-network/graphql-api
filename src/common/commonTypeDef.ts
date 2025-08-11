@@ -87,7 +87,6 @@ const commonTypeDef = gql`
   enum Forge {
     GitHub
     GitLab
-    Orcid
   }
 
   type Source {
@@ -98,7 +97,6 @@ const commonTypeDef = gql`
   }
 
   type OrcidSource {
-    forge: Forge!
     url: String!
   }
 

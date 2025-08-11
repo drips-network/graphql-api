@@ -105,7 +105,6 @@ export type ResolverUnClaimedProjectData = UnClaimedProjectData &
   ProjectDataParentProjectInfo;
 
 export type OrcidSource = {
-  forge: 'Orcid';
   url: string;
 };
 
