@@ -3,8 +3,10 @@ import type {
   NftDriverId,
   RepoDriverId,
   ResolverClaimedProjectData,
+  ResolverClaimedOrcidAccountData,
   ResolverDripListData,
   ResolverEcosystemData,
+  ResolverUnClaimedOrcidAccountData,
   ResolverUnClaimedProjectData,
 } from './types';
 import type { Context } from '../server';
@@ -39,7 +41,9 @@ export async function resolveTotalEarned(
     | ResolverClaimedProjectData
     | ResolverUnClaimedProjectData
     | ResolverDripListData
-    | ResolverEcosystemData,
+    | ResolverEcosystemData
+    | ResolverClaimedOrcidAccountData
+    | ResolverUnClaimedOrcidAccountData,
   context: Context,
 ) {
   let accountId: RepoDriverId | NftDriverId;
@@ -50,6 +54,9 @@ export async function resolveTotalEarned(
   } else if ('parentDripListInfo' in entityData) {
     accountId = entityData.parentDripListInfo.dripListId;
     chain = entityData.parentDripListInfo.dripListChain;
+  } else if ('parentOrcidAccountInfo' in entityData) {
+    accountId = entityData.parentOrcidAccountInfo.accountId;
+    chain = entityData.parentOrcidAccountInfo.accountChain;
   } else {
     accountId = entityData.parentEcosystemInfo.ecosystemId;
     chain = entityData.parentEcosystemInfo.ecosystemChain;

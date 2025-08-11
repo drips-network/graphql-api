@@ -96,6 +96,10 @@ const commonTypeDef = gql`
     ownerName: String!
   }
 
+  type OrcidSource {
+    url: String!
+  }
+
   type DripListSupport {
     account: NftDriverAccount!
     date: Date!

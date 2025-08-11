@@ -6,6 +6,10 @@ import type {
   RepoDriverId,
   RepoDriverMultiChainKey,
 } from '../common/types';
+import type {
+  OrcidAccountWhereInput,
+  OrcidAccountSortInput,
+} from '../generated/graphql';
 import parseMultiChainKeys from '../utils/parseMultiChainKeys';
 import linkedIdentityQueries from './sqlQueries/linkedIdentityQueries';
 
@@ -31,13 +35,7 @@ export default class LinkedIdentityDataSource {
         {} as Record<RepoDriverId, LinkedIdentityDataValues>,
       );
 
-      return identityKeys.map((key) => {
-        const identity = identityIdToIdentityMap[key.accountId];
-        if (!identity) {
-          throw new Error(`LinkedIdentity with ID ${key.accountId} not found.`);
-        }
-        return identity;
-      });
+      return identityKeys.map((key) => identityIdToIdentityMap[key.accountId]);
     },
   );
 
@@ -58,5 +56,41 @@ export default class LinkedIdentityDataSource {
     });
 
     return identities || null;
+  }
+
+  public async getOrcidAccountsByFilter(
+    chains: DbSchema[],
+    where?: OrcidAccountWhereInput,
+    sort?: OrcidAccountSortInput,
+    limit?: number,
+  ): Promise<LinkedIdentityDataValues[]> {
+    return linkedIdentityQueries.getOrcidAccountsByFilter(
+      chains,
+      where,
+      sort,
+      limit,
+    );
+  }
+
+  public async getOrcidAccountById(
+    accountId: RepoDriverId,
+    chains: DbSchema[],
+  ): Promise<LinkedIdentityDataValues[] | null> {
+    const chainKeys = chains.map((chain) => ({ accountId, chains: [chain] }));
+    const results = await this._batchLinkedIdentitiesByIds.loadMany(chainKeys);
+
+    const dbLinkedIdentities = results.filter(
+      Boolean,
+    ) as LinkedIdentityDataValues[];
+
+    if (!dbLinkedIdentities?.length) {
+      return null;
+    }
+
+    const orcidIdentities = dbLinkedIdentities.filter(
+      (identity) => identity.identityType === 'orcid',
+    );
+
+    return orcidIdentities.length > 0 ? orcidIdentities : null;
   }
 }
