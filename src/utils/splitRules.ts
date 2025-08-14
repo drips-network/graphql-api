@@ -28,6 +28,11 @@ const SPLIT_RULES = Object.freeze([
     receiverAccountType: 'drip_list',
     relationshipType: 'project_dependency',
   },
+  {
+    senderAccountType: 'project',
+    receiverAccountType: 'linked_identity',
+    relationshipType: 'project_dependency',
+  },
 
   // Drip List Rules
   {
@@ -45,11 +50,21 @@ const SPLIT_RULES = Object.freeze([
     receiverAccountType: 'project',
     relationshipType: 'drip_list_receiver',
   },
+  {
+    senderAccountType: 'drip_list',
+    receiverAccountType: 'linked_identity',
+    relationshipType: 'drip_list_receiver',
+  },
 
   // Ecosystem Main Account Rules
   {
     senderAccountType: 'ecosystem_main_account',
     receiverAccountType: 'project',
+    relationshipType: 'ecosystem_receiver',
+  },
+  {
+    senderAccountType: 'ecosystem_main_account',
+    receiverAccountType: 'linked_identity',
     relationshipType: 'ecosystem_receiver',
   },
   {
@@ -62,22 +77,34 @@ const SPLIT_RULES = Object.freeze([
   {
     senderAccountType: 'sub_list',
     receiverAccountType: 'address',
-    relationshipType: 'sub_list_link',
+    relationshipType: 'sub_list_receiver',
   },
   {
     senderAccountType: 'sub_list',
     receiverAccountType: 'drip_list',
-    relationshipType: 'sub_list_link',
+    relationshipType: 'sub_list_receiver',
   },
   {
     senderAccountType: 'sub_list',
     receiverAccountType: 'project',
-    relationshipType: 'sub_list_link',
+    relationshipType: 'sub_list_receiver',
   },
   {
     senderAccountType: 'sub_list',
     receiverAccountType: 'sub_list',
     relationshipType: 'sub_list_link',
+  },
+  {
+    senderAccountType: 'sub_list',
+    receiverAccountType: 'linked_identity',
+    relationshipType: 'sub_list_link',
+  },
+
+  // Linked Identity Rules
+  {
+    senderAccountType: 'linked_identity',
+    receiverAccountType: 'address',
+    relationshipType: 'identity_owner',
   },
 ] as const);
 
@@ -88,6 +115,7 @@ type EntityIdMap = {
   sub_list: ImmutableSplitsDriverId;
   deadline: RepoDeadlineDriverId;
   address: AddressDriverId;
+  linked_identity: RepoDriverId;
 };
 
 export type RelationshipType = (typeof SPLIT_RULES)[number]['relationshipType'];
@@ -114,6 +142,7 @@ export type SplitReceiverShape = SplitRuleFromRaw<
 > & {
   weight: number;
   blockTimestamp: Date;
+  splitsToRepoDriverSubAccount?: boolean;
 };
 
 export const ACCOUNT_TYPES = Array.from(
@@ -138,6 +167,7 @@ export const ACCOUNT_TYPE_TO_METADATA_RECEIVER_TYPE: Record<
   ecosystem_main_account: 'ecosystem',
   sub_list: 'subList',
   address: 'address',
+  linked_identity: 'linkedIdentity',
 };
 
 export const METADATA_RECEIVER_TYPE_TO_ACCOUNT_TYPE = Object.fromEntries(
