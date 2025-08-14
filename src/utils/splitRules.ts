@@ -97,7 +97,7 @@ const SPLIT_RULES = Object.freeze([
   {
     senderAccountType: 'sub_list',
     receiverAccountType: 'linked_identity',
-    relationshipType: 'sub_list_link',
+    relationshipType: 'sub_list_receiver',
   },
 
   // Linked Identity Rules
