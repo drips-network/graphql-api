@@ -77,12 +77,20 @@ const commonTypeDef = gql`
     account: ImmutableSplitsDriverAccount!
   }
 
+  type OrcidReceiver implements Receiver {
+    weight: Int!
+    driver: Driver!
+    account: RepoDriverAccount!
+    linkedIdentity: LinkedIdentity!
+  }
+
   union SplitsReceiver =
     | AddressReceiver
     | ProjectReceiver
     | DripListReceiver
     | SubListReceiver
     | EcosystemMainAccountReceiver
+    | OrcidReceiver
 
   enum Forge {
     GitHub

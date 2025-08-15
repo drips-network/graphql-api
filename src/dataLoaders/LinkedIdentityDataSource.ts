@@ -72,6 +72,20 @@ export default class LinkedIdentityDataSource {
     );
   }
 
+  public async getLinkedIdentitiesByIdsOnChain(
+    ids: RepoDriverId[],
+    chain: DbSchema,
+  ): Promise<LinkedIdentityDataValues[]> {
+    return (
+      await (this._batchLinkedIdentitiesByIds.loadMany(
+        ids.map((id) => ({
+          accountId: id,
+          chains: [chain],
+        })),
+      ) as Promise<LinkedIdentityDataValues[]>)
+    ).filter((li) => li.chain === chain);
+  }
+
   public async getOrcidAccountById(
     accountId: RepoDriverId,
     chains: DbSchema[],

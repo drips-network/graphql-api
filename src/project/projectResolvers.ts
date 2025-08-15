@@ -27,7 +27,9 @@ import queryableChains from '../common/queryableChains';
 import type { ProjectDataValues } from './ProjectModel';
 import validateProjectsInput from './projectValidators';
 import type { DripListDataValues } from '../drip-list/DripListModel';
+import type { LinkedIdentityDataValues } from '../linked-identity/LinkedIdentityModel';
 import {
+  assertIsImmutableSplitsDriverId,
   assertIsNftDriverId,
   assertIsRepoDriverId,
   assertMany,
@@ -37,6 +39,7 @@ import {
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import { toResolverDripList } from '../drip-list/dripListUtils';
+import { toResolverSubList } from '../sub-list/subListUtils';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
@@ -188,6 +191,7 @@ const projectResolvers = {
           projectsDataSource,
           dripListsDataSource,
           splitsReceiversDataSource,
+          linkedIdentitiesDataSource,
         },
       }: Context,
     ) => {
@@ -204,7 +208,11 @@ const projectResolvers = {
 
       assertMany(
         splitsReceivers.map((s) => s.receiverAccountType),
-        (s) => s === 'address' || s === 'project' || s === 'drip_list',
+        (s) =>
+          s === 'address' ||
+          s === 'project' ||
+          s === 'drip_list' ||
+          s === 'linked_identity',
       );
 
       const splitReceiversByReceiverAccountType = groupBy(
@@ -237,12 +245,22 @@ const projectResolvers = {
       const dripListReceivers =
         splitReceiversByReceiverAccountType.get('drip_list') || [];
 
+      const linkedIdentityReceivers =
+        splitReceiversByReceiverAccountType.get('linked_identity') || [];
+
       const projectIds =
         projectReceivers.length > 0
           ? (projectReceivers.map((r) => r.receiverAccountId) as RepoDriverId[]) // Events processors ensure that all project IDs are RepoDriverIds.
           : [];
 
-      const [projects, dripLists] = await Promise.all([
+      const linkedIdentityIds =
+        linkedIdentityReceivers.length > 0
+          ? (linkedIdentityReceivers.map(
+              (r) => r.receiverAccountId,
+            ) as RepoDriverId[]) // Events processors ensure that all linkedIdentity IDs are RepoDriverIds.
+          : [];
+
+      const [projects, dripLists, linkedIdentities] = await Promise.all([
         projectReceivers.length > 0
           ? projectsDataSource.getProjectsByIdsOnChain(projectIds, projectChain)
           : [],
@@ -252,6 +270,13 @@ const projectResolvers = {
               dripListReceivers.map(
                 (r) => r.receiverAccountId,
               ) as NftDriverId[],
+              projectChain,
+            )
+          : [],
+
+        linkedIdentityReceivers.length > 0
+          ? linkedIdentitiesDataSource.getLinkedIdentitiesByIdsOnChain(
+              linkedIdentityIds,
               projectChain,
             )
           : [],
@@ -267,6 +292,14 @@ const projectResolvers = {
         dripLists
           .filter((l): l is DripListDataValues => l.accountId !== undefined)
           .map((l) => [l.accountId, l]),
+      );
+
+      const linkedIdentitiesMap = new Map(
+        linkedIdentities
+          .filter(
+            (li): li is LinkedIdentityDataValues => li.accountId !== undefined,
+          )
+          .map((li) => [li.accountId, li]),
       );
 
       const projectDependencies = await Promise.all(
@@ -288,6 +321,43 @@ const projectResolvers = {
                   project as unknown as ProjectDataValues,
                 )
               : undefined,
+          };
+        }),
+      );
+
+      const orcidDependencies = await Promise.all(
+        linkedIdentityReceivers.map(async (s) => {
+          assertIsRepoDriverId(s.receiverAccountId);
+
+          const linkedIdentity = linkedIdentitiesMap.get(s.receiverAccountId);
+          if (!linkedIdentity) {
+            return shouldNeverHappen(
+              `Expected LinkedIdentity ${s.receiverAccountId} to exist.`,
+            );
+          }
+
+          return {
+            ...s,
+            driver: Driver.REPO,
+            account: {
+              driver: Driver.REPO,
+              accountId: s.receiverAccountId,
+            },
+            linkedIdentity: {
+              account: {
+                driver: Driver.REPO,
+                accountId: linkedIdentity.accountId,
+              },
+              identityType: linkedIdentity.identityType,
+              owner: {
+                driver: Driver.ADDRESS,
+                accountId: linkedIdentity.ownerAccountId,
+                address: getUserAddress(linkedIdentity.ownerAccountId),
+              },
+              isLinked: linkedIdentity.isLinked,
+              createdAt: linkedIdentity.createdAt,
+              updatedAt: linkedIdentity.updatedAt,
+            },
           };
         }),
       );
@@ -320,6 +390,7 @@ const projectResolvers = {
           ...addressDependencies,
           ...projectDependencies,
           ...dripListDependencies,
+          ...orcidDependencies,
         ],
       };
     },
@@ -345,12 +416,8 @@ const projectResolvers = {
 
       const support = await Promise.all(
         splitReceivers.map(async (receiver) => {
-          const {
-            senderAccountId,
-            receiverAccountId,
-            blockTimestamp,
-            senderAccountType,
-          } = receiver;
+          const { senderAccountId, blockTimestamp, senderAccountType } =
+            receiver;
 
           if (senderAccountType === 'project') {
             assertIsRepoDriverId(senderAccountId);
@@ -358,8 +425,8 @@ const projectResolvers = {
             return {
               ...receiver,
               account: {
-                driver: Driver.NFT,
-                accountId: receiverAccountId,
+                driver: Driver.REPO,
+                accountId: senderAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
@@ -379,7 +446,7 @@ const projectResolvers = {
               ...receiver,
               account: {
                 driver: Driver.NFT,
-                accountId: receiverAccountId,
+                accountId: senderAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
@@ -398,7 +465,7 @@ const projectResolvers = {
               ...receiver,
               account: {
                 driver: Driver.NFT,
-                accountId: receiverAccountId,
+                accountId: senderAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
@@ -461,6 +528,8 @@ const projectResolvers = {
           dripListsDataSource,
           supportDataSource,
           ecosystemsDataSource,
+          linkedIdentitiesDataSource,
+          subListsDataSource,
         },
       }: Context,
     ) => {
@@ -472,19 +541,14 @@ const projectResolvers = {
 
       const support = await Promise.all(
         splitsReceivers.map(async (s) => {
-          const {
-            senderAccountId,
-            receiverAccountId,
-            senderAccountType,
-            blockTimestamp,
-          } = s;
+          const { senderAccountId, senderAccountType, blockTimestamp } = s;
 
           if (senderAccountType === 'project') {
             return {
               ...s,
               account: {
-                driver: Driver.NFT,
-                accountId: receiverAccountId,
+                driver: Driver.REPO,
+                accountId: senderAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
@@ -503,7 +567,7 @@ const projectResolvers = {
               ...s,
               account: {
                 driver: Driver.NFT,
-                accountId: receiverAccountId,
+                accountId: senderAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
@@ -523,7 +587,7 @@ const projectResolvers = {
               ...s,
               account: {
                 driver: Driver.NFT,
-                accountId: receiverAccountId,
+                accountId: senderAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
@@ -536,8 +600,77 @@ const projectResolvers = {
             };
           }
 
+          if (senderAccountType === 'linked_identity') {
+            assertIsRepoDriverId(senderAccountId);
+
+            const linkedIdentity =
+              await linkedIdentitiesDataSource.getLinkedIdentityById(
+                [projectChain],
+                senderAccountId,
+              );
+
+            if (!linkedIdentity) {
+              return shouldNeverHappen(
+                `Expected LinkedIdentity ${senderAccountId} to exist.`,
+              );
+            }
+
+            return {
+              ...s,
+              account: {
+                driver: Driver.REPO,
+                accountId: senderAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              linkedIdentity: {
+                account: {
+                  driver: Driver.REPO,
+                  accountId: linkedIdentity.accountId,
+                },
+                identityType: linkedIdentity.identityType.toUpperCase(),
+                owner: {
+                  driver: Driver.ADDRESS,
+                  accountId: linkedIdentity.ownerAccountId,
+                  address: getUserAddress(linkedIdentity.ownerAccountId),
+                },
+                isLinked: linkedIdentity.isLinked,
+                createdAt: linkedIdentity.createdAt,
+                updatedAt: linkedIdentity.updatedAt,
+              },
+            };
+          }
+
+          if (senderAccountType === 'sub_list') {
+            assertIsImmutableSplitsDriverId(senderAccountId);
+
+            const subList = (
+              await subListsDataSource.getSubListsByIdsOnChain(
+                [senderAccountId],
+                projectChain,
+              )
+            )[0];
+
+            if (!subList) {
+              return shouldNeverHappen(
+                `Expected SubList ${senderAccountId} to exist.`,
+              );
+            }
+
+            return {
+              ...s,
+              account: {
+                driver: Driver.IMMUTABLE_SPLITS,
+                accountId: senderAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              subList: await toResolverSubList(projectChain, subList),
+            };
+          }
+
           return shouldNeverHappen(
-            'Supporter is neither a Project, a DripList, nor an Ecosystem.',
+            'Supporter is not a supported account type.',
           );
         }),
       );
