@@ -76,15 +76,13 @@ describe('chainStatsQueries', () => {
 
       const { calls } = vi.mocked(dbConnection.query).mock;
 
-      expect(calls[0][0]).toContain('"isValid" = true');
-      expect(calls[0][0]).toContain('FROM "mainnet"."DripLists"');
+      expect(calls[0][0]).toContain('"is_valid" = true');
+      expect(calls[0][0]).toContain('FROM "mainnet"."drip_lists"');
 
-      expect(calls[1][0]).toContain('"verificationStatus" = \'Claimed\'');
-      expect(calls[1][0]).toContain('FROM "mainnet"."GitProjects"');
+      expect(calls[1][0]).toContain('"verification_status" = \'claimed\'');
+      expect(calls[1][0]).toContain('FROM "mainnet"."projects"');
 
-      expect(calls[2][0]).toContain('AddressDriverSplitReceivers');
-      expect(calls[2][0]).toContain('DripListSplitReceivers');
-      expect(calls[2][0]).toContain('RepoDriverSplitReceivers');
+      expect(calls[2][0]).toContain('"splits_receivers"');
     });
 
     test('should reject invalid database schemas', async () => {

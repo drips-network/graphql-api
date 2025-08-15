@@ -1,47 +1,31 @@
 import type {
   DbSchema,
-  DripListId,
-  ProjectId,
+  NftDriverId,
+  RepoDriverId,
+  ResolverClaimedProjectData,
+  ResolverClaimedOrcidAccountData,
   ResolverDripListData,
+  ResolverEcosystemData,
+  ResolverUnClaimedOrcidAccountData,
   ResolverUnClaimedProjectData,
 } from './types';
 import type { Context } from '../server';
 import mergeAmounts from '../utils/mergeAmounts';
-import DripListSplitReceiverModel from '../models/DripListSplitReceiverModel';
-import RepoDriverSplitReceiverModel from '../models/RepoDriverSplitReceiverModel';
-import shouldNeverHappen from '../utils/shouldNeverHappen';
 import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
+import type SplitsReceiverModel from '../models/SplitsReceiverModel';
 
 export async function resolveTotalSplit(
   chains: DbSchema[],
-  parent: DripListSplitReceiverModel | RepoDriverSplitReceiverModel,
+  { senderAccountId, receiverAccountId }: SplitsReceiverModel,
 ) {
-  let incomingAccountId: DripListId | ProjectId;
-  let recipientAccountId: DripListId | ProjectId;
-
-  if (parent instanceof DripListSplitReceiverModel) {
-    const { fundeeDripListId, funderDripListId, funderProjectId } = parent;
-    recipientAccountId = fundeeDripListId;
-    incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
-  } else if (parent instanceof RepoDriverSplitReceiverModel) {
-    const { fundeeProjectId, funderDripListId, funderProjectId } = parent;
-    recipientAccountId = fundeeProjectId;
-    incomingAccountId =
-      funderDripListId || funderProjectId || shouldNeverHappen();
-  } else {
-    shouldNeverHappen('Invalid SupportItem type');
-  }
-
-  const splitEventModelDataValues =
-    await splitEventsQueries.getByAccountIdAndReceiver(
-      chains,
-      incomingAccountId,
-      recipientAccountId,
-    );
+  const splitEvents = await splitEventsQueries.getByAccountIdAndReceiver(
+    chains,
+    senderAccountId,
+    receiverAccountId,
+  );
 
   return mergeAmounts(
-    splitEventModelDataValues.map((splitEvent) => ({
+    splitEvents.map((splitEvent) => ({
       tokenAddress: splitEvent.erc20,
       amount: BigInt(splitEvent.amt),
       chain: splitEvent.chain,
@@ -53,28 +37,40 @@ export async function resolveTotalSplit(
 }
 
 export async function resolveTotalEarned(
-  projectOrDripListData: ResolverUnClaimedProjectData | ResolverDripListData,
+  entityData:
+    | ResolverClaimedProjectData
+    | ResolverUnClaimedProjectData
+    | ResolverDripListData
+    | ResolverEcosystemData
+    | ResolverClaimedOrcidAccountData
+    | ResolverUnClaimedOrcidAccountData,
   context: Context,
 ) {
-  let accountId: ProjectId | DripListId;
+  let accountId: RepoDriverId | NftDriverId;
   let chain: DbSchema;
-  if ('parentProjectInfo' in projectOrDripListData) {
-    accountId = projectOrDripListData.parentProjectInfo.projectId;
-    chain = projectOrDripListData.parentProjectInfo.projectChain;
+  if ('parentProjectInfo' in entityData) {
+    accountId = entityData.parentProjectInfo.projectId;
+    chain = entityData.parentProjectInfo.projectChain;
+  } else if ('parentDripListInfo' in entityData) {
+    accountId = entityData.parentDripListInfo.dripListId;
+    chain = entityData.parentDripListInfo.dripListChain;
+  } else if ('parentOrcidAccountInfo' in entityData) {
+    accountId = entityData.parentOrcidAccountInfo.accountId;
+    chain = entityData.parentOrcidAccountInfo.accountChain;
   } else {
-    accountId = projectOrDripListData.parentDripListInfo.dripListId;
-    chain = projectOrDripListData.parentDripListInfo.dripListChain;
+    accountId = entityData.parentEcosystemInfo.ecosystemId;
+    chain = entityData.parentEcosystemInfo.ecosystemChain;
   }
 
   const { totalEarnedDataSource } = context.dataSources;
 
-  const { splitEventsForDripListDataValues, givenEventsForDripListDataValues } =
-    await totalEarnedDataSource.getTotalEarnedByProjectIds(accountId, [chain]);
+  const { splitEventsForAccountDataValues, givenEventsForAccountDataValues } =
+    await totalEarnedDataSource.getTotalEarnedByAccountIds(accountId, [chain]);
 
   return mergeAmounts(
     [
-      ...splitEventsForDripListDataValues.filter((e) => e.chain === chain),
-      ...givenEventsForDripListDataValues.filter((e) => e.chain === chain),
+      ...splitEventsForAccountDataValues.filter((e) => e.chain === chain),
+      ...givenEventsForAccountDataValues.filter((e) => e.chain === chain),
     ].map((event) => ({
       tokenAddress: event.erc20,
       amount: BigInt(event.amt),

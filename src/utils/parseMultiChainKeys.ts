@@ -8,7 +8,7 @@ type ExtractedValues<T> = {
 export default function parseMultiChainKeys<T extends MultiChainKey>(
   keys: ReadonlyArray<T>,
 ): ExtractedValues<T> {
-  const ids = keys.map((key) => key.id);
+  const ids = keys.map((key) => key.accountId);
   const chains = new Set(keys.flatMap((key) => key.chains));
 
   return {

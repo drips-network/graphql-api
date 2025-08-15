@@ -3,14 +3,17 @@ import type { ProjectDataValues } from '../project/ProjectModel';
 import type {
   AccountId,
   DbSchema,
-  ProjectId,
-  ProjectMultiChainKey,
+  RepoDriverId,
+  RepoDriverMultiChainKey,
 } from '../common/types';
 import {
   doesRepoExists,
   toApiProject,
   toProjectRepresentationFromUrl,
+  toProjectRepresentationFromUrlWithDbFallback,
+  extractProjectInfoFromUrl,
 } from '../project/projectUtils';
+import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
 import type {
   ProjectSortInput,
   ProjectWhereInput,
@@ -26,7 +29,7 @@ import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
     async (
-      projectKeys: readonly ProjectMultiChainKey[],
+      projectKeys: readonly RepoDriverMultiChainKey[],
     ): Promise<ProjectDataValues[]> => {
       const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
 
@@ -36,7 +39,7 @@ export default class ProjectsDataSource {
       );
 
       const apiProjectsDataValues = await Promise.all(
-        projectsDataValues.map((p) => toApiProject(p, chains)),
+        projectsDataValues.map((p) => toApiProject(p)),
       );
 
       const filteredProjectsDataValues = apiProjectsDataValues.filter(
@@ -44,9 +47,9 @@ export default class ProjectsDataSource {
       ) as ProjectDataValues[];
 
       const projectIdToProjectMap = filteredProjectsDataValues.reduce<
-        Record<ProjectId, ProjectDataValues>
+        Record<RepoDriverId, ProjectDataValues>
       >((mapping, project) => {
-        mapping[project.id] = project; // eslint-disable-line no-param-reassign
+        mapping[project.accountId] = project; // eslint-disable-line no-param-reassign
 
         return mapping;
       }, {});
@@ -56,11 +59,11 @@ export default class ProjectsDataSource {
   );
 
   public async getProjectByIdOnChain(
-    id: ProjectId,
+    accountId: RepoDriverId,
     chain: DbSchema,
   ): Promise<ProjectDataValues | null> {
     const dbProject = await this._batchProjectsByIds.load({
-      id,
+      accountId,
       chains: [chain],
     });
 
@@ -68,24 +71,26 @@ export default class ProjectsDataSource {
   }
 
   public async getProjectById(
-    id: ProjectId,
+    accountId: RepoDriverId,
     chains: DbSchema[],
   ): Promise<ProjectDataValues[] | null> {
     const dbProjects = (
-      await this._batchProjectsByIds.loadMany([{ id, chains }])
+      await this._batchProjectsByIds.loadMany([{ accountId, chains }])
     ).filter(Boolean) as ProjectDataValues[];
 
     if (!dbProjects?.length) {
       return null;
     }
 
-    if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
+    if (dbProjects.some((p) => p.accountId !== dbProjects[0].accountId)) {
       shouldNeverHappen(
         'Found same project with different ids on different chains.',
       );
     }
 
-    return dbProjects;
+    // Filter out projects that don't have a name and forge (yet).
+    // This can happen if `OwnerUpdated` event processed but `AccountMetadataEmitted` not yet.
+    return dbProjects.filter((p) => p.name && p.forge);
   }
 
   public async getProjectByUrl(
@@ -98,19 +103,50 @@ export default class ProjectsDataSource {
       return null;
     }
 
-    const dbProjects = await projectsQueries.getByUrl(chains, url);
+    // First, try to find projects by URL (for projects that have URL populated)
+    let dbProjects = await projectsQueries.getByUrl(chains, url);
 
+    // If no projects found by URL, try to find by calculated accountId
+    // This handles the case where projects exist in DB but don't have URL populated yet
     if (!dbProjects?.length) {
-      return [await toProjectRepresentationFromUrl(url, chains)];
+      const { forge, projectName } = extractProjectInfoFromUrl(url);
+      const accountId = await getCrossChainRepoDriverAccountIdByAddress(
+        forge,
+        projectName,
+        chains,
+      );
+
+      dbProjects = await projectsQueries.getByIds(chains, [accountId]);
+
+      // If still no projects found, create from URL
+      if (!dbProjects?.length) {
+        return [await toProjectRepresentationFromUrl(url, chains)];
+      }
     }
 
-    if (dbProjects.some((p) => p.id !== dbProjects[0].id)) {
+    if (dbProjects.some((p) => p.accountId !== dbProjects[0].accountId)) {
       shouldNeverHappen(
         'Found same project with different ids on different chains.',
       );
     }
 
-    return dbProjects;
+    // Check if any projects have name and forge
+    const validProjects = dbProjects.filter((p) => p.name && p.forge);
+
+    if (validProjects.length > 0) {
+      // We have complete projects, return them
+      return validProjects;
+    }
+
+    // We have incomplete projects (missing name/forge) but potentially with owner info
+    // Create representation from URL but merge with DB owner data
+    return [
+      await toProjectRepresentationFromUrlWithDbFallback(
+        url,
+        chains,
+        dbProjects,
+      ),
+    ];
   }
 
   public async getProjectsByFilter(
@@ -128,19 +164,19 @@ export default class ProjectsDataSource {
 
     return Promise.all(
       projectsDataValues
-        .map((p) => toApiProject(p, chains))
+        .map((p) => toApiProject(p))
         .filter(Boolean) as ProjectDataValues[],
     );
   }
 
   public async getProjectsByIdsOnChain(
-    ids: ProjectId[],
+    ids: RepoDriverId[],
     chain: DbSchema,
   ): Promise<ProjectDataValues[]> {
     return (
       await (this._batchProjectsByIds.loadMany(
         ids.map((id) => ({
-          id,
+          accountId: id,
           chains: [chain],
         })),
       ) as Promise<ProjectDataValues[]>)
@@ -148,7 +184,7 @@ export default class ProjectsDataSource {
   }
 
   public async getEarnedFunds(
-    projectId: ProjectId,
+    projectId: RepoDriverId,
     chains: DbSchema[],
   ): Promise<
     {

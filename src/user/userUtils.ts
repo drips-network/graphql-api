@@ -23,6 +23,7 @@ export default function toResolverUser(
       balances: [], // Will be populated by the resolver.
       dripLists: [], // Will be populated by the resolver.
       projects: [], // Will be populated by the resolver.
+      linkedIdentities: [], // Will be populated by the resolver.
       streams: {
         incoming: [], // Will be populated by the resolver.
         outgoing: [], // Will be populated by the resolver.

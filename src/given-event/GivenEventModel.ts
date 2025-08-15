@@ -4,26 +4,30 @@ import type {
   Sequelize,
 } from 'sequelize';
 import { DataTypes, Model } from 'sequelize';
+import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
 import type {
   AccountId,
   Address,
   BigIntString,
-  CommonDataValues,
+  DbSchema,
+  IEventModel,
 } from '../common/types';
 
-export type GivenEventModelDataValues = GivenEventModel['dataValues'] &
-  CommonDataValues;
+export type GivenEventModelDataValues = GivenEventModel['dataValues'] & {
+  chain: DbSchema;
+};
 
-export default class GivenEventModel extends Model<
-  InferAttributes<GivenEventModel>,
-  InferCreationAttributes<GivenEventModel>
-> {
+export default class GivenEventModel
+  extends Model<
+    InferAttributes<GivenEventModel>,
+    InferCreationAttributes<GivenEventModel>
+  >
+  implements IEventModel
+{
   public declare accountId: AccountId; // Sender of the Give
   public declare receiver: AccountId;
   public declare erc20: Address;
   public declare amt: BigIntString;
-
-  // Common event log properties.
   public declare logIndex: number;
   public declare blockNumber: number;
   public declare blockTimestamp: Date;
@@ -33,43 +37,46 @@ export default class GivenEventModel extends Model<
     this.init(
       {
         accountId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         receiver: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         erc20: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         amt: {
+          allowNull: false,
           type: DataTypes.STRING,
-          allowNull: false,
         },
-        transactionHash: {
-          type: DataTypes.STRING,
-          allowNull: false,
-          primaryKey: true,
-        },
-        logIndex: {
-          type: DataTypes.INTEGER,
-          allowNull: false,
-          primaryKey: true,
-        },
-        blockTimestamp: {
-          type: DataTypes.DATE,
-          allowNull: false,
-        },
-        blockNumber: {
-          type: DataTypes.INTEGER,
-          allowNull: false,
-        },
+        ...COMMON_EVENT_INIT_ATTRIBUTES,
       },
       {
         sequelize,
-        tableName: 'GivenEvents',
+        tableName: 'given_events',
+        underscored: true,
+        timestamps: true,
+        indexes: [
+          {
+            fields: ['accountId'],
+            name: `idx_given_events_accountId`,
+          },
+          {
+            fields: ['receiver'],
+            name: `idx_given_events_receiver`,
+          },
+          {
+            fields: ['erc20'],
+            name: `idx_given_events_erc20`,
+          },
+          {
+            fields: ['transactionHash', 'logIndex'],
+            name: `idx_given_events_transactionHash_logIndex`,
+          },
+        ],
       },
     );
   }

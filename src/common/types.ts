@@ -1,15 +1,20 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
 import type {
+  ClaimedOrcidAccountData,
   ClaimedProjectData,
   DripList,
+  EcosystemMainAccount,
   Give,
+  OrcidAccount,
   Project,
+  SubList,
+  UnClaimedOrcidAccountData,
   UnClaimedProjectData,
   User,
   UserData,
 } from '../generated/graphql';
 import type StreamReceiverSeenEventModel from '../models/StreamReceiverSeenEventModel';
-import type { DB_SCHEMAS, FORGES_MAP } from './constants';
+import type { DB_SCHEMAS } from './constants';
 import type { addressDriverAccountMetadataParser } from '../schemas';
 import type StreamsSetEventModel from '../models/StreamsSetEventModel';
 import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
@@ -21,16 +26,28 @@ export type IpfsHash = string & { __brand: 'IpfsHash' };
 export type AddressDriverId = string & {
   __brand: 'AddressDriverId';
 };
-export type DripListId = string & { __brand: 'DripListId' };
-export type ProjectId = string & { __brand: 'ProjectId' };
-
-export type AccountId = AddressDriverId | DripListId | ProjectId;
+export type NftDriverId = string & { __brand: 'NftDriverId' };
+export type RepoDriverId = string & { __brand: 'RepoDriverId' };
+export type ImmutableSplitsDriverId = string & {
+  __brand: 'ImmutableSplitsDriverId';
+};
+export type RepoDeadlineDriverId = string & {
+  __brand: 'RepoDeadlineDriverId';
+};
+export type RepoSubAccountDriverId = string & {
+  __brand: 'RepoSubAccountDriverId';
+};
+export type AccountId =
+  | AddressDriverId
+  | NftDriverId
+  | RepoDriverId
+  | ImmutableSplitsDriverId
+  | RepoDeadlineDriverId
+  | RepoSubAccountDriverId;
 
 export type Address = string & { __brand: 'Address' };
 
 export type BigIntString = string & { __brand: 'BigIntString' };
-
-export type Forge = ValuesOf<typeof FORGES_MAP>;
 
 export enum DependencyType {
   ProjectDependency = 'ProjectDependency',
@@ -75,7 +92,7 @@ export type ResolverProject = Project & {
 
 type ProjectDataParentProjectInfo = {
   parentProjectInfo: {
-    projectId: ProjectId;
+    projectId: RepoDriverId;
     projectChain: DbSchema;
     queriedChains: DbSchema[];
   };
@@ -87,12 +104,39 @@ export type ResolverClaimedProjectData = ClaimedProjectData &
 export type ResolverUnClaimedProjectData = UnClaimedProjectData &
   ProjectDataParentProjectInfo;
 
+export type OrcidSource = {
+  url: string;
+};
+
+export type ResolverOrcidAccount = Omit<OrcidAccount, 'source'> & {
+  source: OrcidSource;
+  chainData: (
+    | ResolverClaimedOrcidAccountData
+    | ResolverUnClaimedOrcidAccountData
+  )[];
+};
+
+type OrcidAccountDataParentOrcidAccountInfo = {
+  parentOrcidAccountInfo: {
+    accountId: RepoDriverId;
+    accountChain: DbSchema;
+  };
+};
+
+export type ResolverClaimedOrcidAccountData = ClaimedOrcidAccountData &
+  OrcidAccountDataParentOrcidAccountInfo;
+
+export type ResolverUnClaimedOrcidAccountData = UnClaimedOrcidAccountData &
+  OrcidAccountDataParentOrcidAccountInfo;
+
 export interface MultiChainKey<T = AccountId> {
-  id: T;
+  accountId: T;
   chains: DbSchema[];
 }
-export type ProjectMultiChainKey = MultiChainKey<ProjectId>;
-export type DripListMultiChainKey = MultiChainKey<DripListId>;
+export type RepoDriverMultiChainKey = MultiChainKey<RepoDriverId>;
+export type NftDriverMultiChainKey = MultiChainKey<NftDriverId>;
+export type ImmutableSplitsDriverMultiChainKey =
+  MultiChainKey<ImmutableSplitsDriverId>;
 
 export type ResolverDripList = DripList & {
   chainData?: ResolverDripListData[];
@@ -100,19 +144,42 @@ export type ResolverDripList = DripList & {
 
 type DripListDataParentDripListInfo = {
   parentDripListInfo: {
-    dripListId: DripListId;
+    dripListId: NftDriverId;
     dripListChain: DbSchema;
+    queriedChain: DbSchema;
+  };
+};
+
+export type ResolverSubListData = SubList & SubListDataParentSubListInfo;
+
+export type ResolverSubList = SubList & {
+  chainData?: ResolverSubListData[];
+};
+
+type SubListDataParentSubListInfo = {
+  parentDripListInfo: {
+    subListId: NftDriverId;
+    subListChain: DbSchema;
     queriedChain: DbSchema;
   };
 };
 
 export type ResolverDripListData = DripList & DripListDataParentDripListInfo;
 
-export type CommonDataValues = {
-  createdAt: Date;
-  updatedAt: Date;
-  chain: DbSchema;
+export type ResolverEcosystem = EcosystemMainAccount & {
+  chainData?: ResolverEcosystemData[];
 };
+
+type EcosystemDataParentEcosystemInfo = {
+  parentEcosystemInfo: {
+    ecosystemId: NftDriverId;
+    ecosystemChain: DbSchema;
+    queriedChains: DbSchema[];
+  };
+};
+
+export type ResolverEcosystemData = EcosystemMainAccount &
+  EcosystemDataParentEcosystemInfo;
 
 export type ResolverGive = Give & {
   chainData: ResolverGiveChainData[];

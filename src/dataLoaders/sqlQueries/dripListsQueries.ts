@@ -1,5 +1,5 @@
 import { QueryTypes } from 'sequelize';
-import type { DbSchema, DripListId } from '../../common/types';
+import type { DbSchema, NftDriverId } from '../../common/types';
 import { dbConnection } from '../../database/connectToDatabase';
 import type { DripListDataValues } from '../../drip-list/DripListModel';
 import DripListModel from '../../drip-list/DripListModel';
@@ -18,33 +18,33 @@ async function getDripListsByFilter(
     if (sort?.field === 'mintedAt') {
       return `
         WITH mint_events AS (
-          SELECT DISTINCT ON ("tokenId") 
-            "tokenId", 
-            "blockTimestamp" as "mintedAt"
-          FROM "${schema}"."TransferEvents" 
+          SELECT DISTINCT ON ("token_id") 
+            "token_id", 
+            "block_timestamp" as "mintedAt"
+          FROM "${schema}"."transfer_events" 
           WHERE "from" = '0x0000000000000000000000000000000000000000'
-          ORDER BY "tokenId", "blockTimestamp" ASC
+          ORDER BY "token_id", "block_timestamp" ASC
         )
-        SELECT dl."id", dl."isValid", dl."isVisible", dl."name", dl."creator", dl."description", dl."ownerAddress", dl."ownerAccountId", dl."latestVotingRoundId", dl."previousOwnerAddress", dl."createdAt", dl."updatedAt", '${schema}' AS chain
-        FROM "${schema}"."DripLists" dl
-        INNER JOIN mint_events me ON dl."id" = me."tokenId"
+        SELECT dl."account_id", dl."is_valid", dl."is_visible", dl."name", dl."creator", dl."description", dl."owner_address", dl."owner_account_id", dl."latest_voting_round_id", dl."previous_owner_address", dl."created_at", dl."updated_at", '${schema}' AS chain
+        FROM "${schema}"."drip_lists" dl
+        INNER JOIN mint_events me ON dl."account_id" = me."token_id"
       `;
     }
     return `
-      SELECT "id", "isValid", "isVisible", "name", "creator", "description", "ownerAddress", "ownerAccountId", "latestVotingRoundId", "previousOwnerAddress", "createdAt", "updatedAt", '${schema}' AS chain
-      FROM "${schema}"."DripLists"
+      SELECT "account_id", "is_valid", "is_visible", "name", "creator", "description", "owner_address", "owner_account_id", "latest_voting_round_id", "previous_owner_address", "created_at", "updated_at", '${schema}' AS chain
+      FROM "${schema}"."drip_lists"
     `;
   };
 
-  const conditions: string[] = ['"isValid" = true', 'name IS NOT NULL'];
+  const conditions: string[] = ['is_valid = true', 'name IS NOT NULL'];
   const parameters: { [key: string]: any } = {};
 
-  if (where?.id) {
-    conditions.push(`"id" = :id`);
-    parameters.id = where.id;
+  if (where?.accountId) {
+    conditions.push(`account_id = :accountId`);
+    parameters.accountId = where.accountId;
   }
   if (where?.ownerAddress) {
-    conditions.push(`"ownerAddress" = :ownerAddress`);
+    conditions.push(`owner_address = :ownerAddress`);
     parameters.ownerAddress = where.ownerAddress;
   }
 
@@ -72,14 +72,15 @@ async function getDripListsByFilter(
 
 async function getDripListsByIds(
   chains: DbSchema[],
-  dripListIds: DripListId[],
+  dripListIds: NftDriverId[],
 ) {
   const baseSQL = (schema: DbSchema) => `
-    SELECT "id", "isValid", "isVisible", "ownerAddress", "ownerAccountId", "name", "latestVotingRoundId", "description", "creator", "previousOwnerAddress", "createdAt", "updatedAt", "lastProcessedIpfsHash", '${schema}' AS chain
-    FROM "${schema}"."DripLists"
-  `;
+    SELECT *, '${schema}' AS chain FROM ${schema}.drip_lists`;
 
-  const conditions: string[] = ['"id" IN (:dripListIds)', '"isValid" = true'];
+  const conditions: string[] = [
+    'account_id IN (:dripListIds)',
+    'is_valid = true',
+  ];
   const parameters: { [key: string]: any } = { dripListIds };
 
   const whereClause = ` WHERE ${conditions.join(' AND ')}`;

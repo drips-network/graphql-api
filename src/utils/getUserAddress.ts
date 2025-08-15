@@ -1,7 +1,7 @@
 /* eslint-disable no-bitwise */
 import { ethers } from 'ethers';
-import getContractNameByAccountId from './getContractNameByAccountId';
 import type { Address } from '../common/types';
+import { getContractNameFromAccountId } from './assert';
 
 export default function getUserAddress(accountId: string): Address {
   const accountIdAsBn = BigInt(accountId);
@@ -14,7 +14,7 @@ export default function getUserAddress(accountId: string): Address {
     );
   }
 
-  if (getContractNameByAccountId(accountId) === 'addressDriver') {
+  if (getContractNameFromAccountId(accountId) === 'addressDriver') {
     const mid64BitsMask = (BigInt(2) ** BigInt(64) - BigInt(1)) << BigInt(160);
 
     if ((accountIdAsBn & mid64BitsMask) !== BigInt(0)) {
