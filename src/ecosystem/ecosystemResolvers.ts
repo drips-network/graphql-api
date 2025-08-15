@@ -385,7 +385,7 @@ const ecosystemResolvers = {
                   driver: Driver.REPO,
                   accountId: linkedIdentity.accountId,
                 },
-                identityType: linkedIdentity.identityType.toUpperCase(),
+                identityType: linkedIdentity.identityType,
                 owner: {
                   driver: Driver.ADDRESS,
                   accountId: linkedIdentity.ownerAccountId,

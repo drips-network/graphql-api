@@ -227,12 +227,8 @@ const userResolvers = {
 
       const support = await Promise.all(
         splitsReceivers.map(async (receiver) => {
-          const {
-            senderAccountId,
-            senderAccountType,
-            blockTimestamp,
-            receiverAccountId,
-          } = receiver;
+          const { senderAccountId, senderAccountType, blockTimestamp } =
+            receiver;
 
           if (senderAccountType === 'project') {
             assertIsRepoDriverId(senderAccountId);
@@ -316,7 +312,7 @@ const userResolvers = {
               account: {
                 driver: Driver.REPO,
                 accountId: senderAccountId,
-                address: getUserAddress(receiverAccountId),
+                address: getUserAddress(senderAccountId),
               },
               date: blockTimestamp,
               totalSplit: [],
@@ -359,7 +355,7 @@ const userResolvers = {
               account: {
                 driver: Driver.IMMUTABLE_SPLITS,
                 accountId: senderAccountId,
-                address: getUserAddress(receiverAccountId),
+                address: getUserAddress(senderAccountId),
               },
               date: blockTimestamp,
               totalSplit: [],
