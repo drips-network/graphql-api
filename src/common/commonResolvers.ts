@@ -3,10 +3,10 @@ import type {
   Amount,
   DripList,
   ImmutableSplitsDriverAccount,
+  LinkedIdentity,
   NftDriverAccount,
   Project,
   RepoDriverAccount,
-  SplitsReceiver,
   SubList,
   SupportedChain,
 } from '../generated/graphql';
@@ -113,6 +113,13 @@ const commonResolvers = {
     subList: ({ subList }: { subList: SubList }) => subList,
     account: ({ account }: { account: ImmutableSplitsDriverAccount }) =>
       account,
+  },
+  OrcidReceiver: {
+    weight: ({ weight }: { weight: number }) => weight,
+    driver: ({ driver }: { driver: Driver }) => driver,
+    account: ({ account }: { account: RepoDriverAccount }) => account,
+    linkedIdentity: ({ linkedIdentity }: { linkedIdentity: LinkedIdentity }) =>
+      linkedIdentity,
   },
   SupportItem: {
     __resolveType(
@@ -366,8 +373,16 @@ const commonResolvers = {
     date: (parent: ProtoStream) => parent.createdAt,
   },
   SplitsReceiver: {
-    __resolveType(receiver: SplitsReceiver) {
+    __resolveType(receiver: any /* 👈 Populated in resolvers as `splits` */) {
       if (receiver.driver === Driver.REPO) {
+        if (
+          'linkedIdentity' in receiver &&
+          'identityType' in receiver.linkedIdentity &&
+          typeof receiver.linkedIdentity.identityType === 'string' &&
+          receiver.linkedIdentity.identityType.toLowerCase() === 'orcid'
+        ) {
+          return 'OrcidReceiver';
+        }
         return 'ProjectReceiver';
       }
 

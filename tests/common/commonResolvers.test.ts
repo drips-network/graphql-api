@@ -75,4 +75,21 @@ describe('commonResolvers', () => {
       });
     });
   });
+
+  describe('SplitsReceiver', () => {
+    describe('__resolveType', () => {
+      test('should return OrcidReceiver for ORCID identity type', () => {
+        const receiver = {
+          driver: 'REPO',
+          linkedIdentity: {
+            identityType: 'ORCID',
+          },
+        };
+
+        const result = commonResolvers.SplitsReceiver.__resolveType(receiver);
+
+        expect(result).toBe('OrcidReceiver');
+      });
+    });
+  });
 });
