@@ -2,10 +2,12 @@ import type {
   AddressDriverAccount,
   Amount,
   DripList,
+  ImmutableSplitsDriverAccount,
   NftDriverAccount,
   Project,
   RepoDriverAccount,
   SplitsReceiver,
+  SubList,
   SupportedChain,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
@@ -104,6 +106,13 @@ const commonResolvers = {
     }: {
       splitsToSubAccount: boolean;
     }) => splitsToSubAccount,
+  },
+  SubListReceiver: {
+    weight: ({ weight }: { weight: number }) => weight,
+    driver: ({ driver }: { driver: Driver }) => driver,
+    subList: ({ subList }: { subList: SubList }) => subList,
+    account: ({ account }: { account: ImmutableSplitsDriverAccount }) =>
+      account,
   },
   SupportItem: {
     __resolveType(
@@ -363,6 +372,10 @@ const commonResolvers = {
       }
 
       if (receiver.driver === Driver.NFT) {
+        // TODO: Currently, we treat all NFT driver accounts as Drip Lists, since we don’t allow ecosystems as split receivers.
+        // If ecosystem split receivers are supported in the future, we’ll need to:
+        //  - Add logic here to differentiate between DripListReceiver and EcosystemMainAccountReceiver.
+        //  - Implement `EcosystemMainAccountReceiver` resolver (left unimplemented on purpose).
         return 'DripListReceiver';
       }
 
