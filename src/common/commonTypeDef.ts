@@ -137,6 +137,7 @@ const commonTypeDef = gql`
     POLYGON_AMOY
     BASE_SEPOLIA
     FILECOIN
+    ZKSYNC_ERA_SEPOLIA
     METIS
     LOCALTESTNET
     OPTIMISM
