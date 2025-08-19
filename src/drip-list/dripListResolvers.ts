@@ -272,7 +272,7 @@ const dripListResolvers = {
           dripListChain,
         );
 
-      const projectsAndDripListsSupport = await Promise.all(
+      const supportItems = await Promise.all(
         splitReceivers.map(async (receiver) => {
           const {
             senderAccountId,
@@ -284,25 +284,14 @@ const dripListResolvers = {
           if (senderAccountType === 'project') {
             assertIsRepoDriverId(senderAccountId);
 
-            return {
-              ...receiver,
-              account: {
-                driver: Driver.NFT,
-                accountId: receiverAccountId,
-              },
-              date: blockTimestamp,
-              totalSplit: [],
-              project: await toResolverProject(
-                [dripListChain],
-                (await projectsDataSource.getProjectByIdOnChain(
-                  senderAccountId,
-                  dripListChain,
-                )) || shouldNeverHappen(),
-              ),
-            };
-          }
-          if (senderAccountType === 'drip_list') {
-            assertIsNftDriverId(senderAccountId);
+            const projectData = await projectsDataSource.getProjectByIdOnChain(
+              senderAccountId,
+              dripListChain,
+            );
+
+            if (!projectData) {
+              return null;
+            }
 
             return {
               ...receiver,
@@ -312,12 +301,30 @@ const dripListResolvers = {
               },
               date: blockTimestamp,
               totalSplit: [],
-              dripList: await toResolverDripList(
-                dripListChain,
-                (await dripListsDataSource.getDripListById(senderAccountId, [
-                  dripListChain,
-                ])) || shouldNeverHappen(),
-              ),
+              project: await toResolverProject([dripListChain], projectData),
+            };
+          }
+          if (senderAccountType === 'drip_list') {
+            assertIsNftDriverId(senderAccountId);
+
+            const dripListData = await dripListsDataSource.getDripListById(
+              senderAccountId,
+              [dripListChain],
+            );
+
+            if (!dripListData) {
+              return null;
+            }
+
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              dripList: await toResolverDripList(dripListChain, dripListData),
             };
           }
 
@@ -325,6 +332,10 @@ const dripListResolvers = {
             'Supported is neither a Project nor a DripList.',
           );
         }),
+      );
+
+      const projectsAndDripListsSupport = supportItems.filter(
+        (item) => item !== null,
       );
 
       const oneTimeDonationSupport =

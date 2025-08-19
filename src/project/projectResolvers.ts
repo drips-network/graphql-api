@@ -343,7 +343,7 @@ const projectResolvers = {
           projectChain,
         );
 
-      const support = await Promise.all(
+      const supportItems = await Promise.all(
         splitReceivers.map(async (receiver) => {
           const {
             senderAccountId,
@@ -355,25 +355,14 @@ const projectResolvers = {
           if (senderAccountType === 'project') {
             assertIsRepoDriverId(senderAccountId);
 
-            return {
-              ...receiver,
-              account: {
-                driver: Driver.NFT,
-                accountId: receiverAccountId,
-              },
-              date: blockTimestamp,
-              totalSplit: [],
-              project: await toResolverProject(
-                [projectChain],
-                (await projectsDataSource.getProjectByIdOnChain(
-                  senderAccountId,
-                  projectChain,
-                )) || shouldNeverHappen(),
-              ),
-            };
-          }
-          if (senderAccountType === 'drip_list') {
-            assertIsNftDriverId(senderAccountId);
+            const projectData = await projectsDataSource.getProjectByIdOnChain(
+              senderAccountId,
+              projectChain,
+            );
+
+            if (!projectData) {
+              return null;
+            }
 
             return {
               ...receiver,
@@ -383,16 +372,43 @@ const projectResolvers = {
               },
               date: blockTimestamp,
               totalSplit: [],
-              dripList: await toResolverDripList(
-                projectChain,
-                (await dripListsDataSource.getDripListById(senderAccountId, [
-                  projectChain,
-                ])) || shouldNeverHappen(),
-              ),
+              project: await toResolverProject([projectChain], projectData),
+            };
+          }
+          if (senderAccountType === 'drip_list') {
+            assertIsNftDriverId(senderAccountId);
+
+            const dripListData = await dripListsDataSource.getDripListById(
+              senderAccountId,
+              [projectChain],
+            );
+
+            if (!dripListData) {
+              return null;
+            }
+
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              dripList: await toResolverDripList(projectChain, dripListData),
             };
           }
           if (senderAccountType === 'ecosystem_main_account') {
             assertIsNftDriverId(senderAccountId);
+
+            const ecosystemData = await ecosystemsDataSource.getEcosystemById(
+              senderAccountId,
+              [projectChain],
+            );
+
+            if (!ecosystemData) {
+              return null;
+            }
 
             return {
               ...receiver,
@@ -404,9 +420,7 @@ const projectResolvers = {
               totalSplit: [],
               ecosystemMainAccount: await toResolverEcosystem(
                 projectChain,
-                (await ecosystemsDataSource.getEcosystemById(senderAccountId, [
-                  projectChain,
-                ])) || shouldNeverHappen(),
+                ecosystemData,
               ),
             };
           }
@@ -416,6 +430,8 @@ const projectResolvers = {
           );
         }),
       );
+
+      const support = supportItems.filter((item) => item !== null);
 
       const oneTimeDonationSupport =
         await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
@@ -470,7 +486,7 @@ const projectResolvers = {
           projectChain,
         );
 
-      const support = await Promise.all(
+      const supportItems = await Promise.all(
         splitsReceivers.map(async (s) => {
           const {
             senderAccountId,
@@ -480,6 +496,15 @@ const projectResolvers = {
           } = s;
 
           if (senderAccountType === 'project') {
+            const projectData = await projectsDataSource.getProjectByIdOnChain(
+              senderAccountId as RepoDriverId,
+              projectChain,
+            );
+
+            if (!projectData) {
+              return null;
+            }
+
             return {
               ...s,
               account: {
@@ -489,16 +514,19 @@ const projectResolvers = {
               date: blockTimestamp,
               totalSplit: [],
               splitsToSubAccount: s.splitsToRepoDriverSubAccount,
-              project: await toResolverProject(
-                [projectChain],
-                (await projectsDataSource.getProjectByIdOnChain(
-                  senderAccountId as RepoDriverId,
-                  projectChain,
-                )) || shouldNeverHappen(),
-              ),
+              project: await toResolverProject([projectChain], projectData),
             };
           }
           if (senderAccountType === 'drip_list') {
+            const dripListData = await dripListsDataSource.getDripListById(
+              senderAccountId as NftDriverId,
+              [projectChain],
+            );
+
+            if (!dripListData) {
+              return null;
+            }
+
             return {
               ...s,
               account: {
@@ -507,17 +535,20 @@ const projectResolvers = {
               },
               date: blockTimestamp,
               totalSplit: [],
-              dripList: await toResolverDripList(
-                projectChain,
-                (await dripListsDataSource.getDripListById(
-                  senderAccountId as NftDriverId,
-                  [projectChain],
-                )) || shouldNeverHappen(),
-              ),
+              dripList: await toResolverDripList(projectChain, dripListData),
             };
           }
           if (senderAccountType === 'ecosystem_main_account') {
             assertIsNftDriverId(senderAccountId);
+
+            const ecosystemData = await ecosystemsDataSource.getEcosystemById(
+              senderAccountId,
+              [projectChain],
+            );
+
+            if (!ecosystemData) {
+              return null;
+            }
 
             return {
               ...s,
@@ -529,9 +560,7 @@ const projectResolvers = {
               totalSplit: [],
               ecosystemMainAccount: await toResolverEcosystem(
                 projectChain,
-                (await ecosystemsDataSource.getEcosystemById(senderAccountId, [
-                  projectChain,
-                ])) || shouldNeverHappen(),
+                ecosystemData,
               ),
             };
           }
@@ -541,6 +570,8 @@ const projectResolvers = {
           );
         }),
       );
+
+      const support = supportItems.filter((item) => item !== null);
 
       // `GivenEventModelDataValues`s that represent one time donations to the Project.
       const oneTimeDonationSupport =
