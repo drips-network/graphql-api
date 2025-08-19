@@ -226,7 +226,7 @@ const ecosystemResolvers = {
           ecosystemChain,
         );
 
-      const projectsAndDripListsSupport = await Promise.all(
+      const supportItems = await Promise.all(
         splitReceivers.map(async (receiver) => {
           const {
             senderAccountId,
@@ -238,25 +238,14 @@ const ecosystemResolvers = {
           if (senderAccountType === 'project') {
             assertIsRepoDriverId(senderAccountId);
 
-            return {
-              ...receiver,
-              account: {
-                driver: Driver.NFT,
-                accountId: receiverAccountId,
-              },
-              date: blockTimestamp,
-              totalSplit: [],
-              project: await toResolverProject(
-                [ecosystemChain],
-                (await projectsDataSource.getProjectByIdOnChain(
-                  senderAccountId,
-                  ecosystemChain,
-                )) || shouldNeverHappen(),
-              ),
-            };
-          }
-          if (senderAccountType === 'drip_list') {
-            assertIsNftDriverId(senderAccountId);
+            const projectData = await projectsDataSource.getProjectByIdOnChain(
+              senderAccountId,
+              ecosystemChain,
+            );
+
+            if (!projectData) {
+              return null;
+            }
 
             return {
               ...receiver,
@@ -266,12 +255,30 @@ const ecosystemResolvers = {
               },
               date: blockTimestamp,
               totalSplit: [],
-              dripList: await toResolverDripList(
-                ecosystemChain,
-                (await dripListsDataSource.getDripListById(senderAccountId, [
-                  ecosystemChain,
-                ])) || shouldNeverHappen(),
-              ),
+              project: await toResolverProject([ecosystemChain], projectData),
+            };
+          }
+          if (senderAccountType === 'drip_list') {
+            assertIsNftDriverId(senderAccountId);
+
+            const dripListData = await dripListsDataSource.getDripListById(
+              senderAccountId,
+              [ecosystemChain],
+            );
+
+            if (!dripListData) {
+              return null;
+            }
+
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              dripList: await toResolverDripList(ecosystemChain, dripListData),
             };
           }
 
@@ -279,6 +286,10 @@ const ecosystemResolvers = {
             'Supporter is neither a Project nor a DripList.',
           );
         }),
+      );
+
+      const projectsAndDripListsSupport = supportItems.filter(
+        (item) => item !== null,
       );
 
       const oneTimeDonationSupport =
