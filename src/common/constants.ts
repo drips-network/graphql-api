@@ -21,11 +21,6 @@ export const COMMON_EVENT_INIT_ATTRIBUTES = {
   },
 } as const;
 
-export const FORGES_MAP = {
-  0: 'GitHub',
-  1: 'GitLab',
-} as const;
-
 export const AMT_PER_SEC_MULTIPLIER = 1_000_000_000;
 
 export const DB_SCHEMAS = [
@@ -38,4 +33,5 @@ export const DB_SCHEMAS = [
   'metis',
   'localtestnet',
   'optimism',
+  'zksync_era_sepolia',
 ] as const;

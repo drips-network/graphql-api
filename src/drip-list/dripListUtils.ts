@@ -28,12 +28,12 @@ export async function toResolverDripLists(
 
         return {
           account: {
-            accountId: dripList.id,
+            accountId: dripList.accountId,
             driver: Driver.NFT,
           },
           chain: dbSchemaToChain[dripListChain],
           parentDripListInfo: {
-            dripListId: dripList.id,
+            dripListId: dripList.accountId,
             dripListChain,
             queriedChains: chains,
           },

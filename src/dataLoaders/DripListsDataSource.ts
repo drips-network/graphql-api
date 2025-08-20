@@ -2,8 +2,8 @@ import DataLoader from 'dataloader';
 import type {
   Address,
   DbSchema,
-  DripListId,
-  DripListMultiChainKey,
+  NftDriverId,
+  NftDriverMultiChainKey,
 } from '../common/types';
 import type {
   DripListWhereInput,
@@ -19,7 +19,7 @@ import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 export default class DripListsDataSource {
   private readonly _batchDripListsByIds = new DataLoader(
     async (
-      dripListKeys: readonly DripListMultiChainKey[],
+      dripListKeys: readonly NftDriverMultiChainKey[],
     ): Promise<(DripListDataValues | null)[]> => {
       const { chains, ids: dripListIds } = parseMultiChainKeys(dripListKeys);
 
@@ -29,23 +29,25 @@ export default class DripListsDataSource {
       );
 
       const dripListIdToDripListMap = dripListDataValues.reduce<
-        Record<DripListId, DripListDataValues>
+        Record<NftDriverId, DripListDataValues>
       >((mapping, dripList) => {
-        mapping[dripList.id] = dripList; // eslint-disable-line no-param-reassign
+        mapping[dripList.accountId] = dripList; // eslint-disable-line no-param-reassign
 
         return mapping;
       }, {});
 
-      return dripListKeys.map(({ id }) => dripListIdToDripListMap[id] || null);
+      return dripListKeys.map(
+        ({ accountId }) => dripListIdToDripListMap[accountId] || null,
+      );
     },
   );
 
   public async getDripListById(
-    id: DripListId,
+    accountId: NftDriverId,
     chains: DbSchema[],
   ): Promise<DripListDataValues | null> {
     return this._batchDripListsByIds.load({
-      id,
+      accountId,
       chains,
     });
   }
@@ -60,13 +62,13 @@ export default class DripListsDataSource {
   }
 
   public async getDripListsByIdsOnChain(
-    ids: DripListId[],
+    ids: NftDriverId[],
     chain: DbSchema,
   ): Promise<DripListDataValues[]> {
     return (
       await (this._batchDripListsByIds.loadMany(
         ids.map((id) => ({
-          id,
+          accountId: id,
           chains: [chain],
         })),
       ) as Promise<DripListDataValues[]>)

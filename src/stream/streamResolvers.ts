@@ -1,6 +1,7 @@
 import queryableChains from '../common/queryableChains';
-import type { AddressDriverId, DripListId } from '../common/types';
+import type { AddressDriverId, NftDriverId } from '../common/types';
 import { toResolverDripList } from '../drip-list/dripListUtils';
+import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
 import type { StreamWhereInput, SupportedChain } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
@@ -48,12 +49,27 @@ const streamResolvers = {
 
       if (receiver.driver === Driver.NFT) {
         const dbDripList =
-          (await dataSources.dripListsDataSource.getDripListById(
-            receiver.accountId as DripListId,
+          await dataSources.dripListsDataSource.getDripListById(
+            receiver.accountId as NftDriverId,
             [chain],
-          )) || shouldNeverHappen('Expected Drip List to exist.');
+          );
 
-        return toResolverDripList(chain, dbDripList);
+        const dbEcosystemMainAccount =
+          await dataSources.ecosystemsDataSource.getEcosystemById(
+            receiver.accountId as NftDriverId,
+            [chain],
+          );
+
+        if (dbDripList) {
+          return toResolverDripList(chain, dbDripList);
+        }
+        if (dbEcosystemMainAccount) {
+          return toResolverEcosystem(chain, dbEcosystemMainAccount);
+        }
+
+        shouldNeverHappen(
+          'NFTDriver stream receiver is neither an Ecosystem nor a DripList',
+        );
       }
 
       throw shouldNeverHappen();

@@ -1,17 +1,22 @@
 import commonResolvers from './common/commonResolvers';
 import dateScalar from './common/date';
 import dripListResolvers from './drip-list/dripListResolvers';
+import ecosystemResolvers from './ecosystem/ecosystemResolvers';
 import projectResolvers from './project/projectResolvers';
 import streamResolvers from './stream/streamResolvers';
+import subListResolvers from './sub-list/subListResolvers';
 import userResolvers from './user/userResolvers';
+import orcidAccountResolvers from './orcid-account/orcidAccountResolvers';
 
 const resolvers = {
   Query: {
     ...projectResolvers.Query,
     ...dripListResolvers.Query,
+    ...ecosystemResolvers.Query,
     ...userResolvers.Query,
     ...streamResolvers.Query,
     ...commonResolvers.Query,
+    ...orcidAccountResolvers.Query,
   },
   Project: projectResolvers.Project,
   ProjectReceiver: commonResolvers.ProjectReceiver,
@@ -22,6 +27,7 @@ const resolvers = {
   DripListReceiver: commonResolvers.DripListReceiver,
   SplitsReceiver: commonResolvers.SplitsReceiver,
   SupportItem: commonResolvers.SupportItem,
+  EcosystemSupportItem: commonResolvers.SupportItem,
   Avatar: projectResolvers.Avatar,
   ProjectSupport: commonResolvers.ProjectSupport,
   DripListSupport: commonResolvers.DripListSupport,
@@ -34,6 +40,13 @@ const resolvers = {
   Stream: streamResolvers.Stream,
   StreamReceiver: userResolvers.StreamReceiver,
   AddressReceiver: commonResolvers.AddressReceiver,
+  EcosystemMainAccount: ecosystemResolvers.EcosystemMainAccount,
+  SubList: subListResolvers.SubList,
+  EcosystemSupport: commonResolvers.EcosystemSupport,
+  OrcidAccount: orcidAccountResolvers.OrcidAccount,
+  OrcidAccountData: orcidAccountResolvers.OrcidAccountData,
+  ClaimedOrcidAccountData: orcidAccountResolvers.ClaimedOrcidAccountData,
+  UnClaimedOrcidAccountData: orcidAccountResolvers.UnClaimedOrcidAccountData,
 };
 
 export default resolvers;

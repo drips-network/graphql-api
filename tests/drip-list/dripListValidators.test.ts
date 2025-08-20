@@ -133,9 +133,9 @@ describe('dripListValidators', () => {
     it('should still validate where input correctly', () => {
       expect(() => {
         verifyDripListsInput({
-          where: { id: 'invalid-id' },
+          where: { accountId: 'invalid-id' },
         });
-      }).toThrow('Cannot convert invalid-id to a BigInt');
+      }).toThrow('Could not get bits: invalid-id is not a number');
     });
 
     it('should still validate owner address correctly', () => {

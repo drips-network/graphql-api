@@ -128,17 +128,13 @@ export default function buildAssetConfigs(
           if (eventConfig.start) {
             if (eventConfig.duration) {
               endsAt = new Date(
-                Number(startTimeInMilliseconds) +
-                  Number(durationInMilliseconds),
+                Number(startTimeInMilliseconds + durationInMilliseconds),
               );
             }
           } else if (eventConfig.duration) {
-            endsAt = new Date(
-              (
-                BigInt(streamsSetEvent.blockTimestamp.getTime()) +
-                durationInMilliseconds
-              ).toString(),
-            );
+            const base = BigInt(streamsSetEvent.blockTimestamp.getTime());
+            const end = base + durationInMilliseconds;
+            endsAt = new Date(Number(end));
           }
 
           assetConfigHistoryItemStreams.push({

@@ -7,6 +7,7 @@ const commonTypeDef = gql`
     ADDRESS
     REPO
     NFT
+    IMMUTABLE_SPLITS
   }
 
   interface Account {
@@ -30,6 +31,11 @@ const commonTypeDef = gql`
     accountId: ID!
   }
 
+  type ImmutableSplitsDriverAccount implements Account {
+    driver: Driver!
+    accountId: ID!
+  }
+
   interface Receiver {
     weight: Int!
     driver: Driver!
@@ -47,6 +53,7 @@ const commonTypeDef = gql`
     driver: Driver!
     project: Project!
     account: RepoDriverAccount!
+    splitsToSubAccount: Boolean
   }
 
   type DripListReceiver implements Receiver {
@@ -56,7 +63,26 @@ const commonTypeDef = gql`
     account: NftDriverAccount!
   }
 
-  union SplitsReceiver = AddressReceiver | ProjectReceiver | DripListReceiver
+  type EcosystemMainAccountReceiver implements Receiver {
+    weight: Int!
+    driver: Driver!
+    ecosystemMainAccount: EcosystemMainAccount!
+    account: NftDriverAccount!
+  }
+
+  type SubListReceiver implements Receiver {
+    weight: Int!
+    driver: Driver!
+    subList: SubList!
+    account: ImmutableSplitsDriverAccount!
+  }
+
+  union SplitsReceiver =
+    | AddressReceiver
+    | ProjectReceiver
+    | DripListReceiver
+    | SubListReceiver
+    | EcosystemMainAccountReceiver
 
   enum Forge {
     GitHub
@@ -70,11 +96,23 @@ const commonTypeDef = gql`
     ownerName: String!
   }
 
+  type OrcidSource {
+    url: String!
+  }
+
   type DripListSupport {
     account: NftDriverAccount!
     date: Date!
     weight: Int!
     dripList: DripList!
+    totalSplit: [Amount!]!
+  }
+
+  type EcosystemSupport {
+    account: NftDriverAccount!
+    date: Date!
+    weight: Int!
+    ecosystemMainAccount: EcosystemMainAccount!
     totalSplit: [Amount!]!
   }
 
@@ -118,12 +156,14 @@ const commonTypeDef = gql`
     | ProjectSupport
     | OneTimeDonationSupport
     | StreamSupport
+    | EcosystemSupport
 
   union Support =
     | DripListSupport
     | ProjectSupport
     | OneTimeDonationSupport
     | StreamSupport
+    | EcosystemSupport
 
   enum SortDirection {
     ASC
@@ -140,6 +180,7 @@ const commonTypeDef = gql`
     METIS
     LOCALTESTNET
     OPTIMISM
+    ZKSYNC_ERA_SEPOLIA
   }
 
   type WithdrawableBalance {

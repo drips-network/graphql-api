@@ -21,9 +21,9 @@ async function getDistinctErc20ByReceiversHashes(
   }
 
   const baseSQL = (schema: DbSchema) =>
-    `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
+    `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM ${schema}.streams_set_events`;
 
-  const whereClause = ` WHERE "receiversHash" IN (:receiversHashes)`;
+  const whereClause = ` WHERE "receivers_hash" IN (:receiversHashes)`;
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
@@ -44,13 +44,13 @@ async function getSortedStreamsSetEventsByAccountId(
   accountId: AccountId,
 ) {
   const baseSQL = (schema: DbSchema) => `
-    SELECT *, '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
+    SELECT *, '${schema}' AS chain FROM ${schema}.streams_set_events`;
 
   const parameters: { [key: string]: any } = { accountId };
 
-  const whereClause = ` WHERE "accountId" = :accountId`;
+  const whereClause = ` WHERE "account_id" = :accountId`;
 
-  const orderClause = ' ORDER BY "blockNumber" ASC, "logIndex" ASC';
+  const orderClause = ' ORDER BY block_number ASC, "log_index" ASC';
 
   const queries = chains.map((chain) => `${baseSQL(chain) + whereClause}`);
 
@@ -75,9 +75,9 @@ async function getSortedStreamsSetEventsByReceiversHashes(
   }
 
   const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."StreamsSetEvents"`;
+    `SELECT *, '${schema}' AS chain FROM ${schema}.streams_set_events`;
 
-  const whereClause = ` WHERE "receiversHash" IN (:receiversHashes)`;
+  const whereClause = ` WHERE "receivers_hash" IN (:receiversHashes)`;
 
   const queries = chains.map((chain) => baseSQL(chain) + whereClause);
 
@@ -111,9 +111,9 @@ async function getStreamsSetEventsWithReceivers(
   ];
 
   const baseSQL = (schema: DbSchema) => `
-    SELECT *, '${schema}' AS chain FROM "${schema}"."StreamReceiverSeenEvents"`;
+    SELECT *, '${schema}' AS chain FROM ${schema}.stream_receiver_seen_events`;
 
-  const conditions: string[] = ['"receiversHash" IN (:uniqueReceiversHashes)'];
+  const conditions: string[] = ['receivers_hash IN (:uniqueReceiversHashes)'];
   const parameters: { [key: string]: any } = {
     uniqueReceiversHashes,
   };

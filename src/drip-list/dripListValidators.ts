@@ -1,6 +1,6 @@
 import { isAddress } from 'ethers';
+import { isNftDriverId } from '../utils/assert';
 import { SortDirection } from '../generated/graphql';
-import { isDripListId } from '../utils/assert';
 import type dripListResolvers from './dripListResolvers';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 
@@ -13,7 +13,7 @@ export default function verifyDripListsInput(
 ) {
   const { where, sort, chains, limit } = dripsListsQueryArgs;
 
-  if (where?.id && !isDripListId(where.id)) {
+  if (where?.accountId && !isNftDriverId(where.accountId)) {
     throw new Error('Invalid drip list id.');
   }
 

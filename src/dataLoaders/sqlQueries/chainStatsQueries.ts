@@ -21,28 +21,17 @@ async function getChainStats(chains: DbSchema[]): Promise<ChainStatsResult[]> {
   for (const chain of chains) {
     const dripListsCountQuery = `
       SELECT COUNT(*) as count
-      FROM "${chain}"."DripLists"
-      WHERE "isValid" = true
+      FROM "${chain}"."drip_lists"
+      WHERE "is_valid" = true
     `;
 
     const claimedProjectsCountQuery = `
       SELECT COUNT(*) as count
-      FROM "${chain}"."GitProjects"
-      WHERE "isValid" = true AND "verificationStatus" = 'Claimed'
+      FROM "${chain}"."projects"
+      WHERE "is_valid" = true AND "verification_status" = 'claimed'
     `;
 
-    const receiversCountQuery = `
-      SELECT 
-        (
-          SELECT COUNT(*) FROM "${chain}"."AddressDriverSplitReceivers"
-        ) +
-        (
-          SELECT COUNT(*) FROM "${chain}"."DripListSplitReceivers"
-        ) +
-        (
-          SELECT COUNT(*) FROM "${chain}"."RepoDriverSplitReceivers"
-        ) as count
-    `;
+    const receiversCountQuery = `SELECT COUNT(*) FROM "${chain}"."splits_receivers"`;
 
     const [dripListsResult, claimedProjectsResult, receiversResult] =
       await Promise.all([

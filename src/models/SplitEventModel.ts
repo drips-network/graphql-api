@@ -8,23 +8,27 @@ import type {
   AccountId,
   Address,
   BigIntString,
-  CommonDataValues,
+  DbSchema,
+  IEventModel,
 } from '../common/types';
 import { COMMON_EVENT_INIT_ATTRIBUTES } from '../common/constants';
 
-export type SplitEventModelDataValues = SplitEventModel['dataValues'] &
-  CommonDataValues;
+export type SplitEventModelDataValues = SplitEventModel['dataValues'] & {
+  chain: DbSchema;
+};
 
-export default class SplitEventModel extends Model<
-  InferAttributes<SplitEventModel>,
-  InferCreationAttributes<SplitEventModel>
-> {
+export default class SplitEventModel
+  extends Model<
+    InferAttributes<SplitEventModel>,
+    InferCreationAttributes<SplitEventModel>
+  >
+  implements IEventModel
+{
   public declare accountId: AccountId;
   public declare receiver: AccountId;
   public declare erc20: Address;
   public declare amt: BigIntString;
 
-  // Common event log properties.
   public declare logIndex: number;
   public declare blockNumber: number;
   public declare blockTimestamp: Date;
@@ -34,26 +38,38 @@ export default class SplitEventModel extends Model<
     this.init(
       {
         accountId: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         receiver: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         erc20: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         amt: {
-          type: DataTypes.STRING,
           allowNull: false,
+          type: DataTypes.STRING,
         },
         ...COMMON_EVENT_INIT_ATTRIBUTES,
       },
       {
         sequelize,
-        tableName: 'SplitEvents',
+        tableName: 'split_events',
+        underscored: true,
+        timestamps: true,
+        indexes: [
+          {
+            fields: ['receiver'],
+            name: `idx_split_events_receiver`,
+          },
+          {
+            fields: ['accountId', 'receiver'],
+            name: `idx_split_events_accountId_receiver`,
+          },
+        ],
       },
     );
   }

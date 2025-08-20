@@ -10,7 +10,7 @@ async function getDistinctErc20ByReceiver(
   receiver: AccountId,
 ) {
   const baseSQL = (schema: DbSchema) =>
-    `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+    `SELECT DISTINCT ON ("erc20") "erc20", '${schema}' AS chain FROM ${schema}.given_events`;
 
   const whereClause = ` WHERE "receiver" = :receiver`;
 
@@ -33,7 +33,7 @@ async function getGivenEventsByFilter(
   where: GiveWhereInput,
 ) {
   const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+    `SELECT *, '${schema}' AS chain FROM ${schema}.given_events`;
 
   const conditions: string[] = [];
   const parameters: { [key: string]: any } = {};
@@ -43,7 +43,7 @@ async function getGivenEventsByFilter(
     parameters.receiver = where.receiverAccountId;
   }
   if (where?.senderAccountId) {
-    conditions.push(`"accountId" = :accountId`);
+    conditions.push(`"account_id" = :accountId`);
     parameters.accountId = where.senderAccountId;
   }
   if (where?.tokenAddress) {
@@ -73,7 +73,7 @@ async function getGivenEventsByReceivers(
   receivers: AccountId[],
 ) {
   const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+    `SELECT *, '${schema}' AS chain FROM ${schema}.given_events`;
 
   const parameters: { [key: string]: any } = { receivers };
 
@@ -99,11 +99,11 @@ async function getGivenEventsByTxHashesAndLogIndex(
   logIndexes: number[],
 ) {
   const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+    `SELECT *, '${schema}' AS chain FROM ${schema}.given_events`;
 
   const conditions: string[] = [
-    '"transactionHash" IN (:transactionHashes)',
-    '"logIndex" IN (:logIndexes)',
+    'transaction_hash IN (:transactionHashes)',
+    'log_index IN (:logIndexes)',
   ];
   const parameters: { [key: string]: any } = {
     transactionHashes,
@@ -131,7 +131,7 @@ async function getGivenEventsByReceiver(
   receiver: AccountId,
 ) {
   const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM "${schema}"."GivenEvents"`;
+    `SELECT *, '${schema}' AS chain FROM ${schema}.given_events`;
 
   const parameters: { [receiver: string]: any } = { receiver };
 

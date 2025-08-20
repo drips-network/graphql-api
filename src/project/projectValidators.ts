@@ -2,14 +2,17 @@ import { isAddress } from 'ethers';
 import { SortDirection } from '../generated/graphql';
 import {
   isGitHubUrl,
-  isProjectId,
+  isRepoDriverId,
   isProjectVerificationStatus,
 } from '../utils/assert';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import type projectResolvers from './projectResolvers';
 
+export const projectSortFields = ['claimedAt'] as const;
 function isSortableProjectField(field: string): boolean {
-  return ['claimedAt'].includes(field);
+  return projectSortFields.includes(
+    field as (typeof projectSortFields)[number],
+  );
 }
 
 export default function validateProjectsInput(
@@ -17,7 +20,7 @@ export default function validateProjectsInput(
 ) {
   const { where, sort, chains } = projectsQueryArgs;
 
-  if (where?.id && !isProjectId(where.id)) {
+  if (where?.accountId && !isRepoDriverId(where.accountId)) {
     throw new Error('Invalid project id.');
   }
 

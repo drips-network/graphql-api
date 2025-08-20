@@ -1,21 +1,28 @@
 import { ZeroAddress } from 'ethers';
 import type {
   DbSchema,
-  Forge,
   ResolverClaimedProjectData,
   ResolverProject,
   ResolverUnClaimedProjectData,
 } from '../common/types';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
-import type { ProjectDataValues } from './ProjectModel';
-import { ProjectVerificationStatus } from './ProjectModel';
-import assert from '../utils/assert';
+import type {
+  Forge,
+  ProjectDataValues,
+  ProjectVerificationStatus as DbProjectVerificationStatus,
+} from './ProjectModel';
+import type { Splits } from '../generated/graphql';
+import {
+  ProjectVerificationStatus,
+  Driver,
+  Forge as GraphQlForge,
+} from '../generated/graphql';
 import appSettings from '../common/appSettings';
 import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
-import type { Forge as GraphQlForge, Splits } from '../generated/graphql';
-import { Driver } from '../generated/graphql';
 import { singleOrDefault } from '../utils/linq';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
+import assert from '../utils/assert';
+import type { projectSortFields } from './projectValidators';
 
 export function splitProjectName(projectName: string): {
   ownerName: string;
@@ -30,6 +37,28 @@ export function splitProjectName(projectName: string): {
   return { ownerName: components[0], repoName: components[1] };
 }
 
+export function extractProjectInfoFromUrl(url: string): {
+  forge: Forge;
+  ownerName: string;
+  repoName: string;
+  projectName: string;
+} {
+  const pattern =
+    /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
+  const match = url.match(pattern);
+
+  if (!match) {
+    throw new Error(`Unsupported repository url: ${url}.`);
+  }
+
+  const forge = match[1] as Forge;
+  const ownerName = match[2];
+  const repoName = match[3];
+  const projectName = `${ownerName}/${repoName}`;
+
+  return { forge, ownerName, repoName, projectName };
+}
+
 export async function doesRepoExists(url: string) {
   if (appSettings.pretendAllReposExist) return true;
 
@@ -38,7 +67,7 @@ export async function doesRepoExists(url: string) {
   return res.status === 200;
 }
 
-export function toApiProject(project: ProjectDataValues, chains: DbSchema[]) {
+export function toApiProject(project: ProjectDataValues) {
   if (!project) {
     return null;
   }
@@ -48,25 +77,58 @@ export function toApiProject(project: ProjectDataValues, chains: DbSchema[]) {
   }
 
   if (!(project.name && project.forge)) {
-    // Means that the relevant `OwnerUpdateRequested` event has not been processed yet.
     return null;
   }
 
-  if (project.verificationStatus === ProjectVerificationStatus.Claimed) {
+  if (project.verificationStatus === 'claimed') {
     return project;
   }
 
-  return toProjectRepresentation(project, chains);
+  return toProjectRepresentation(project);
 }
 
-function toForge(forge: string): Forge {
-  switch (forge.toLocaleLowerCase()) {
-    case 'github':
-      return `GitHub`;
-    case 'gitlab':
-      return `GitLab`;
+function toApiVerificationStatus(
+  verificationStatus: ProjectDataValues['verificationStatus'],
+): ProjectVerificationStatus {
+  switch (verificationStatus) {
+    case 'claimed':
+      return ProjectVerificationStatus.Claimed;
+    case 'unclaimed':
+      return ProjectVerificationStatus.Unclaimed;
+    case 'pending_metadata':
+      return ProjectVerificationStatus.PendingMetadata;
     default:
-      return shouldNeverHappen(`Forge ${forge} not supported.`);
+      throw new Error(
+        `Unsupported verification status: ${verificationStatus}.`,
+      );
+  }
+}
+
+export function toDbVerificationStatus(
+  verificationStatus: ProjectVerificationStatus,
+): DbProjectVerificationStatus {
+  switch (verificationStatus) {
+    case ProjectVerificationStatus.Claimed:
+      return 'claimed';
+    case ProjectVerificationStatus.Unclaimed:
+      return 'unclaimed';
+    case ProjectVerificationStatus.PendingMetadata:
+      return 'pending_metadata';
+    default:
+      throw new Error(
+        `Unsupported verification status: ${verificationStatus}.`,
+      );
+  }
+}
+
+export function toDbProjectSortField(
+  field: (typeof projectSortFields)[number],
+): string {
+  switch (field) {
+    case 'claimedAt':
+      return 'claimed_at';
+    default:
+      throw new Error(`Unsupported project sort field: ${field}.`);
   }
 }
 
@@ -74,36 +136,61 @@ export async function toProjectRepresentationFromUrl(
   url: string,
   chains: DbSchema[],
 ) {
-  const pattern =
-    /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
-  const match = url.match(pattern);
-
-  if (!match) {
-    throw new Error(`Unsupported repository url: ${url}.`);
-  }
-
-  const forge = toForge(match[1]);
-  const ownerName = match[2];
-  const repoName = match[3];
+  const { forge, projectName } = extractProjectInfoFromUrl(url);
 
   return {
-    id: await getCrossChainRepoDriverAccountIdByAddress(
+    accountId: await getCrossChainRepoDriverAccountIdByAddress(
       forge,
-      `${ownerName}/${repoName}`,
+      projectName,
       chains,
     ),
-    name: `${ownerName}/${repoName}`,
+    name: projectName,
     forge,
     url,
-    verificationStatus: ProjectVerificationStatus.Unclaimed,
+    verificationStatus: 'unclaimed',
     isValid: true,
     isVisible: true,
   } as ProjectDataValues;
 }
 
+export async function toProjectRepresentationFromUrlWithDbFallback(
+  url: string,
+  chains: DbSchema[],
+  dbProjects?: ProjectDataValues[],
+): Promise<ProjectDataValues> {
+  const { forge, projectName } = extractProjectInfoFromUrl(url);
+
+  const accountId = await getCrossChainRepoDriverAccountIdByAddress(
+    forge,
+    projectName,
+    chains,
+  );
+
+  const matchingDbProject = dbProjects?.find((p) => p.accountId === accountId);
+
+  return {
+    // Always use calculated/URL-derived values
+    accountId,
+    name: projectName,
+    forge,
+    url,
+
+    // Preserve database values when available, with fallbacks
+    ownerAddress: matchingDbProject?.ownerAddress || ZeroAddress,
+    ownerAccountId: matchingDbProject?.ownerAccountId || undefined,
+    verificationStatus: matchingDbProject?.verificationStatus || 'unclaimed',
+    claimedAt: matchingDbProject?.claimedAt || null,
+    isVisible: matchingDbProject?.isVisible ?? true,
+    isValid: matchingDbProject?.isValid ?? true,
+
+    // Chain info (if available from DB project)
+    chain: matchingDbProject?.chain,
+  } as ProjectDataValues;
+}
+
 function toUrl(forge: Forge, projectName: string): string {
   switch (forge) {
-    case 'GitHub':
+    case 'github':
       return `https://github.com/${projectName}`;
     default:
       throw new Error(`Unsupported forge: ${forge}.`);
@@ -112,24 +199,22 @@ function toUrl(forge: Forge, projectName: string): string {
 
 export async function toProjectRepresentation(
   project: ProjectDataValues,
-  chains: DbSchema[],
 ): Promise<ProjectDataValues> {
-  const { name, forge } = project;
+  const { name, forge, accountId } = project;
 
   assert(name && forge, 'Project name and forge must be defined.');
 
   return {
-    id: await getCrossChainRepoDriverAccountIdByAddress(forge, name, chains),
+    accountId: accountId || shouldNeverHappen('Project accountId is missing.'),
     name,
     forge,
     url: toUrl(forge, name),
-    verificationStatus:
-      project.verificationStatus ?? ProjectVerificationStatus.Unclaimed,
+    verificationStatus: project.verificationStatus ?? 'unclaimed',
     isValid: true,
     isVisible: project.isVisible,
     chain: project.chain,
     ownerAddress: project.ownerAddress || ZeroAddress,
-    ownerAccountId: project.ownerAccountId || '0',
+    ownerAccountId: project.ownerAccountId,
   } as ProjectDataValues;
 }
 
@@ -150,7 +235,7 @@ function mapClaimedProjectChainData(
   return {
     chain: dbSchemaToChain[projectChain],
     parentProjectInfo: {
-      projectId: project.id,
+      projectId: project.accountId,
       queriedChains,
       projectChain,
     },
@@ -164,17 +249,17 @@ function mapClaimedProjectChainData(
           emoji: project.emoji || '💧',
         },
     splits: {} as Splits, // Will be populated by the resolver.
-    description: project.description,
     owner: {
       driver: Driver.ADDRESS,
       accountId: project.ownerAccountId,
       address: project.ownerAddress as string,
     },
-    verificationStatus: project.verificationStatus,
+    verificationStatus: toApiVerificationStatus(project.verificationStatus),
     support: [], // Will be populated by the resolver.
     claimedAt: project.claimedAt,
     totalEarned: [], // Will be populated by the resolver.
     withdrawableBalances: [], // Will be populated by the resolver.
+    withdrawableSubAccountBalances: [], // Will be populated by the resolver.
     latestMetadataIpfsHash: '', // Will be populated by the resolver.
     lastProcessedIpfsHash: project.lastProcessedIpfsHash,
   } as ResolverClaimedProjectData;
@@ -189,13 +274,16 @@ function mapUnClaimedProjectChainData(
     chain: dbSchemaToChain[projectChain],
     parentProjectInfo: {
       queriedChains,
-      projectId: fakeUnclaimedProject.id,
+      projectId: fakeUnclaimedProject.accountId,
       projectChain,
     },
-    verificationStatus: fakeUnclaimedProject.verificationStatus,
+    verificationStatus: toApiVerificationStatus(
+      fakeUnclaimedProject.verificationStatus,
+    ),
     support: [], // Will be populated by the resolver.
     totalEarned: [], // Will be populated by the resolver.
     withdrawableBalances: [], // Will be populated by the resolver.
+    withdrawableSubAccountBalances: [], // Will be populated by the resolver.
     owner: {
       driver: Driver.ADDRESS,
       accountId: fakeUnclaimedProject.ownerAccountId || '0',
@@ -212,15 +300,18 @@ export async function toResolverProjects(
   const duplicates = new Map<string, ProjectDataValues[]>();
 
   projects.forEach((project) => {
-    if (projectsMap.has(project.id)) {
-      if (!duplicates.has(project.id)) {
-        duplicates.set(project.id, [projectsMap.get(project.id)!, project]);
-        projectsMap.delete(project.id);
+    if (projectsMap.has(project.accountId)) {
+      if (!duplicates.has(project.accountId)) {
+        duplicates.set(project.accountId, [
+          projectsMap.get(project.accountId)!,
+          project,
+        ]);
+        projectsMap.delete(project.accountId);
       } else {
-        duplicates.get(project.id)!.push(project);
+        duplicates.get(project.accountId)!.push(project);
       }
     } else {
-      projectsMap.set(project.id, project);
+      projectsMap.set(project.accountId, project);
     }
   });
 
@@ -231,9 +322,7 @@ export async function toResolverProjects(
           if (project.chain === chain) {
             return mapClaimedProjectChainData(project, chain, chains);
           }
-          const fakeUnclaimedProject = await toProjectRepresentation(project, [
-            chain,
-          ]);
+          const fakeUnclaimedProject = await toProjectRepresentation(project);
 
           return mapUnClaimedProjectChainData(
             fakeUnclaimedProject,
@@ -245,16 +334,20 @@ export async function toResolverProjects(
 
       return {
         account: {
-          accountId: project.id,
+          accountId: project.accountId,
           driver: Driver.REPO,
         },
         source: {
-          url: project.url || shouldNeverHappen(),
-          repoName: splitProjectName(project.name || shouldNeverHappen())
-            .repoName,
-          ownerName: splitProjectName(project.name || shouldNeverHappen())
-            .ownerName,
-          forge: (project.forge as GraphQlForge) || shouldNeverHappen(),
+          url: project.url || shouldNeverHappen('Project URL is missing.'),
+          repoName: splitProjectName(
+            project.name || shouldNeverHappen('Project repo name is missing.'),
+          ).repoName,
+          ownerName: splitProjectName(
+            project.name || shouldNeverHappen('Project owner name is missing.'),
+          ).ownerName,
+          forge: convertToGraphQlForge(
+            project.forge || shouldNeverHappen('Project forge is missing.'),
+          ),
         },
         isVisible: project.isVisible,
         chainData,
@@ -273,7 +366,7 @@ export async function mergeProjects(
   projects: ProjectDataValues[],
   chains: DbSchema[],
 ) {
-  if (projects.some((p) => p.id !== projects[0].id)) {
+  if (projects.some((p) => p.accountId !== projects[0].accountId)) {
     throw new Error('All projects should have the same id when merging.');
   }
 
@@ -295,9 +388,10 @@ export async function mergeProjects(
         );
       } else {
         if (!projectOnChain) {
-          projectOnChain = await toProjectRepresentationFromUrl(
+          projectOnChain = await toProjectRepresentationFromUrlWithDbFallback(
             projectBase.url!,
             chains,
+            projects,
           );
         }
 
@@ -310,18 +404,33 @@ export async function mergeProjects(
 
   return {
     account: {
-      accountId: projectBase.id,
+      accountId: projectBase.accountId,
       driver: Driver.REPO,
     },
     source: {
-      url: projectBase.url || shouldNeverHappen(),
-      repoName: splitProjectName(projectBase.name || shouldNeverHappen())
-        .repoName,
-      ownerName: splitProjectName(projectBase.name || shouldNeverHappen())
-        .ownerName,
-      forge: (projectBase.forge as GraphQlForge) || shouldNeverHappen(),
+      url: projectBase.url || shouldNeverHappen('Project URL is missing.'),
+      repoName: splitProjectName(
+        projectBase.name || shouldNeverHappen('Project repo name is missing.'),
+      ).repoName,
+      ownerName: splitProjectName(
+        projectBase.name || shouldNeverHappen('Project owner name is missing.'),
+      ).ownerName,
+      forge: convertToGraphQlForge(
+        projectBase.forge || shouldNeverHappen('Project forge is missing.'),
+      ),
     },
     isVisible: projectBase.isVisible,
     chainData,
   } as ResolverProject;
+}
+
+export function convertToGraphQlForge(forge: Forge): GraphQlForge | undefined {
+  switch (forge) {
+    case 'github':
+      return GraphQlForge.GitHub;
+    case 'gitlab':
+      return GraphQlForge.GitLab;
+    default:
+      return undefined;
+  }
 }

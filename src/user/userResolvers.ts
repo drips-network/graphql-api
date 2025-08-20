@@ -16,10 +16,18 @@ import type {
   SupportedChain,
   AddressDriverAccount,
   User,
+  EcosystemMainAccount,
+  LinkedIdentity,
 } from '../generated/graphql';
-import { Driver } from '../generated/graphql';
+import { Driver, LinkedIdentityType } from '../generated/graphql';
 import type { Context } from '../server';
-import assert, { isAccountId, isAddressDriverId } from '../utils/assert';
+import assert, {
+  assertIsNftDriverId,
+  assertIsRepoDriverId,
+  assertMany,
+  isAccountId,
+  isAddressDriverId,
+} from '../utils/assert';
 import getAssetConfigs from '../utils/getAssetConfigs';
 import getUserAddress from '../utils/getUserAddress';
 import queryableChains from '../common/queryableChains';
@@ -39,6 +47,7 @@ import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import getWithdrawableBalancesOnChain, {
   getRelevantTokens,
 } from '../utils/getWithdrawableBalances';
+import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
 
 const userResolvers = {
   Query: {
@@ -48,8 +57,11 @@ const userResolvers = {
         accountId,
         chains,
       }: { accountId: AddressDriverId; chains?: SupportedChain[] },
-    ): ResolverUser => {
-      assert(isAccountId(accountId));
+    ): ResolverUser | null => {
+      if (!isAccountId(accountId)) {
+        return null;
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -63,8 +75,11 @@ const userResolvers = {
     userByAddress: async (
       _: undefined,
       { address, chains }: { address: Address; chains?: SupportedChain[] },
-    ): Promise<ResolverUser> => {
-      assert(isAddress(address));
+    ): Promise<ResolverUser | null> => {
+      if (!isAddress(address)) {
+        return null;
+      }
+
       if (chains?.length) {
         validateChainsQueryArg(chains);
       }
@@ -185,91 +200,161 @@ const userResolvers = {
         dataSources: {
           projectsDataSource,
           dripListsDataSource,
-          projectAndDripListSupportDataSource,
+          supportDataSource,
+          ecosystemsDataSource,
         },
       }: Context,
     ) => {
-      // `RepoDriverSplitReceiver`s that represent the Project as a receiver.
-      const dbAddressDriverSplitReceivers =
-        await projectAndDripListSupportDataSource.getProjectAndDripListSupportByAddressDriverIdOnChain(
-          accountId as AddressDriverId,
+      const splitsReceivers =
+        await supportDataSource.getSplitSupportByReceiverIdOnChain(
+          accountId,
           userChain,
         );
 
-      const projectsAndDripListsSupport = await Promise.all(
-        dbAddressDriverSplitReceivers.map(async (receiver) => {
+      assertMany(
+        splitsReceivers.map((s) => s.receiverAccountType),
+        (s) => s === 'project' || s === 'drip_list',
+      );
+
+      const supportItems = await Promise.all(
+        splitsReceivers.map(async (receiver) => {
           const {
-            funderProjectId,
-            funderDripListId,
-            fundeeAccountId,
+            senderAccountId,
+            senderAccountType,
             blockTimestamp,
+            receiverAccountId,
           } = receiver;
 
-          // Supported is a Project.
-          if (funderProjectId && !funderDripListId) {
+          if (senderAccountType === 'project') {
+            assertIsRepoDriverId(senderAccountId);
+
+            const projectData = await projectsDataSource.getProjectByIdOnChain(
+              senderAccountId,
+              userChain,
+            );
+
+            if (!projectData) {
+              return null;
+            }
+
             return {
               ...receiver,
               account: {
                 driver: Driver.NFT,
-                accountId: fundeeAccountId,
+                accountId: receiverAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
-              project: await toResolverProject(
-                [userChain],
-                (await projectsDataSource.getProjectByIdOnChain(
-                  funderProjectId,
-                  userChain,
-                )) || shouldNeverHappen(),
-              ),
+              splitsToSubAccount: receiver.splitsToRepoDriverSubAccount,
+              project: await toResolverProject([userChain], projectData),
             };
-            // Supported is a DripList.
           }
-          if (funderDripListId && !funderProjectId) {
+
+          if (senderAccountType === 'drip_list') {
+            assertIsNftDriverId(senderAccountId);
+
+            const dripListData = await dripListsDataSource.getDripListById(
+              senderAccountId,
+              [userChain],
+            );
+
+            if (!dripListData) {
+              return null;
+            }
+
             return {
               ...receiver,
               account: {
                 driver: Driver.NFT,
-                accountId: fundeeAccountId,
+                accountId: receiverAccountId,
               },
               date: blockTimestamp,
               totalSplit: [],
-              dripList: await toResolverDripList(
+              dripList: await toResolverDripList(userChain, dripListData),
+            };
+          }
+
+          if (senderAccountType === 'ecosystem_main_account') {
+            assertIsNftDriverId(senderAccountId);
+
+            const ecosystemData = await ecosystemsDataSource.getEcosystemById(
+              senderAccountId,
+              [userChain],
+            );
+
+            if (!ecosystemData) {
+              return null;
+            }
+
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              ecosystemMainAccount: await toResolverEcosystem(
                 userChain,
-                (await dripListsDataSource.getDripListById(funderDripListId, [
-                  userChain,
-                ])) || shouldNeverHappen(),
+                ecosystemData,
               ),
             };
           }
 
           return shouldNeverHappen(
-            'Supported is neither a Project nor a DripList.',
+            'Supporter is neither a Project, a DripList, nor an Ecosystem.',
           );
         }),
       );
 
+      const support = supportItems.filter((item) => item !== null);
+
       const oneTimeDonationSupport =
-        await projectAndDripListSupportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
+        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
           accountId as AccountId,
           userChain,
         );
 
       const streamSupport =
-        await projectAndDripListSupportDataSource.getStreamSupportByAccountIdOnChain(
+        await supportDataSource.getStreamSupportByAccountIdOnChain(
           accountId as AccountId,
           userChain,
         );
 
-      return [
-        ...projectsAndDripListsSupport,
-        ...streamSupport,
-        ...oneTimeDonationSupport,
-      ];
+      return [...support, ...streamSupport, ...oneTimeDonationSupport];
     },
     latestMetadataIpfsHash: async ({
       parentUserInfo: { accountId, userChain },
     }: ResolverUserData) => getLatestMetadataHashOnChain(accountId, userChain),
+    linkedIdentities: async (
+      { parentUserInfo: { accountId, userChain } }: ResolverUserData,
+      _: {},
+      { dataSources: { linkedIdentitiesDataSource } }: Context,
+    ) => {
+      const linkedIdentityDataValues =
+        await linkedIdentitiesDataSource.getLinkedIdentitiesByOwnerAddress(
+          [userChain],
+          getUserAddress(accountId),
+        );
+
+      return linkedIdentityDataValues.map(
+        (identity): LinkedIdentity => ({
+          account: {
+            driver: Driver.REPO,
+            accountId: identity.accountId,
+          },
+          identityType: LinkedIdentityType.ORCID,
+          owner: {
+            driver: Driver.ADDRESS,
+            accountId: identity.ownerAccountId,
+            address: identity.ownerAddress,
+          },
+          isLinked: identity.isLinked,
+          createdAt: identity.createdAt,
+          updatedAt: identity.updatedAt,
+        }),
+      );
+    },
   },
   UserStreams: {
     outgoing: async (
@@ -298,7 +383,13 @@ const userResolvers = {
     },
   },
   StreamReceiver: {
-    __resolveType(parent: DripListModel | User) {
+    __resolveType(parent: DripListModel | User | EcosystemMainAccount) {
+      // Order matters.
+
+      if ('parentEcosystemInfo' in parent) {
+        return 'EcosystemMainAccount';
+      }
+
       if ('account' in parent && parent.account.driver === Driver.NFT) {
         return 'DripList';
       }

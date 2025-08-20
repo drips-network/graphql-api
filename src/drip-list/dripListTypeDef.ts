@@ -19,7 +19,7 @@ const dripListTypeDef = gql`
   }
 
   input DripListWhereInput {
-    id: String
+    accountId: String
     ownerAddress: String
   }
 

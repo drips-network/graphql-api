@@ -5,6 +5,10 @@ import commonTypeDef from './common/commonTypeDef';
 import givenEventTypeDef from './given-event/givenEventTypeDef';
 import userTypeDef from './user/userTypeDef';
 import streamTypeDef from './stream/streamTypeDef';
+import ecosystemTypeDef from './ecosystem/ecosystemTypeDef';
+import subListTypeDef from './sub-list/subListTypeDef';
+import linkedIdentityTypeDef from './linked-identity/linkedIdentityTypeDef';
+import orcidAccountTypeDef from './orcid-account/orcidAccountTypeDef';
 
 const rootTypeDef = gql`
   type Query {
@@ -31,18 +35,30 @@ const rootTypeDef = gql`
     userById(accountId: ID!, chains: [SupportedChain!]): User!
     userByAddress(address: String!, chains: [SupportedChain!]): User!
     streams(where: StreamWhereInput, chains: [SupportedChain!]): [Stream!]!
+    ecosystemMainAccount(id: ID!, chain: SupportedChain!): EcosystemMainAccount
     chainStats(chains: [SupportedChain!]): [ChainStats!]!
+    orcidAccounts(
+      chains: [SupportedChain!]
+      where: OrcidAccountWhereInput
+      sort: OrcidAccountSortInput
+      limit: Int = 100
+    ): [OrcidAccount!]!
+    orcidAccountById(id: ID!, chains: [SupportedChain!]): OrcidAccount
   }
 `;
 
 const typeDefs = [
   rootTypeDef,
   dripListTypeDef,
+  ecosystemTypeDef,
   gitProjectTypeDef,
   commonTypeDef,
   givenEventTypeDef,
   userTypeDef,
   streamTypeDef,
+  subListTypeDef,
+  linkedIdentityTypeDef,
+  orcidAccountTypeDef,
 ];
 
 export default typeDefs;
