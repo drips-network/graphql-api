@@ -4,11 +4,8 @@ import { isOrcidId } from '../../src/utils/assert';
 describe('isOrcidId', () => {
   test('should return true for valid ORCID IDs', () => {
     // Valid ORCID ID patterns
-    expect(isOrcidId('0000-0000-0000-0000')).toBe(true);
-    expect(isOrcidId('0000-0000-0000-000X')).toBe(true);
-    expect(isOrcidId('1234-5678-9012-3456')).toBe(true);
-    expect(isOrcidId('0000-0002-1825-009X')).toBe(true);
-    expect(isOrcidId('0000-0003-1527-0030')).toBe(true);
+    expect(isOrcidId('0009-0007-1106-8413')).toBe(true);
+    expect(isOrcidId('0000-0002-9079-593X')).toBe(true);
   });
 
   test('should return false for invalid ORCID IDs', () => {
@@ -31,5 +28,7 @@ describe('isOrcidId', () => {
     expect(isOrcidId('')).toBe(false); // Empty string
     expect(isOrcidId('abc-def-ghi-jkl')).toBe(false); // Letters instead of digits
     expect(isOrcidId('0000-0000-0000-000@')).toBe(false); // Invalid special character
+    expect(isOrcidId('0000-0001-5109-370X')).toBe(false); // Incorrect X position
+    expect(isOrcidId('0000-0002-1825-0098')).toBe(false); // Fails checksum
   });
 });
