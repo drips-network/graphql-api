@@ -347,7 +347,7 @@ const dripListResolvers = {
           dripListChain,
         );
 
-      const supportItems = await Promise.all(
+      const projectsAndDripListsSupport = await Promise.all(
         splitReceivers.map(async (receiver) => {
           const { senderAccountId, blockTimestamp, senderAccountType } =
             receiver;
@@ -383,30 +383,12 @@ const dripListResolvers = {
               },
               date: blockTimestamp,
               totalSplit: [],
-              project: await toResolverProject([dripListChain], projectData),
-            };
-          }
-          if (senderAccountType === 'drip_list') {
-            assertIsNftDriverId(senderAccountId);
-
-            const dripListData = await dripListsDataSource.getDripListById(
-              senderAccountId,
-              [dripListChain],
-            );
-
-            if (!dripListData) {
-              return null;
-            }
-
-            return {
-              ...receiver,
-              account: {
-                driver: Driver.NFT,
-                accountId: receiverAccountId,
-              },
-              date: blockTimestamp,
-              totalSplit: [],
-              dripList: await toResolverDripList(dripListChain, dripListData),
+              dripList: await toResolverDripList(
+                dripListChain,
+                (await dripListsDataSource.getDripListById(senderAccountId, [
+                  dripListChain,
+                ])) || shouldNeverHappen(),
+              ),
             };
           }
 
@@ -503,10 +485,6 @@ const dripListResolvers = {
             'Supporter is not a supported account type.',
           );
         }),
-      );
-
-      const projectsAndDripListsSupport = supportItems.filter(
-        (item) => item !== null,
       );
 
       const oneTimeDonationSupport =
