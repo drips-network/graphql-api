@@ -73,7 +73,7 @@ const orcidAccountResolvers = {
     ): Promise<ResolverOrcidAccount | null> => {
       if (!isOrcidId(id)) {
         throw new Error(
-          `Invalid ORCID identifier: '${id}'. Expected format: 0000-0000-0000-000X`,
+          `Invalid ORCID identifier: '${id}'. See https://support.orcid.org/hc/en-us/articles/360006897674-Structure-of-the-ORCID-Identifier.`,
         );
       }
 
