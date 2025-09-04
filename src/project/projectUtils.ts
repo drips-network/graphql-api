@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import { ZeroAddress } from 'ethers';
 import type {
   DbSchema,
@@ -23,6 +24,8 @@ import { singleOrDefault } from '../utils/linq';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 import assert from '../utils/assert';
 import type { projectSortFields } from './projectValidators';
+import { getGitHubRepoByUrl } from '../services/github';
+import extractProjectInfoFromUrl from '../utils/extractProjectInfoFromUrl';
 
 export function splitProjectName(projectName: string): {
   ownerName: string;
@@ -37,34 +40,11 @@ export function splitProjectName(projectName: string): {
   return { ownerName: components[0], repoName: components[1] };
 }
 
-export function extractProjectInfoFromUrl(url: string): {
-  forge: Forge;
-  ownerName: string;
-  repoName: string;
-  projectName: string;
-} {
-  const pattern =
-    /^(?:https?:\/\/)?(?:www\.)?(github|gitlab)\.com\/([^\/]+)\/([^\/]+)/; // eslint-disable-line no-useless-escape
-  const match = url.match(pattern);
-
-  if (!match) {
-    throw new Error(`Unsupported repository url: ${url}.`);
-  }
-
-  const forge = match[1] as Forge;
-  const ownerName = match[2];
-  const repoName = match[3];
-  const projectName = `${ownerName}/${repoName}`;
-
-  return { forge, ownerName, repoName, projectName };
-}
-
 export async function doesRepoExists(url: string) {
   if (appSettings.pretendAllReposExist) return true;
 
-  const res = await fetch(url);
-
-  return res.status === 200;
+  const repoData = await getGitHubRepoByUrl(url);
+  return repoData !== null;
 }
 
 export function toApiProject(project: ProjectDataValues) {

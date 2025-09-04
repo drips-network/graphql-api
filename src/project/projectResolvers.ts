@@ -43,6 +43,7 @@ import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import getUserAddress from '../utils/getUserAddress';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
 import { calcSubRepoDriverId } from '../utils/repoSubAccountIdUtils';
+import { getGitHubRepoByUrl } from '../services/github';
 
 const projectResolvers = {
   Query: {
@@ -155,6 +156,20 @@ const projectResolvers = {
     account: (project: ResolverProject): RepoDriverAccount => project.account,
     chainData: (project: ResolverProject): ProjectData[] => project.chainData,
     isVisible: (project: ResolverProject): boolean => project.isVisible,
+    repoMetadata: async (project: ResolverProject) => {
+      const repoData = await getGitHubRepoByUrl(project.source.url);
+
+      if (!repoData) {
+        return null;
+      }
+
+      return {
+        description: repoData.description,
+        forksCount: repoData.forksCount,
+        stargazersCount: repoData.stargazersCount,
+        defaultBranch: repoData.defaultBranch,
+      };
+    },
   },
   ProjectData: {
     __resolveType(parent: ProjectData) {

@@ -22,11 +22,19 @@ const projectTypeDef = gql`
 
   union Avatar = EmojiAvatar | ImageAvatar
 
+  type RepoMetadata {
+    description: String
+    forksCount: Int!
+    stargazersCount: Int!
+    defaultBranch: String!
+  }
+
   type Project {
     source: Source!
     account: RepoDriverAccount!
     chainData: [ProjectData!]!
     isVisible: Boolean!
+    repoMetadata: RepoMetadata
   }
 
   union ProjectData = ClaimedProjectData | UnClaimedProjectData
