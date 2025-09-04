@@ -84,6 +84,7 @@ async function fetchGitHubRepoData(
         remaining: parseInt(rateLimitRemaining, 10),
         resetAt: new Date(parseInt(rateLimitReset, 10) * 1000).toISOString(),
         authenticated: !!appSettings.githubToken,
+        lastRequest: url,
       });
     }
 
