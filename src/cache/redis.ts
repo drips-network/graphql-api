@@ -20,7 +20,6 @@ export async function getRedisClient(): Promise<RedisClientType | null> {
 
       redisClient.on('error', (err) => {
         console.error('Redis client error:', err);
-        redisClient = null; // Reset on error to trigger reconnection
       });
 
       await redisClient.connect();
