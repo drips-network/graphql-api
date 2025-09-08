@@ -32,6 +32,7 @@ import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
 import groupBy from '../utils/linq';
 import getUserAddress from '../utils/getUserAddress';
+import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
 
 const dripListResolvers = {
   Query: {
@@ -124,6 +125,7 @@ const dripListResolvers = {
           projectsDataSource,
           dripListsDataSource,
           splitsReceiversDataSource,
+          linkedIdentitiesDataSource,
         },
       }: Context,
     ) => {
@@ -140,7 +142,11 @@ const dripListResolvers = {
 
       assertMany(
         splitsReceivers.map((s) => s.receiverAccountType),
-        (s) => s === 'address' || s === 'project' || s === 'drip_list',
+        (s) =>
+          s === 'address' ||
+          s === 'project' ||
+          s === 'drip_list' ||
+          s === 'linked_identity',
       );
 
       const splitReceiversByReceiverAccountType = groupBy(
@@ -165,6 +171,9 @@ const dripListResolvers = {
 
       const dripListReceivers =
         splitReceiversByReceiverAccountType.get('drip_list') || [];
+
+      const linkedIdentityReceivers =
+        splitReceiversByReceiverAccountType.get('linked_identity') || [];
 
       const projectIds =
         projectReceivers.length > 0
@@ -247,10 +256,37 @@ const dripListResolvers = {
         }),
       );
 
+      const linkedIdentityDependencies = await Promise.all(
+        linkedIdentityReceivers.map(async (s) => {
+          assertIsRepoDriverId(s.receiverAccountId);
+
+          const identity =
+            await linkedIdentitiesDataSource.getLinkedIdentityById(
+              [dripListChain],
+              s.receiverAccountId as RepoDriverId,
+            );
+
+          if (!identity) {
+            return shouldNeverHappen('Expected linked identity to exist');
+          }
+
+          return {
+            ...s,
+            driver: Driver.REPO,
+            account: {
+              driver: Driver.REPO,
+              accountId: s.receiverAccountId,
+            },
+            linkedIdentity: toGqlLinkedIdentity(identity),
+          };
+        }),
+      );
+
       return [
         ...addressDependencies,
-        ...projectDependencies.filter((p) => p.project !== undefined),
-        ...dripListDependencies.filter((d) => d.dripList !== undefined),
+        ...projectDependencies,
+        ...dripListDependencies,
+        ...linkedIdentityDependencies,
       ];
     },
     support: async (

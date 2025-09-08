@@ -4,6 +4,8 @@ import type {
   DripList,
   ImmutableSplitsDriverAccount,
   NftDriverAccount,
+  LinkedIdentity as GqlLinkedIdentity,
+  OrcidLinkedIdentity as GqlOrcidLinkedIdentity,
   Project,
   RepoDriverAccount,
   SplitsReceiver,
@@ -15,6 +17,7 @@ import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { DbSchema, NftDriverId, RepoDriverId } from './types';
 import getUserAddress from '../utils/getUserAddress';
+import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import { toResolverProject } from '../project/projectUtils';
 import { toResolverDripLists } from '../drip-list/dripListUtils';
@@ -384,6 +387,10 @@ const commonResolvers = {
   },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {
+      if ('linkedIdentity' in receiver && receiver.linkedIdentity) {
+        return 'LinkedIdentityReceiver';
+      }
+
       if (receiver.driver === Driver.REPO) {
         return 'ProjectReceiver';
       }
@@ -393,6 +400,13 @@ const commonResolvers = {
         // If ecosystem split receivers are supported in the future, we’ll need to:
         //  - Add logic here to differentiate between DripListReceiver and EcosystemMainAccountReceiver.
         //  - Implement `EcosystemMainAccountReceiver` resolver (left unimplemented on purpose).
+
+        // Check if this is a DripList - ecosystems are not currently supported as split receivers
+        if (!('dripList' in receiver)) {
+          return shouldNeverHappen(
+            'Only DripLists can be NFT driver split receivers for now',
+          );
+        }
         return 'DripListReceiver';
       }
 
@@ -406,6 +420,36 @@ const commonResolvers = {
 
       return shouldNeverHappen('Unknown SplitsReceiver type');
     },
+  },
+  LinkedIdentityReceiver: {
+    weight: ({ weight }: { weight: number }) => weight,
+    driver: ({ driver }: { driver: Driver }) => driver,
+    account: ({ account }: { account: RepoDriverAccount }) => account,
+    linkedIdentity: ({
+      linkedIdentity,
+    }: {
+      linkedIdentity: GqlLinkedIdentity;
+    }) => linkedIdentity,
+  },
+  LinkedIdentity: {
+    __resolveType(linkedIdentity: Record<string, unknown>) {
+      if ('orcid' in linkedIdentity) return 'OrcidLinkedIdentity';
+      return shouldNeverHappen('Unsupported linked identity shape');
+    },
+  },
+  OrcidLinkedIdentity: {
+    account: (linkedIdentity: GqlOrcidLinkedIdentity): RepoDriverAccount =>
+      linkedIdentity.account,
+    owner: (linkedIdentity: GqlOrcidLinkedIdentity): AddressDriverAccount =>
+      linkedIdentity.owner,
+    isLinked: (linkedIdentity: GqlOrcidLinkedIdentity): boolean =>
+      linkedIdentity.isLinked,
+    createdAt: (linkedIdentity: GqlOrcidLinkedIdentity): Date =>
+      linkedIdentity.createdAt,
+    updatedAt: (linkedIdentity: GqlOrcidLinkedIdentity): Date =>
+      linkedIdentity.updatedAt,
+    orcid: (linkedIdentity: GqlOrcidLinkedIdentity): string =>
+      extractOrcidFromAccountId(linkedIdentity.account.accountId),
   },
 };
 
