@@ -19,7 +19,7 @@ import type {
   EcosystemMainAccount,
   LinkedIdentity,
 } from '../generated/graphql';
-import { Driver, LinkedIdentityType } from '../generated/graphql';
+import { Driver } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, {
   assertIsNftDriverId,
@@ -48,6 +48,7 @@ import getWithdrawableBalancesOnChain, {
   getRelevantTokens,
 } from '../utils/getWithdrawableBalances';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
+import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
 
 const userResolvers = {
   Query: {
@@ -330,7 +331,7 @@ const userResolvers = {
       { parentUserInfo: { accountId, userChain } }: ResolverUserData,
       _: {},
       { dataSources: { linkedIdentitiesDataSource } }: Context,
-    ) => {
+    ): Promise<LinkedIdentity[]> => {
       const linkedIdentityDataValues =
         await linkedIdentitiesDataSource.getLinkedIdentitiesByOwnerAddress(
           [userChain],
@@ -338,21 +339,7 @@ const userResolvers = {
         );
 
       return linkedIdentityDataValues.map(
-        (identity): LinkedIdentity => ({
-          account: {
-            driver: Driver.REPO,
-            accountId: identity.accountId,
-          },
-          identityType: LinkedIdentityType.ORCID,
-          owner: {
-            driver: Driver.ADDRESS,
-            accountId: identity.ownerAccountId,
-            address: identity.ownerAddress,
-          },
-          isLinked: identity.isLinked,
-          createdAt: identity.createdAt,
-          updatedAt: identity.updatedAt,
-        }),
+        (identity): LinkedIdentity => toGqlLinkedIdentity(identity),
       );
     },
   },

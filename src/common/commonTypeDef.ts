@@ -77,12 +77,20 @@ const commonTypeDef = gql`
     account: ImmutableSplitsDriverAccount!
   }
 
+  type LinkedIdentityReceiver implements Receiver {
+    weight: Int!
+    driver: Driver!
+    linkedIdentity: LinkedIdentity!
+    account: RepoDriverAccount!
+  }
+
   union SplitsReceiver =
     | AddressReceiver
     | ProjectReceiver
     | DripListReceiver
     | SubListReceiver
     | EcosystemMainAccountReceiver
+    | LinkedIdentityReceiver
 
   enum Forge {
     GitHub

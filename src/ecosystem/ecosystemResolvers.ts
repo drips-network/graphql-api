@@ -31,6 +31,7 @@ import type { ProjectDataValues } from '../project/ProjectModel';
 import getUserAddress from '../utils/getUserAddress';
 import groupBy from '../utils/linq';
 import { toResolverSubList } from '../sub-list/subListUtils';
+import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
 
 const ecosystemResolvers = {
   Query: {
@@ -80,6 +81,7 @@ const ecosystemResolvers = {
           projectsDataSource,
           subListsDataSource,
           splitsReceiversDataSource,
+          linkedIdentitiesDataSource,
         },
       }: Context,
     ) => {
@@ -96,7 +98,7 @@ const ecosystemResolvers = {
 
       assertMany(
         splitsReceivers.map((s) => s.receiverAccountType),
-        (s) => s === 'project' || s === 'sub_list',
+        (s) => s === 'project' || s === 'sub_list' || s === 'linked_identity',
       );
 
       const splitReceiversByReceiverAccountType = groupBy(
@@ -121,6 +123,9 @@ const ecosystemResolvers = {
 
       const subListReceivers =
         splitReceiversByReceiverAccountType.get('sub_list') || [];
+
+      const linkedIdentityReceivers =
+        splitReceiversByReceiverAccountType.get('linked_identity') || [];
 
       const projectIds =
         projectReceivers.length > 0
@@ -201,10 +206,37 @@ const ecosystemResolvers = {
         }),
       );
 
+      const linkedIdentityDependencies = await Promise.all(
+        linkedIdentityReceivers.map(async (s) => {
+          assertIsRepoDriverId(s.receiverAccountId);
+
+          const identity =
+            await linkedIdentitiesDataSource.getLinkedIdentityById(
+              [ecosystemChain],
+              s.receiverAccountId as RepoDriverId,
+            );
+
+          if (!identity) {
+            return shouldNeverHappen('Expected linked identity to exist');
+          }
+
+          return {
+            ...s,
+            driver: Driver.REPO,
+            account: {
+              driver: Driver.REPO,
+              accountId: s.receiverAccountId,
+            },
+            linkedIdentity: toGqlLinkedIdentity(identity),
+          };
+        }),
+      );
+
       return [
         ...addressDependencies,
         ...projectDependencies,
         ...subListDependencies,
+        ...linkedIdentityDependencies,
       ];
     },
     support: async (

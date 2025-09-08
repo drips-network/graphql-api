@@ -43,6 +43,7 @@ import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import getUserAddress from '../utils/getUserAddress';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
 import { calcSubRepoDriverId } from '../utils/repoSubAccountIdUtils';
+import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
 
 const projectResolvers = {
   Query: {
@@ -188,6 +189,7 @@ const projectResolvers = {
           projectsDataSource,
           dripListsDataSource,
           splitsReceiversDataSource,
+          linkedIdentitiesDataSource,
         },
       }: Context,
     ) => {
@@ -204,7 +206,11 @@ const projectResolvers = {
 
       assertMany(
         splitsReceivers.map((s) => s.receiverAccountType),
-        (s) => s === 'address' || s === 'project' || s === 'drip_list',
+        (s) =>
+          s === 'address' ||
+          s === 'project' ||
+          s === 'drip_list' ||
+          s === 'linked_identity',
       );
 
       const splitReceiversByReceiverAccountType = groupBy(
@@ -236,6 +242,9 @@ const projectResolvers = {
 
       const dripListReceivers =
         splitReceiversByReceiverAccountType.get('drip_list') || [];
+
+      const linkedIdentityReceivers =
+        splitReceiversByReceiverAccountType.get('linked_identity') || [];
 
       const projectIds =
         projectReceivers.length > 0
@@ -314,12 +323,39 @@ const projectResolvers = {
         }),
       );
 
+      const linkedIdentityDependencies = await Promise.all(
+        linkedIdentityReceivers.map(async (s) => {
+          assertIsRepoDriverId(s.receiverAccountId);
+
+          const identity =
+            await linkedIdentitiesDataSource.getLinkedIdentityById(
+              [projectChain],
+              s.receiverAccountId as RepoDriverId,
+            );
+
+          if (!identity) {
+            return shouldNeverHappen('Expected linked identity to exist');
+          }
+
+          return {
+            ...s,
+            driver: Driver.REPO,
+            account: {
+              driver: Driver.REPO,
+              accountId: s.receiverAccountId,
+            },
+            linkedIdentity: toGqlLinkedIdentity(identity),
+          };
+        }),
+      );
+
       return {
         maintainers,
         dependencies: [
           ...addressDependencies,
           ...projectDependencies,
           ...dripListDependencies,
+          ...linkedIdentityDependencies,
         ],
       };
     },

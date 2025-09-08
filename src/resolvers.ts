@@ -47,6 +47,8 @@ const resolvers = {
   OrcidAccountData: orcidAccountResolvers.OrcidAccountData,
   ClaimedOrcidAccountData: orcidAccountResolvers.ClaimedOrcidAccountData,
   UnClaimedOrcidAccountData: orcidAccountResolvers.UnClaimedOrcidAccountData,
+  LinkedIdentity: commonResolvers.LinkedIdentity,
+  OrcidLinkedIdentity: commonResolvers.OrcidLinkedIdentity,
 };
 
 export default resolvers;
