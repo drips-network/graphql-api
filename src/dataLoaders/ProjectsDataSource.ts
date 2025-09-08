@@ -11,7 +11,6 @@ import {
   toApiProject,
   toProjectRepresentationFromUrl,
   toProjectRepresentationFromUrlWithDbFallback,
-  extractProjectInfoFromUrl,
 } from '../project/projectUtils';
 import { getCrossChainRepoDriverAccountIdByAddress } from '../common/dripsContracts';
 import type {
@@ -25,6 +24,7 @@ import givenEventsQueries from './sqlQueries/givenEventsQueries';
 import splitEventsQueries from './sqlQueries/splitEventsQueries';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
+import extractProjectInfoFromUrl from '../utils/extractProjectInfoFromUrl';
 
 export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
@@ -99,7 +99,7 @@ export default class ProjectsDataSource {
   ): Promise<ProjectDataValues[] | null> {
     // TODO: To Data Loader.
 
-    if (!doesRepoExists(url)) {
+    if (!(await doesRepoExists(url))) {
       return null;
     }
 

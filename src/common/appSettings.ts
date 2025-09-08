@@ -41,4 +41,6 @@ export default {
   timeoutInSeconds: parseInt(process.env.TIMEOUT_IN_SECONDS ?? '20', 10),
   ipfsGatewayUrl:
     process.env.IPFS_GATEWAY_URL || 'https://drips.mypinata.cloud',
+  githubToken: process.env.GITHUB_TOKEN,
+  redisUrl: process.env.REDIS_URL,
 };
