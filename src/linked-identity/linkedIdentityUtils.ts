@@ -14,11 +14,14 @@ export default function toGqlLinkedIdentity(
           driver: Driver.REPO,
           accountId: identity.accountId,
         },
-        owner: {
-          driver: Driver.ADDRESS,
-          accountId: identity.ownerAccountId,
-          address: identity.ownerAddress,
-        },
+        owner:
+          identity.ownerAccountId && identity.ownerAddress
+            ? {
+                driver: Driver.ADDRESS,
+                accountId: identity.ownerAccountId,
+                address: identity.ownerAddress,
+              }
+            : null,
         isLinked: identity.isLinked,
         createdAt: identity.createdAt,
         updatedAt: identity.updatedAt,
