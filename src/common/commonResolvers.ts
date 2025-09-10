@@ -423,8 +423,9 @@ const commonResolvers = {
   OrcidLinkedIdentity: {
     account: (linkedIdentity: GqlOrcidLinkedIdentity): RepoDriverAccount =>
       linkedIdentity.account,
-    owner: (linkedIdentity: GqlOrcidLinkedIdentity): AddressDriverAccount =>
-      linkedIdentity.owner,
+    owner: (
+      linkedIdentity: GqlOrcidLinkedIdentity,
+    ): AddressDriverAccount | null => linkedIdentity.owner ?? null,
     isLinked: (linkedIdentity: GqlOrcidLinkedIdentity): boolean =>
       linkedIdentity.isLinked,
     createdAt: (linkedIdentity: GqlOrcidLinkedIdentity): Date =>
