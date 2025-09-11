@@ -1,3 +1,5 @@
+/* eslint-disable no-bitwise */
+
 import { describe, beforeEach, expect, vi, it } from 'vitest';
 import LinkedIdentityDataSource from '../../src/dataLoaders/LinkedIdentityDataSource';
 import type { LinkedIdentityDataValues } from '../../src/linked-identity/LinkedIdentityModel';
@@ -5,15 +7,10 @@ import type {
   RepoDriverId,
   Address,
   DbSchema,
-  RepoDriverMultiChainKey,
+  LinkedIdentityMultiChainKey,
   AddressDriverId,
+  LinkedIdentityId,
 } from '../../src/common/types';
-import {
-  type OrcidAccountWhereInput,
-  type OrcidAccountSortInput,
-  OrcidAccountSortField,
-  SortDirection,
-} from '../../src/generated/graphql';
 import linkedIdentityQueries from '../../src/dataLoaders/sqlQueries/linkedIdentityQueries';
 import parseMultiChainKeys from '../../src/utils/parseMultiChainKeys';
 
@@ -21,7 +18,7 @@ vi.mock('../../src/dataLoaders/sqlQueries/linkedIdentityQueries', () => ({
   default: {
     getByIds: vi.fn(),
     getByOwnerAddress: vi.fn(),
-    getOrcidAccountsByFilter: vi.fn(),
+    getLinkedIdentitiesByFilter: vi.fn(),
   },
 }));
 
@@ -41,43 +38,23 @@ describe('LinkedIdentityDataSource', () => {
     it('should call linkedIdentityQueries.getByOwnerAddress with correct parameters', async () => {
       const chains: DbSchema[] = ['mainnet'];
       const ownerAddress: Address = '0x123' as Address;
-      const mockResult: LinkedIdentityDataValues[] = [
-        {
-          accountId: '1' as RepoDriverId,
-          ownerAddress,
-          identityType: 'orcid',
-          ownerAccountId: '1' as AddressDriverId,
-          isLinked: true,
-          lastProcessedVersion: '1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          chain: 'mainnet',
-        },
-      ];
 
-      (linkedIdentityQueries.getByOwnerAddress as any).mockResolvedValue(
-        mockResult,
-      );
-
-      const result = await dataSource.getLinkedIdentitiesByOwnerAddress(
-        chains,
-        ownerAddress,
-      );
+      await dataSource.getLinkedIdentitiesByOwnerAddress(chains, ownerAddress);
 
       expect(linkedIdentityQueries.getByOwnerAddress).toHaveBeenCalledWith(
         chains,
         ownerAddress,
       );
-      expect(result).toEqual(mockResult);
     });
   });
 
   describe('getLinkedIdentityById', () => {
     it('should load identity through DataLoader and return result', async () => {
       const chains: DbSchema[] = ['mainnet'];
-      const accountId: RepoDriverId = '1' as RepoDriverId;
+      const repoId = ((3n << 224n) | 1n).toString() as RepoDriverId;
+      const accountId: LinkedIdentityId = repoId as unknown as LinkedIdentityId;
       const mockIdentity: LinkedIdentityDataValues = {
-        accountId,
+        accountId: repoId,
         ownerAddress: '0x123' as Address,
         identityType: 'orcid',
         ownerAccountId: '1' as AddressDriverId,
@@ -92,7 +69,7 @@ describe('LinkedIdentityDataSource', () => {
         .fn()
         .mockResolvedValue(mockIdentity);
 
-      const result = await dataSource.getLinkedIdentityById(chains, accountId);
+      const result = await dataSource.getLinkedIdentityById(accountId, chains);
 
       expect(dataSource._batchLinkedIdentitiesByIds.load).toHaveBeenCalledWith({
         accountId,
@@ -103,13 +80,14 @@ describe('LinkedIdentityDataSource', () => {
 
     it('should return null when identity is not found', async () => {
       const chains: DbSchema[] = ['mainnet'];
-      const accountId: RepoDriverId = '1' as RepoDriverId;
+      const repoId = ((3n << 224n) | 1n).toString() as RepoDriverId;
+      const accountId: LinkedIdentityId = repoId as unknown as LinkedIdentityId;
 
       dataSource._batchLinkedIdentitiesByIds.load = vi
         .fn()
         .mockResolvedValue(null);
 
-      const result = await dataSource.getLinkedIdentityById(chains, accountId);
+      const result = await dataSource.getLinkedIdentityById(accountId, chains);
 
       expect(result).toBeNull();
     });
@@ -117,19 +95,28 @@ describe('LinkedIdentityDataSource', () => {
 
   describe('_batchLinkedIdentitiesByIds DataLoader', () => {
     it('should batch load identities and map results correctly', async () => {
-      const identityKeys: RepoDriverMultiChainKey[] = [
-        { accountId: '1' as RepoDriverId, chains: ['mainnet'] },
-        { accountId: '2' as RepoDriverId, chains: ['mainnet'] },
+      const repoId1 = ((3n << 224n) | 1n).toString() as RepoDriverId;
+      const repoId2 = ((3n << 224n) | 2n).toString() as RepoDriverId;
+
+      const identityKeys: LinkedIdentityMultiChainKey[] = [
+        {
+          accountId: repoId1 as unknown as LinkedIdentityId,
+          chains: ['mainnet'],
+        },
+        {
+          accountId: repoId2 as unknown as LinkedIdentityId,
+          chains: ['mainnet'],
+        },
       ];
 
       const mockParsedResult = {
-        chains: ['mainnet'] as DbSchema[],
-        ids: ['1', '2'] as RepoDriverId[],
+        chains: ['mainnet'],
+        ids: [repoId1, repoId2],
       };
 
       const mockDbResults: LinkedIdentityDataValues[] = [
         {
-          accountId: '1' as RepoDriverId,
+          accountId: repoId1,
           ownerAddress: '0x123' as Address,
           identityType: 'orcid',
           ownerAccountId: '1' as AddressDriverId,
@@ -140,7 +127,7 @@ describe('LinkedIdentityDataSource', () => {
           chain: 'mainnet',
         },
         {
-          accountId: '2' as RepoDriverId,
+          accountId: repoId2,
           ownerAddress: '0x456' as Address,
           identityType: 'orcid',
           ownerAccountId: '2' as AddressDriverId,
@@ -155,31 +142,41 @@ describe('LinkedIdentityDataSource', () => {
       (parseMultiChainKeys as any).mockReturnValue(mockParsedResult);
       (linkedIdentityQueries.getByIds as any).mockResolvedValue(mockDbResults);
 
-      const result =
-        await dataSource._batchLinkedIdentitiesByIds.loadMany(identityKeys);
+      const result = await (
+        dataSource as any
+      )._batchLinkedIdentitiesByIds.loadMany(identityKeys);
 
       expect(parseMultiChainKeys).toHaveBeenCalledWith(identityKeys);
       expect(linkedIdentityQueries.getByIds).toHaveBeenCalledWith(
-        ['mainnet'],
-        ['1', '2'],
+        mockParsedResult.chains,
+        mockParsedResult.ids,
       );
       expect(result).toEqual(mockDbResults);
     });
 
     it('should return undefined for identities not found in batch', async () => {
-      const identityKeys: RepoDriverMultiChainKey[] = [
-        { accountId: '1' as RepoDriverId, chains: ['mainnet'] },
-        { accountId: '2' as RepoDriverId, chains: ['mainnet'] },
+      const repoId1 = ((3n << 224n) | 1n).toString() as RepoDriverId;
+      const repoId2 = ((3n << 224n) | 2n).toString() as RepoDriverId;
+
+      const identityKeys: LinkedIdentityMultiChainKey[] = [
+        {
+          accountId: repoId1 as unknown as LinkedIdentityId,
+          chains: ['mainnet'],
+        },
+        {
+          accountId: repoId2 as unknown as LinkedIdentityId,
+          chains: ['mainnet'],
+        },
       ];
 
       const mockParsedResult = {
-        chains: ['mainnet'] as DbSchema[],
-        ids: ['1', '2'] as RepoDriverId[],
+        chains: ['mainnet'],
+        ids: [repoId1, repoId2],
       };
 
       const mockDbResults: LinkedIdentityDataValues[] = [
         {
-          accountId: '1' as RepoDriverId,
+          accountId: repoId1,
           ownerAddress: '0x123' as Address,
           identityType: 'orcid',
           ownerAccountId: '1' as AddressDriverId,
@@ -194,115 +191,13 @@ describe('LinkedIdentityDataSource', () => {
       (parseMultiChainKeys as any).mockReturnValue(mockParsedResult);
       (linkedIdentityQueries.getByIds as any).mockResolvedValue(mockDbResults);
 
-      const results =
-        await dataSource._batchLinkedIdentitiesByIds.loadMany(identityKeys);
+      const results = await (
+        dataSource as any
+      )._batchLinkedIdentitiesByIds.loadMany(identityKeys);
 
       expect(results).toHaveLength(2);
       expect(results[0]).toEqual(mockDbResults[0]);
       expect(results[1]).toBeUndefined();
-    });
-  });
-
-  describe('getOrcidAccountsByFilter', () => {
-    it('should call linkedIdentityQueries.getOrcidAccountsByFilter with correct parameters', async () => {
-      const chains: DbSchema[] = ['mainnet'];
-      const where: OrcidAccountWhereInput = { accountId: 'test' };
-      const sort: OrcidAccountSortInput = {
-        field: OrcidAccountSortField.createdAt,
-        direction: SortDirection.DESC,
-      };
-      const limit = 10;
-
-      await dataSource.getOrcidAccountsByFilter(chains, where, sort, limit);
-
-      expect(
-        linkedIdentityQueries.getOrcidAccountsByFilter,
-      ).toHaveBeenCalledWith(chains, where, sort, limit);
-    });
-  });
-
-  describe('getOrcidAccountById', () => {
-    it('should load identities through DataLoader and filter for ORCID type', async () => {
-      const chains: DbSchema[] = ['mainnet', 'sepolia'];
-      const accountId: RepoDriverId = '1' as RepoDriverId;
-      const mockResults = [
-        {
-          accountId,
-          ownerAddress: '0x123' as Address,
-          identityType: 'orcid',
-          ownerAccountId: '1' as AddressDriverId,
-          isLinked: true,
-          lastProcessedVersion: '1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          chain: 'mainnet',
-        },
-        {
-          accountId,
-          ownerAddress: '0x123' as Address,
-          identityType: 'github',
-          ownerAccountId: '1' as AddressDriverId,
-          isLinked: true,
-          lastProcessedVersion: '1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          chain: 'mainnet',
-        },
-      ];
-
-      dataSource._batchLinkedIdentitiesByIds.loadMany = vi
-        .fn()
-        .mockResolvedValue(mockResults);
-
-      const result = await dataSource.getOrcidAccountById(accountId, chains);
-
-      expect(
-        dataSource._batchLinkedIdentitiesByIds.loadMany,
-      ).toHaveBeenCalledWith([
-        { accountId, chains: ['mainnet'] },
-        { accountId, chains: ['sepolia'] },
-      ]);
-      expect(result).toHaveLength(1);
-      expect(result![0].identityType).toBe('orcid');
-    });
-
-    it('should return null when no identities are found', async () => {
-      const chains: DbSchema[] = ['mainnet'];
-      const accountId: RepoDriverId = '1' as RepoDriverId;
-
-      dataSource._batchLinkedIdentitiesByIds.loadMany = vi
-        .fn()
-        .mockResolvedValue([]);
-
-      const result = await dataSource.getOrcidAccountById(accountId, chains);
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null when no ORCID identities are found', async () => {
-      const chains: DbSchema[] = ['mainnet'];
-      const accountId: RepoDriverId = '1' as RepoDriverId;
-      const mockResults = [
-        {
-          accountId,
-          ownerAddress: '0x123' as Address,
-          identityType: 'github',
-          ownerAccountId: '1' as AddressDriverId,
-          isLinked: true,
-          lastProcessedVersion: '1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          chain: 'mainnet',
-        },
-      ];
-
-      dataSource._batchLinkedIdentitiesByIds.loadMany = vi
-        .fn()
-        .mockResolvedValue(mockResults);
-
-      const result = await dataSource.getOrcidAccountById(accountId, chains);
-
-      expect(result).toBeNull();
     });
   });
 });

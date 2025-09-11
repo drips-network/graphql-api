@@ -5,7 +5,6 @@ import type {
   ImmutableSplitsDriverAccount,
   NftDriverAccount,
   LinkedIdentity as GqlLinkedIdentity,
-  OrcidLinkedIdentity as GqlOrcidLinkedIdentity,
   Project,
   RepoDriverAccount,
   SplitsReceiver,
@@ -17,7 +16,6 @@ import type { Context } from '../server';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { DbSchema, NftDriverId, RepoDriverId } from './types';
 import getUserAddress from '../utils/getUserAddress';
-import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils';
 import type { ProtoStream } from '../utils/buildAssetConfigs';
 import { toResolverProject } from '../project/projectUtils';
 import { toResolverDripLists } from '../drip-list/dripListUtils';
@@ -419,21 +417,6 @@ const commonResolvers = {
       if ('orcid' in linkedIdentity) return 'OrcidLinkedIdentity';
       return shouldNeverHappen('Unsupported linked identity shape');
     },
-  },
-  OrcidLinkedIdentity: {
-    account: (linkedIdentity: GqlOrcidLinkedIdentity): RepoDriverAccount =>
-      linkedIdentity.account,
-    owner: (
-      linkedIdentity: GqlOrcidLinkedIdentity,
-    ): AddressDriverAccount | null => linkedIdentity.owner ?? null,
-    isLinked: (linkedIdentity: GqlOrcidLinkedIdentity): boolean =>
-      linkedIdentity.isLinked,
-    createdAt: (linkedIdentity: GqlOrcidLinkedIdentity): Date =>
-      linkedIdentity.createdAt,
-    updatedAt: (linkedIdentity: GqlOrcidLinkedIdentity): Date =>
-      linkedIdentity.updatedAt,
-    orcid: (linkedIdentity: GqlOrcidLinkedIdentity): string =>
-      extractOrcidFromAccountId(linkedIdentity.account.accountId),
   },
 };
 

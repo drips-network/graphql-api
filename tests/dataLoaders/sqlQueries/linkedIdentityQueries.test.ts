@@ -7,6 +7,11 @@ import type {
   Address,
   AddressDriverId,
 } from '../../../src/common/types';
+import {
+  LinkedIdentityTypeField,
+  LinkedIdentitySortField,
+  SortDirection,
+} from '../../../src/generated/graphql';
 
 vi.mock('../../../src/database/connectToDatabase');
 
@@ -352,7 +357,7 @@ describe('linkedIdentityQueries', () => {
     });
   });
 
-  describe('getOrcidAccountById', () => {
+  describe('getByIds (ORCID filtering)', () => {
     test('should return ORCID account for given account ID', async () => {
       const mockResult = [
         {
@@ -372,13 +377,17 @@ describe('linkedIdentityQueries', () => {
 
       vi.mocked(dbConnection.query).mockResolvedValueOnce(mockResult as any);
 
-      const result = await linkedIdentityQueries.getOrcidAccountById(
-        'orcid-account-1' as RepoDriverId,
+      const result = await linkedIdentityQueries.getByIds(
         ['mainnet'],
+        ['orcid-account-1' as RepoDriverId],
       );
 
-      expect(result).toHaveLength(1);
-      expect(result![0]).toMatchObject({
+      const orcidResult = result.filter(
+        (identity) => identity.identityType === 'orcid',
+      );
+
+      expect(orcidResult).toHaveLength(1);
+      expect(orcidResult[0]).toMatchObject({
         accountId: 'orcid-account-1',
         identityType: 'orcid',
         ownerAddress: '0x123',
@@ -386,24 +395,22 @@ describe('linkedIdentityQueries', () => {
       });
 
       expect(dbConnection.query).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'WHERE "account_id" = :accountId AND "identity_type" = \'orcid\'',
-        ),
+        expect.stringContaining('WHERE "account_id" IN (:accountIds)'),
         expect.objectContaining({
-          replacements: { accountId: 'orcid-account-1' as RepoDriverId },
+          replacements: { accountIds: ['orcid-account-1'] },
         }),
       );
     });
 
-    test('should return null when no ORCID account found', async () => {
+    test('should return empty when no ORCID account found', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      const result = await linkedIdentityQueries.getOrcidAccountById(
-        'non-existent' as RepoDriverId,
+      const result = await linkedIdentityQueries.getByIds(
         ['mainnet'],
+        ['non-existent' as RepoDriverId],
       );
 
-      expect(result).toBeNull();
+      expect(result).toHaveLength(0);
     });
 
     test('should search across multiple chains', async () => {
@@ -425,9 +432,9 @@ describe('linkedIdentityQueries', () => {
 
       vi.mocked(dbConnection.query).mockResolvedValueOnce(mockResult as any);
 
-      const result = await linkedIdentityQueries.getOrcidAccountById(
-        'orcid-account-1' as RepoDriverId,
+      const result = await linkedIdentityQueries.getByIds(
         ['mainnet', 'sepolia', 'polygon_amoy'],
+        ['orcid-account-1' as RepoDriverId],
       );
 
       expect(result).toHaveLength(1);
@@ -448,9 +455,9 @@ describe('linkedIdentityQueries', () => {
     test('should apply LIMIT 1000', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountById(
-        'test-account' as RepoDriverId,
+      await linkedIdentityQueries.getByIds(
         ['mainnet'],
+        ['test-account' as RepoDriverId],
       );
 
       expect(dbConnection.query).toHaveBeenCalledWith(
@@ -460,8 +467,8 @@ describe('linkedIdentityQueries', () => {
     });
   });
 
-  describe('getOrcidAccountsByFilter', () => {
-    test('should return ORCID accounts without filters', async () => {
+  describe('getLinkedIdentitiesByFilter (ORCID filtering)', () => {
+    test('should return ORCID accounts without additional filters', async () => {
       const mockResult = [
         {
           dataValues: {
@@ -480,9 +487,10 @@ describe('linkedIdentityQueries', () => {
 
       vi.mocked(dbConnection.query).mockResolvedValueOnce(mockResult as any);
 
-      const result = await linkedIdentityQueries.getOrcidAccountsByFilter([
-        'mainnet',
-      ]);
+      const result = await linkedIdentityQueries.getLinkedIdentitiesByFilter(
+        ['mainnet'],
+        { type: LinkedIdentityTypeField.orcid },
+      );
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
@@ -491,9 +499,9 @@ describe('linkedIdentityQueries', () => {
       });
 
       expect(dbConnection.query).toHaveBeenCalledWith(
-        expect.stringContaining('WHERE "identity_type" = \'orcid\''),
+        expect.stringContaining('WHERE "identity_type" = :identityType'),
         expect.objectContaining({
-          replacements: { limit: 100 },
+          replacements: { limit: 100, identityType: 'orcid' },
         }),
       );
     });
@@ -501,7 +509,8 @@ describe('linkedIdentityQueries', () => {
     test('should filter by accountId', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(['mainnet'], {
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(['mainnet'], {
+        type: LinkedIdentityTypeField.orcid,
         accountId: 'orcid-1' as RepoDriverId,
       });
 
@@ -510,6 +519,7 @@ describe('linkedIdentityQueries', () => {
         expect.objectContaining({
           replacements: {
             limit: 100,
+            identityType: 'orcid',
             accountId: 'orcid-1' as RepoDriverId,
           },
         }),
@@ -519,7 +529,8 @@ describe('linkedIdentityQueries', () => {
     test('should filter by ownerAddress', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(['mainnet'], {
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(['mainnet'], {
+        type: LinkedIdentityTypeField.orcid,
         ownerAddress: '0x123' as Address,
       });
 
@@ -528,6 +539,7 @@ describe('linkedIdentityQueries', () => {
         expect.objectContaining({
           replacements: {
             limit: 100,
+            identityType: 'orcid',
             ownerAddress: '0x123' as Address,
           },
         }),
@@ -537,15 +549,17 @@ describe('linkedIdentityQueries', () => {
     test('should filter by isLinked true', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(['mainnet'], {
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(['mainnet'], {
+        type: LinkedIdentityTypeField.orcid,
         isLinked: true,
       });
 
       expect(dbConnection.query).toHaveBeenCalledWith(
-        expect.stringContaining('AND "is_linked" = :isLinked'),
+        expect.stringContaining('AND "isLinked" = :isLinked'),
         expect.objectContaining({
           replacements: {
             limit: 100,
+            identityType: 'orcid',
             isLinked: true,
           },
         }),
@@ -555,15 +569,17 @@ describe('linkedIdentityQueries', () => {
     test('should filter by isLinked false', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(['mainnet'], {
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(['mainnet'], {
+        type: LinkedIdentityTypeField.orcid,
         isLinked: false,
       });
 
       expect(dbConnection.query).toHaveBeenCalledWith(
-        expect.stringContaining('AND "is_linked" = :isLinked'),
+        expect.stringContaining('AND "isLinked" = :isLinked'),
         expect.objectContaining({
           replacements: {
             limit: 100,
+            identityType: 'orcid',
             isLinked: false,
           },
         }),
@@ -573,22 +589,25 @@ describe('linkedIdentityQueries', () => {
     test('should apply multiple filters together', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(['mainnet'], {
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(['mainnet'], {
+        type: LinkedIdentityTypeField.orcid,
         accountId: 'orcid-1' as RepoDriverId,
         ownerAddress: '0x123' as Address,
         isLinked: true,
       });
 
       const query = vi.mocked(dbConnection.query).mock.calls[0][0] as string;
+      expect(query).toContain('WHERE "identity_type" = :identityType');
       expect(query).toContain('AND "account_id" = :accountId');
       expect(query).toContain('AND "owner_address" = :ownerAddress');
-      expect(query).toContain('AND "is_linked" = :isLinked');
+      expect(query).toContain('AND "isLinked" = :isLinked');
 
       expect(dbConnection.query).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
           replacements: {
             limit: 100,
+            identityType: 'orcid',
             accountId: 'orcid-1' as RepoDriverId,
             ownerAddress: '0x123' as Address,
             isLinked: true,
@@ -600,10 +619,13 @@ describe('linkedIdentityQueries', () => {
     test('should sort by createdAt ASC', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(
         ['mainnet'],
-        undefined,
-        { field: 'createdAt', direction: 'ASC' },
+        { type: LinkedIdentityTypeField.orcid },
+        {
+          field: LinkedIdentitySortField.createdAt,
+          direction: SortDirection.ASC,
+        },
       );
 
       expect(dbConnection.query).toHaveBeenCalledWith(
@@ -615,10 +637,13 @@ describe('linkedIdentityQueries', () => {
     test('should sort by createdAt DESC', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(
         ['mainnet'],
-        undefined,
-        { field: 'createdAt', direction: 'DESC' },
+        { type: LinkedIdentityTypeField.orcid },
+        {
+          field: LinkedIdentitySortField.createdAt,
+          direction: SortDirection.DESC,
+        },
       );
 
       expect(dbConnection.query).toHaveBeenCalledWith(
@@ -630,10 +655,10 @@ describe('linkedIdentityQueries', () => {
     test('should default sort direction to ASC when not specified', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(
         ['mainnet'],
-        undefined,
-        { field: 'createdAt' },
+        { type: LinkedIdentityTypeField.orcid },
+        { field: LinkedIdentitySortField.createdAt },
       );
 
       expect(dbConnection.query).toHaveBeenCalledWith(
@@ -645,9 +670,9 @@ describe('linkedIdentityQueries', () => {
     test('should use custom limit', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(
         ['mainnet'],
-        undefined,
+        { type: LinkedIdentityTypeField.orcid },
         undefined,
         50,
       );
@@ -655,7 +680,7 @@ describe('linkedIdentityQueries', () => {
       expect(dbConnection.query).toHaveBeenCalledWith(
         expect.stringContaining('LIMIT :limit'),
         expect.objectContaining({
-          replacements: { limit: 50 },
+          replacements: { limit: 50, identityType: 'orcid' },
         }),
       );
     });
@@ -663,12 +688,14 @@ describe('linkedIdentityQueries', () => {
     test('should use default limit of 100', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(['mainnet']);
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(['mainnet'], {
+        type: 'orcid',
+      });
 
       expect(dbConnection.query).toHaveBeenCalledWith(
         expect.stringContaining('LIMIT :limit'),
         expect.objectContaining({
-          replacements: { limit: 100 },
+          replacements: { limit: 100, identityType: 'orcid' },
         }),
       );
     });
@@ -676,11 +703,10 @@ describe('linkedIdentityQueries', () => {
     test('should search across multiple chains', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter([
-        'mainnet',
-        'sepolia',
-        'polygon_amoy',
-      ]);
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(
+        ['mainnet', 'sepolia', 'polygon_amoy'],
+        { type: LinkedIdentityTypeField.orcid },
+      );
 
       const query = vi.mocked(dbConnection.query).mock.calls[0][0] as string;
       expect(query).toContain(
@@ -698,10 +724,13 @@ describe('linkedIdentityQueries', () => {
     test('should handle ORDER BY placement after UNION correctly', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
-      await linkedIdentityQueries.getOrcidAccountsByFilter(
+      await linkedIdentityQueries.getLinkedIdentitiesByFilter(
         ['mainnet', 'sepolia'],
-        undefined,
-        { field: 'createdAt', direction: 'DESC' },
+        { type: LinkedIdentityTypeField.orcid },
+        {
+          field: LinkedIdentitySortField.createdAt,
+          direction: SortDirection.DESC,
+        },
       );
 
       const query = vi.mocked(dbConnection.query).mock.calls[0][0] as string;

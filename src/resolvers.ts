@@ -6,7 +6,7 @@ import projectResolvers from './project/projectResolvers';
 import streamResolvers from './stream/streamResolvers';
 import subListResolvers from './sub-list/subListResolvers';
 import userResolvers from './user/userResolvers';
-import orcidAccountResolvers from './orcid-account/orcidAccountResolvers';
+import linkedIdentityResolvers from './linked-identity/linkedIdentityResolvers';
 
 const resolvers = {
   Query: {
@@ -16,7 +16,7 @@ const resolvers = {
     ...userResolvers.Query,
     ...streamResolvers.Query,
     ...commonResolvers.Query,
-    ...orcidAccountResolvers.Query,
+    ...linkedIdentityResolvers.Query,
   },
   Project: projectResolvers.Project,
   ProjectReceiver: commonResolvers.ProjectReceiver,
@@ -43,12 +43,8 @@ const resolvers = {
   EcosystemMainAccount: ecosystemResolvers.EcosystemMainAccount,
   SubList: subListResolvers.SubList,
   EcosystemSupport: commonResolvers.EcosystemSupport,
-  OrcidAccount: orcidAccountResolvers.OrcidAccount,
-  OrcidAccountData: orcidAccountResolvers.OrcidAccountData,
-  ClaimedOrcidAccountData: orcidAccountResolvers.ClaimedOrcidAccountData,
-  UnClaimedOrcidAccountData: orcidAccountResolvers.UnClaimedOrcidAccountData,
   LinkedIdentity: commonResolvers.LinkedIdentity,
-  OrcidLinkedIdentity: commonResolvers.OrcidLinkedIdentity,
+  OrcidLinkedIdentity: linkedIdentityResolvers.OrcidLinkedIdentity,
 };
 
 export default resolvers;
