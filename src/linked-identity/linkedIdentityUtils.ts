@@ -1,8 +1,12 @@
-import type { LinkedIdentity as GqlLinkedIdentity } from '../generated/graphql';
+import type {
+  LinkedIdentity as GqlLinkedIdentity,
+  OrcidLinkedIdentity as GqlOrcidLinkedIdentity,
+} from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { LinkedIdentityDataValues } from './LinkedIdentityModel';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils';
+import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 
 export default function toGqlLinkedIdentity(
   identity: LinkedIdentityDataValues,
@@ -10,6 +14,7 @@ export default function toGqlLinkedIdentity(
   switch (identity.identityType) {
     case 'orcid':
       return {
+        chain: dbSchemaToChain[identity.chain],
         account: {
           driver: Driver.REPO,
           accountId: identity.accountId,
@@ -23,10 +28,9 @@ export default function toGqlLinkedIdentity(
               }
             : null,
         isLinked: identity.isLinked,
-        createdAt: identity.createdAt,
-        updatedAt: identity.updatedAt,
+        isClaimed: Boolean(identity.ownerAccountId && identity.ownerAddress),
         orcid: extractOrcidFromAccountId(identity.accountId),
-      };
+      } as GqlOrcidLinkedIdentity;
     default:
       return shouldNeverHappen(
         `Unsupported linked identity type: ${identity.identityType}`,

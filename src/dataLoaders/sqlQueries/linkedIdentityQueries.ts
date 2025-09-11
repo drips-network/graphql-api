@@ -4,8 +4,8 @@ import type { LinkedIdentityDataValues } from '../../linked-identity/LinkedIdent
 import LinkedIdentityModel from '../../linked-identity/LinkedIdentityModel';
 import type { Address, DbSchema, RepoDriverId } from '../../common/types';
 import type {
-  OrcidAccountWhereInput,
-  OrcidAccountSortInput,
+  LinkedIdentityWhereInput,
+  LinkedIdentitySortInput,
 } from '../../generated/graphql';
 
 export default {
@@ -59,20 +59,25 @@ export default {
     ).map((identity) => identity.dataValues as LinkedIdentityDataValues);
   },
 
-  async getOrcidAccountsByFilter(
+  async getLinkedIdentitiesByFilter(
     chains: DbSchema[],
-    where?: OrcidAccountWhereInput,
-    sort?: OrcidAccountSortInput,
+    where?: LinkedIdentityWhereInput,
+    sort?: LinkedIdentitySortInput,
     limit: number = 100,
   ): Promise<LinkedIdentityDataValues[]> {
     const baseSQL = (schema: DbSchema) =>
       `SELECT *, '${schema}' AS chain FROM ${schema}.linked_identities`;
 
+    const conditions: string[] = [];
     const parameters: { [key: string]: any } = { limit };
-    let whereClause = ` WHERE "identity_type" = 'orcid'`;
+
+    if (where?.type) {
+      conditions.push(`"identity_type" = :identityType`);
+      parameters.identityType = where.type;
+    }
 
     if (where?.accountId) {
-      whereClause += ` AND "account_id" = :accountId`;
+      conditions.push(`"account_id" = :accountId`);
       parameters.accountId = where.accountId;
     }
 
@@ -82,9 +87,12 @@ export default {
     }
 
     if (where?.isLinked !== undefined) {
-      whereClause += ` AND "is_linked" = :isLinked`;
+      conditions.push(`"isLinked" = :isLinked`);
       parameters.isLinked = where.isLinked;
     }
+
+    const whereClause =
+      conditions.length > 0 ? ` WHERE ${conditions.join(' AND ')}` : '';
 
     let orderClause = '';
     if (sort?.field === 'createdAt') {
@@ -104,28 +112,5 @@ export default {
     ).map((identity) => identity.dataValues as LinkedIdentityDataValues);
   },
 
-  async getOrcidAccountById(
-    accountId: RepoDriverId,
-    chains: DbSchema[],
-  ): Promise<LinkedIdentityDataValues[] | null> {
-    const baseSQL = (schema: DbSchema) =>
-      `SELECT *, '${schema}' AS chain FROM ${schema}.linked_identities`;
-
-    const parameters: { [key: string]: any } = { accountId };
-    const whereClause = ` WHERE "account_id" = :accountId AND "identity_type" = 'orcid'`;
-
-    const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
-    const multiChainQuery = `${chainQueries.join(' UNION ')} LIMIT 1000`;
-
-    const results = (
-      await dbConnection.query(multiChainQuery, {
-        type: QueryTypes.SELECT,
-        replacements: parameters,
-        mapToModel: true,
-        model: LinkedIdentityModel,
-      })
-    ).map((identity) => identity.dataValues as LinkedIdentityDataValues);
-
-    return results.length > 0 ? results : null;
-  },
+  // getOrcidAccountById removed; rely on getByIds and filter by type if needed upstream
 };

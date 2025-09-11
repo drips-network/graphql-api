@@ -14,6 +14,7 @@ import { Driver, SupportedChain } from '../generated/graphql';
 import type { Context } from '../server';
 import assert, {
   assertIsImmutableSplitsDriverId,
+  assertIsLinkedIdentityId,
   assertIsNftDriverId,
   assertIsRepoDriverId,
   assertMany,
@@ -208,12 +209,12 @@ const ecosystemResolvers = {
 
       const linkedIdentityDependencies = await Promise.all(
         linkedIdentityReceivers.map(async (s) => {
-          assertIsRepoDriverId(s.receiverAccountId);
+          assertIsLinkedIdentityId(s.receiverAccountId);
 
           const identity =
             await linkedIdentitiesDataSource.getLinkedIdentityById(
+              s.receiverAccountId,
               [ecosystemChain],
-              s.receiverAccountId as RepoDriverId,
             );
 
           if (!identity) {

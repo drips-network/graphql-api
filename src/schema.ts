@@ -8,7 +8,6 @@ import streamTypeDef from './stream/streamTypeDef';
 import ecosystemTypeDef from './ecosystem/ecosystemTypeDef';
 import subListTypeDef from './sub-list/subListTypeDef';
 import linkedIdentityTypeDef from './linked-identity/linkedIdentityTypeDef';
-import orcidAccountTypeDef from './orcid-account/orcidAccountTypeDef';
 
 const rootTypeDef = gql`
   type Query {
@@ -37,13 +36,20 @@ const rootTypeDef = gql`
     streams(where: StreamWhereInput, chains: [SupportedChain!]): [Stream!]!
     ecosystemMainAccount(id: ID!, chain: SupportedChain!): EcosystemMainAccount
     chainStats(chains: [SupportedChain!]): [ChainStats!]!
-    orcidAccounts(
+
+    linkedIdentities(
       chains: [SupportedChain!]
-      where: OrcidAccountWhereInput
-      sort: OrcidAccountSortInput
+      where: LinkedIdentityWhereInput
+      sort: LinkedIdentitySortInput
       limit: Int = 100
-    ): [OrcidAccount!]!
-    orcidAccountById(id: ID!, chains: [SupportedChain!]): OrcidAccount
+    ): [LinkedIdentity!]!
+
+    linkedIdentityById(id: ID!, chain: SupportedChain!): LinkedIdentity
+
+    orcidLinkedIdentityByOrcid(
+      orcid: String!
+      chain: SupportedChain!
+    ): OrcidLinkedIdentity
   }
 `;
 
@@ -58,7 +64,6 @@ const typeDefs = [
   streamTypeDef,
   subListTypeDef,
   linkedIdentityTypeDef,
-  orcidAccountTypeDef,
 ];
 
 export default typeDefs;

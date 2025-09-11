@@ -29,6 +29,7 @@ import type { ProjectDataValues } from './ProjectModel';
 import validateProjectsInput from './projectValidators';
 import type { DripListDataValues } from '../drip-list/DripListModel';
 import {
+  assertIsLinkedIdentityId,
   assertIsNftDriverId,
   assertIsRepoDriverId,
   assertMany,
@@ -346,12 +347,12 @@ const projectResolvers = {
 
       const linkedIdentityDependencies = await Promise.all(
         linkedIdentityReceivers.map(async (s) => {
-          assertIsRepoDriverId(s.receiverAccountId);
+          assertIsLinkedIdentityId(s.receiverAccountId);
 
           const identity =
             await linkedIdentitiesDataSource.getLinkedIdentityById(
+              s.receiverAccountId,
               [projectChain],
-              s.receiverAccountId as RepoDriverId,
             );
 
           if (!identity) {

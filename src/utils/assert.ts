@@ -7,6 +7,7 @@ import type {
   ImmutableSplitsDriverId,
   AccountId,
   RepoSubAccountDriverId,
+  LinkedIdentityId,
 } from '../common/types';
 import { ProjectVerificationStatus } from '../generated/graphql';
 
@@ -293,9 +294,50 @@ export function isAccountId(id: string): boolean {
   );
 }
 
+// Linked Identity
+export function isLinkedIdentityId(id: string): id is LinkedIdentityId {
+  if (!isRepoDriverId(id)) {
+    return false;
+  }
+
+  return true;
+}
+
+export function assertIsLinkedIdentityId(
+  id: string,
+): asserts id is LinkedIdentityId {
+  if (!isLinkedIdentityId(id)) {
+    throw new Error(
+      `Failed to assert: '${id}' is not a valid LinkedIdentity ID.`,
+    );
+  }
+}
+
 // ORCID
-export function isOrcidId(id: string): boolean {
-  // ORCID ID format: 0000-0000-0000-000X where X can be 0-9 or X
-  const orcidPattern = /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/;
-  return orcidPattern.test(id);
+export function isOrcidId(orcidId: string): boolean {
+  if (typeof orcidId !== 'string') {
+    return false;
+  }
+
+  const baseStr: string = orcidId.replace(/[-\s]/g, '');
+
+  const orcidPattern: RegExp = /^\d{15}[\dX]$/;
+  if (!orcidPattern.test(baseStr.toUpperCase())) {
+    return false;
+  }
+
+  let total: number = 0;
+  for (let i = 0; i < 15; i++) {
+    const digit: number = parseInt(baseStr[i], 10);
+    total = (total + digit) * 2;
+  }
+
+  const remainder: number = total % 11;
+  const result: number = (12 - remainder) % 11;
+
+  const calculatedCheckDigit: string = result === 10 ? 'X' : String(result);
+
+  const actualCheckDigit: string = baseStr.charAt(15).toUpperCase();
+
+  return calculatedCheckDigit === actualCheckDigit;
 }

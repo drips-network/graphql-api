@@ -16,6 +16,7 @@ import { SupportedChain, Driver } from '../generated/graphql';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import type { Context } from '../server';
 import assert, {
+  assertIsLinkedIdentityId,
   assertIsNftDriverId,
   assertIsRepoDriverId,
   assertMany,
@@ -258,12 +259,12 @@ const dripListResolvers = {
 
       const linkedIdentityDependencies = await Promise.all(
         linkedIdentityReceivers.map(async (s) => {
-          assertIsRepoDriverId(s.receiverAccountId);
+          assertIsLinkedIdentityId(s.receiverAccountId);
 
           const identity =
             await linkedIdentitiesDataSource.getLinkedIdentityById(
+              s.receiverAccountId,
               [dripListChain],
-              s.receiverAccountId as RepoDriverId,
             );
 
           if (!identity) {
