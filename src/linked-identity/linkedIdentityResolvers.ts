@@ -12,6 +12,7 @@ import type { Context } from '../server';
 import queryableChains from '../common/queryableChains';
 import toGqlLinkedIdentity from './linkedIdentityUtils';
 import {
+  assertIsAccountId,
   assertIsLinkedIdentityId,
   isLinkedIdentityId,
   isOrcidId,
@@ -22,6 +23,8 @@ import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils'
 import validateLinkedIdentitiesInput from './linkedIdentityValidators';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import type { RepoDriverId } from '../common/types';
+import { resolveTotalEarned } from '../common/commonResolverLogic';
+import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 
 const linkedIdentityResolvers = {
   Query: {
@@ -115,6 +118,29 @@ const linkedIdentityResolvers = {
       Boolean(linkedIdentity.owner),
     orcid: (linkedIdentity: GqlOrcidLinkedIdentity): string =>
       extractOrcidFromAccountId(linkedIdentity.account.accountId),
+    support: (
+      linkedIdentity: GqlOrcidLinkedIdentity,
+      _: {},
+      { dataSources: { supportDataSource } }: Context,
+    ) => {
+      assertIsAccountId(linkedIdentity.account.accountId);
+      return supportDataSource.getAllSupportByAccountIdOnChain(
+        linkedIdentity.account.accountId,
+        chainToDbSchema[linkedIdentity.chain],
+      );
+    },
+    totalEarned: (
+      linkedIdentity: GqlOrcidLinkedIdentity,
+      _: {},
+      context: Context,
+    ) => resolveTotalEarned(linkedIdentity, context),
+    withdrawableBalances: (linkedIdentity: GqlOrcidLinkedIdentity) => {
+      assertIsLinkedIdentityId(linkedIdentity.account.accountId);
+      return getWithdrawableBalancesOnChain(
+        linkedIdentity.account.accountId,
+        chainToDbSchema[linkedIdentity.chain],
+      );
+    },
   },
 };
 

@@ -182,7 +182,7 @@ export function convertToAddressDriverId(id: string): AddressDriverId {
   return id as AddressDriverId;
 }
 
-export function assertIsAddressDiverId(
+export function assertIsAddressDriverId(
   id: string,
 ): asserts id is AddressDriverId {
   if (!isAddressDriverId(id)) {

@@ -8,6 +8,9 @@ const linkedIdentityTypeDef = gql`
     isLinked: Boolean!
     isClaimed: Boolean!
     orcid: String!
+    support: [SupportItem!]!
+    totalEarned: [Amount!]!
+    withdrawableBalances: [WithdrawableBalance!]!
   }
 
   union LinkedIdentity = OrcidLinkedIdentity
