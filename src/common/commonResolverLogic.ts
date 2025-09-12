@@ -1,5 +1,6 @@
 import type {
   DbSchema,
+  LinkedIdentityId,
   NftDriverId,
   RepoDriverId,
   ResolverClaimedProjectData,
@@ -11,6 +12,9 @@ import type { Context } from '../server';
 import mergeAmounts from '../utils/mergeAmounts';
 import splitEventsQueries from '../dataLoaders/sqlQueries/splitEventsQueries';
 import type SplitsReceiverModel from '../models/SplitsReceiverModel';
+import type { OrcidLinkedIdentity as GqlOrcidLinkedIdentity } from '../generated/graphql';
+import { assertIsLinkedIdentityId } from '../utils/assert';
+import { chainToDbSchema } from '../utils/chainSchemaMappings';
 
 export async function resolveTotalSplit(
   chains: DbSchema[],
@@ -39,10 +43,11 @@ export async function resolveTotalEarned(
     | ResolverClaimedProjectData
     | ResolverUnClaimedProjectData
     | ResolverDripListData
-    | ResolverEcosystemData,
+    | ResolverEcosystemData
+    | GqlOrcidLinkedIdentity,
   context: Context,
 ) {
-  let accountId: RepoDriverId | NftDriverId;
+  let accountId: RepoDriverId | NftDriverId | LinkedIdentityId;
   let chain: DbSchema;
   if ('parentProjectInfo' in entityData) {
     accountId = entityData.parentProjectInfo.projectId;
@@ -50,6 +55,10 @@ export async function resolveTotalEarned(
   } else if ('parentDripListInfo' in entityData) {
     accountId = entityData.parentDripListInfo.dripListId;
     chain = entityData.parentDripListInfo.dripListChain;
+  } else if ('isLinked' in entityData) {
+    assertIsLinkedIdentityId(entityData.account.accountId);
+    accountId = entityData.account.accountId;
+    chain = chainToDbSchema[entityData.chain];
   } else {
     accountId = entityData.parentEcosystemInfo.ecosystemId;
     chain = entityData.parentEcosystemInfo.ecosystemChain;

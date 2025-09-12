@@ -30,6 +30,9 @@ export default function toGqlLinkedIdentity(
         isLinked: identity.isLinked,
         isClaimed: Boolean(identity.ownerAccountId && identity.ownerAddress),
         orcid: extractOrcidFromAccountId(identity.accountId),
+        support: [],
+        totalEarned: [],
+        withdrawableBalances: [],
       } as GqlOrcidLinkedIdentity;
     default:
       return shouldNeverHappen(
