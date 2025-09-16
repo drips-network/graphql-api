@@ -55,7 +55,7 @@ export async function resolveTotalEarned(
   } else if ('parentDripListInfo' in entityData) {
     accountId = entityData.parentDripListInfo.dripListId;
     chain = entityData.parentDripListInfo.dripListChain;
-  } else if ('isLinked' in entityData) {
+  } else if ('areSplitsValid' in entityData) {
     assertIsLinkedIdentityId(entityData.account.accountId);
     accountId = entityData.account.accountId;
     chain = chainToDbSchema[entityData.chain];

@@ -29,7 +29,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid' as const,
             ownerAddress: '0x123' as Address,
             ownerAccountId: 'owner-1' as AddressDriverId,
-            isLinked: true,
+            areSplitsValid: true,
             lastProcessedVersion: '1.0.0',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -72,7 +72,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid' as const,
             ownerAddress: '0x123' as Address,
             ownerAccountId: 'owner-1' as AddressDriverId,
-            isLinked: true,
+            areSplitsValid: true,
             lastProcessedVersion: '1.0.0',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -85,7 +85,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid' as const,
             ownerAddress: '0x456' as Address,
             ownerAccountId: 'owner-2' as AddressDriverId,
-            isLinked: true,
+            areSplitsValid: true,
             lastProcessedVersion: '1.0.0',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -195,7 +195,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid' as const,
             ownerAddress: '0x123' as Address,
             ownerAccountId: 'owner-1' as AddressDriverId,
-            isLinked: true,
+            areSplitsValid: true,
             lastProcessedVersion: '1.0.0',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -238,7 +238,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid' as const,
             ownerAddress: '0x123' as Address,
             ownerAccountId: 'owner-1' as AddressDriverId,
-            isLinked: true,
+            areSplitsValid: true,
             lastProcessedVersion: '1.0.0',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -251,7 +251,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid' as const,
             ownerAddress: '0x123' as Address,
             ownerAccountId: 'owner-2' as AddressDriverId,
-            isLinked: true,
+            areSplitsValid: true,
             lastProcessedVersion: '1.0.0',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -366,7 +366,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid' as const,
             ownerAddress: '0x123' as Address,
             ownerAccountId: 'owner-1' as AddressDriverId,
-            isLinked: true,
+            areSplitsValid: true,
             lastProcessedVersion: '1.0.0',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -421,7 +421,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid' as const,
             ownerAddress: '0x123' as Address,
             ownerAccountId: 'owner-1' as AddressDriverId,
-            isLinked: true,
+            areSplitsValid: true,
             lastProcessedVersion: '1.0.0',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -476,7 +476,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid' as const,
             ownerAddress: '0x123' as Address,
             ownerAccountId: 'owner-1' as AddressDriverId,
-            isLinked: true,
+            areSplitsValid: true,
             lastProcessedVersion: '1.0.0',
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -546,41 +546,41 @@ describe('linkedIdentityQueries', () => {
       );
     });
 
-    test('should filter by isLinked true', async () => {
+    test('should filter by areSplitsValid true', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
       await linkedIdentityQueries.getLinkedIdentitiesByFilter(['mainnet'], {
         type: LinkedIdentityTypeField.orcid,
-        isLinked: true,
+        areSplitsValid: true,
       });
 
       expect(dbConnection.query).toHaveBeenCalledWith(
-        expect.stringContaining('AND "isLinked" = :isLinked'),
+        expect.stringContaining('AND "areSplitsValid" = :areSplitsValid'),
         expect.objectContaining({
           replacements: {
             limit: 100,
             identityType: 'orcid',
-            isLinked: true,
+            areSplitsValid: true,
           },
         }),
       );
     });
 
-    test('should filter by isLinked false', async () => {
+    test('should filter by areSplitsValid false', async () => {
       vi.mocked(dbConnection.query).mockResolvedValueOnce([] as any);
 
       await linkedIdentityQueries.getLinkedIdentitiesByFilter(['mainnet'], {
         type: LinkedIdentityTypeField.orcid,
-        isLinked: false,
+        areSplitsValid: false,
       });
 
       expect(dbConnection.query).toHaveBeenCalledWith(
-        expect.stringContaining('AND "isLinked" = :isLinked'),
+        expect.stringContaining('AND "areSplitsValid" = :areSplitsValid'),
         expect.objectContaining({
           replacements: {
             limit: 100,
             identityType: 'orcid',
-            isLinked: false,
+            areSplitsValid: false,
           },
         }),
       );
@@ -593,14 +593,14 @@ describe('linkedIdentityQueries', () => {
         type: LinkedIdentityTypeField.orcid,
         accountId: 'orcid-1' as RepoDriverId,
         ownerAddress: '0x123' as Address,
-        isLinked: true,
+        areSplitsValid: true,
       });
 
       const query = vi.mocked(dbConnection.query).mock.calls[0][0] as string;
       expect(query).toContain('WHERE "identity_type" = :identityType');
       expect(query).toContain('AND "account_id" = :accountId');
       expect(query).toContain('AND "owner_address" = :ownerAddress');
-      expect(query).toContain('AND "isLinked" = :isLinked');
+      expect(query).toContain('AND "areSplitsValid" = :areSplitsValid');
 
       expect(dbConnection.query).toHaveBeenCalledWith(
         expect.any(String),
@@ -610,7 +610,7 @@ describe('linkedIdentityQueries', () => {
             identityType: 'orcid',
             accountId: 'orcid-1' as RepoDriverId,
             ownerAddress: '0x123' as Address,
-            isLinked: true,
+            areSplitsValid: true,
           },
         }),
       );
