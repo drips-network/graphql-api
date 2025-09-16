@@ -27,7 +27,7 @@ export default function toGqlLinkedIdentity(
                 address: identity.ownerAddress,
               }
             : null,
-        areSplitsValid: identity.areSplitsValid,
+        areSplitsValid: Boolean(identity.areSplitsValid),
         isClaimed: Boolean(identity.ownerAccountId && identity.ownerAddress),
         orcid: extractOrcidFromAccountId(identity.accountId),
         support: [],
