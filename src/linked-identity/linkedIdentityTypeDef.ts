@@ -5,7 +5,7 @@ const linkedIdentityTypeDef = gql`
     chain: SupportedChain!
     account: RepoDriverAccount!
     owner: AddressDriverAccount
-    isLinked: Boolean!
+    areSplitsValid: Boolean!
     isClaimed: Boolean!
     orcid: String!
     support: [SupportItem!]!
@@ -23,7 +23,7 @@ const linkedIdentityTypeDef = gql`
     type: LinkedIdentityTypeField
     accountId: String
     ownerAddress: String
-    isLinked: Boolean
+    areSplitsValid: Boolean
   }
 
   input LinkedIdentitySortInput {

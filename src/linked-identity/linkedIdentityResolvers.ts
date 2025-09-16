@@ -112,8 +112,8 @@ const linkedIdentityResolvers = {
     owner: (
       linkedIdentity: GqlOrcidLinkedIdentity,
     ): AddressDriverAccount | null => linkedIdentity.owner ?? null,
-    isLinked: (linkedIdentity: GqlOrcidLinkedIdentity): boolean =>
-      linkedIdentity.isLinked,
+    areSplitsValid: (linkedIdentity: GqlOrcidLinkedIdentity): boolean =>
+      linkedIdentity.areSplitsValid,
     isClaimed: (linkedIdentity: GqlOrcidLinkedIdentity): boolean =>
       Boolean(linkedIdentity.owner),
     orcid: (linkedIdentity: GqlOrcidLinkedIdentity): string =>

@@ -86,9 +86,9 @@ export default {
       parameters.ownerAddress = where.ownerAddress;
     }
 
-    if (where?.isLinked !== undefined) {
-      conditions.push(`"isLinked" = :isLinked`);
-      parameters.isLinked = where.isLinked;
+    if (where?.areSplitsValid !== undefined) {
+      conditions.push(`"areSplitsValid" = :areSplitsValid`);
+      parameters.areSplitsValid = where.areSplitsValid;
     }
 
     const whereClause =
