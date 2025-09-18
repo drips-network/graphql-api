@@ -1,3 +1,5 @@
+import appSettings from '../common/appSettings';
+
 interface IOrcidValidationCache {
   get(orcid: string): boolean | undefined;
   set(orcid: string, exists: boolean): void;
@@ -54,7 +56,7 @@ export default async function validateOrcidExists(
 
   try {
     const response = await fetch(
-      `https://pub.sandbox.orcid.org/v3.0/${orcidId}/person`,
+      `${appSettings.orcidApiEndpoint}/${orcidId}/person`,
       {
         method: 'HEAD',
         headers: {

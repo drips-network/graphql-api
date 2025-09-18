@@ -43,4 +43,6 @@ export default {
     process.env.IPFS_GATEWAY_URL || 'https://drips.mypinata.cloud',
   githubToken: process.env.GITHUB_TOKEN,
   redisUrl: process.env.REDIS_URL,
+  orcidApiEndpoint:
+    process.env.ORCID_API_ENDPOINT || 'https://pub.orcid.org/v3.0',
 };

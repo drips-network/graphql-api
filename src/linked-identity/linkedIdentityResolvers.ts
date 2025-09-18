@@ -10,15 +10,16 @@ import type {
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import type { Context } from '../server';
 import queryableChains from '../common/queryableChains';
-import toGqlLinkedIdentity from './linkedIdentityUtils';
+import toGqlLinkedIdentity, {
+  toFakeUnclaimedOrcid,
+} from './linkedIdentityUtils';
 import {
-  assertIsAccountId,
   assertIsLinkedIdentityId,
   isLinkedIdentityId,
   isOrcidId,
 } from '../utils/assert';
 import validateOrcidExists from '../orcid-account/validateOrcidExists';
-import { getCrossChainOrcidAccountIdByAddress } from '../common/dripsContracts';
+import { getCrossChainOrcidAccountIdByOrcidId } from '../common/dripsContracts';
 import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils';
 import validateLinkedIdentitiesInput from './linkedIdentityValidators';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
@@ -90,18 +91,20 @@ const linkedIdentityResolvers = {
       const exists = await validateOrcidExists(orcid);
       if (!exists) return null;
 
-      const orcidId: RepoDriverId = await getCrossChainOrcidAccountIdByAddress(
-        orcid,
-        [chainToDbSchema[chain]],
-      );
+      const orcidAccountId: RepoDriverId =
+        await getCrossChainOrcidAccountIdByOrcidId(orcid, [
+          chainToDbSchema[chain],
+        ]);
 
-      assertIsLinkedIdentityId(orcidId);
+      assertIsLinkedIdentityId(orcidAccountId);
       const identity = await linkedIdentitiesDataSource.getLinkedIdentityById(
-        orcidId,
+        orcidAccountId,
         [chainToDbSchema[chain]],
       );
 
-      return identity ? toGqlLinkedIdentity(identity) : null;
+      return identity
+        ? toGqlLinkedIdentity(identity)
+        : toFakeUnclaimedOrcid(orcid, orcidAccountId, chain);
     },
   },
   OrcidLinkedIdentity: {
@@ -123,7 +126,7 @@ const linkedIdentityResolvers = {
       _: {},
       { dataSources: { supportDataSource } }: Context,
     ) => {
-      assertIsAccountId(linkedIdentity.account.accountId);
+      assertIsLinkedIdentityId(linkedIdentity.account.accountId);
       return supportDataSource.getAllSupportByAccountIdOnChain(
         linkedIdentity.account.accountId,
         chainToDbSchema[linkedIdentity.chain],

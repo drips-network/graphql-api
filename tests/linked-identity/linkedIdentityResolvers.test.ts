@@ -16,12 +16,14 @@ import type {
   LinkedIdentityId,
   Address,
 } from '../../src/common/types';
-import toGqlLinkedIdentity from '../../src/linked-identity/linkedIdentityUtils';
+import toGqlLinkedIdentity, {
+  toFakeUnclaimedOrcid,
+} from '../../src/linked-identity/linkedIdentityUtils';
 import validateLinkedIdentitiesInput from '../../src/linked-identity/linkedIdentityValidators';
 import { validateChainsQueryArg } from '../../src/utils/commonInputValidators';
 import * as assertUtils from '../../src/utils/assert';
 import validateOrcidExists from '../../src/orcid-account/validateOrcidExists';
-import { getCrossChainOrcidAccountIdByAddress } from '../../src/common/dripsContracts';
+import { getCrossChainOrcidAccountIdByOrcidId } from '../../src/common/dripsContracts';
 
 vi.mock('../../src/linked-identity/linkedIdentityUtils');
 vi.mock('../../src/linked-identity/linkedIdentityValidators');
@@ -180,7 +182,7 @@ describe('linkedIdentityResolvers', () => {
 
       vi.mocked(assertUtils.isOrcidId).mockReturnValue(true);
       vi.mocked(validateOrcidExists).mockResolvedValue(true);
-      vi.mocked(getCrossChainOrcidAccountIdByAddress).mockResolvedValue(
+      vi.mocked(getCrossChainOrcidAccountIdByOrcidId).mockResolvedValue(
         linkedIdentityId as unknown as RepoDriverId,
       );
       vi.mocked(assertUtils.assertIsLinkedIdentityId).mockImplementation(
@@ -208,7 +210,7 @@ describe('linkedIdentityResolvers', () => {
 
       expect(validateOrcidExists).toHaveBeenCalledWith(orcid);
 
-      expect(getCrossChainOrcidAccountIdByAddress).toHaveBeenCalledWith(orcid, [
+      expect(getCrossChainOrcidAccountIdByOrcidId).toHaveBeenCalledWith(orcid, [
         'mainnet',
       ]);
 
@@ -224,6 +226,62 @@ describe('linkedIdentityResolvers', () => {
       expect(toGqlLinkedIdentity).toHaveBeenCalledWith(mockDbIdentity);
 
       expect(result).toEqual(expectedGqlIdentity);
+    });
+
+    test('should return fallback when identity is missing in DB', async () => {
+      const orcid = '0000-0002-1825-0097';
+      const repoId = ((3n << 224n) | 999n).toString() as RepoDriverId;
+      const linkedIdentityId = repoId as unknown as LinkedIdentityId;
+      const args = {
+        orcid,
+        chain: SupportedChain.MAINNET,
+      };
+
+      const expectedFallback = {
+        chain: SupportedChain.MAINNET,
+      } as unknown as GqlLinkedIdentity;
+
+      vi.mocked(assertUtils.isOrcidId).mockReturnValue(true);
+      vi.mocked(validateOrcidExists).mockResolvedValue(true);
+      vi.mocked(getCrossChainOrcidAccountIdByOrcidId).mockResolvedValue(
+        linkedIdentityId as unknown as RepoDriverId,
+      );
+      vi.mocked(assertUtils.assertIsLinkedIdentityId).mockImplementation(
+        () => {}, // eslint-disable-line no-empty-function
+      );
+      vi.mocked(dataSource.getLinkedIdentityById).mockResolvedValue(null);
+      vi.mocked(toFakeUnclaimedOrcid).mockReturnValue(expectedFallback as any);
+
+      const result =
+        await linkedIdentityResolvers.Query.orcidLinkedIdentityByOrcid(
+          undefined,
+          args,
+          {
+            dataSources: {
+              linkedIdentitiesDataSource: dataSource,
+            } as any,
+          },
+        );
+
+      expect(validateChainsQueryArg).toHaveBeenCalledWith([args.chain]);
+      expect(validateOrcidExists).toHaveBeenCalledWith(orcid);
+      expect(getCrossChainOrcidAccountIdByOrcidId).toHaveBeenCalledWith(orcid, [
+        'mainnet',
+      ]);
+      expect(assertUtils.assertIsLinkedIdentityId).toHaveBeenCalledWith(
+        linkedIdentityId,
+      );
+      expect(dataSource.getLinkedIdentityById).toHaveBeenCalledWith(
+        linkedIdentityId,
+        ['mainnet'],
+      );
+      expect(toFakeUnclaimedOrcid).toHaveBeenCalledWith(
+        orcid,
+        repoId,
+        SupportedChain.MAINNET,
+      );
+      expect(toGqlLinkedIdentity).not.toHaveBeenCalled();
+      expect(result).toEqual(expectedFallback);
     });
   });
 });

@@ -223,7 +223,7 @@ export async function getCrossChainRepoDriverAccountIdByAddress(
   return accountId as RepoDriverId;
 }
 
-export async function getCrossChainOrcidAccountIdByAddress(
+export async function getCrossChainOrcidAccountIdByOrcidId(
   orcidId: string,
   chainsToQuery: DbSchema[],
 ): Promise<RepoDriverId> {
