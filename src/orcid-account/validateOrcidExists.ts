@@ -54,7 +54,7 @@ export default async function validateOrcidExists(
 
   try {
     const response = await fetch(
-      `https://pub.orcid.org/v3.0/${orcidId}/person`,
+      `https://pub.sandbox.orcid.org/v3.0/${orcidId}/person`,
       {
         method: 'HEAD',
         headers: {
