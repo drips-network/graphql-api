@@ -1,12 +1,14 @@
 import type {
   LinkedIdentity as GqlLinkedIdentity,
   OrcidLinkedIdentity as GqlOrcidLinkedIdentity,
+  SupportedChain,
 } from '../generated/graphql';
 import { Driver } from '../generated/graphql';
 import type { LinkedIdentityDataValues } from './LinkedIdentityModel';
 import shouldNeverHappen from '../utils/shouldNeverHappen';
 import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
+import type { RepoDriverId } from '../common/types';
 
 export default function toGqlLinkedIdentity(
   identity: LinkedIdentityDataValues,
@@ -39,4 +41,25 @@ export default function toGqlLinkedIdentity(
         `Unsupported linked identity type: ${identity.identityType}`,
       );
   }
+}
+
+export function toFakeUnclaimedOrcid(
+  orcid: string,
+  orcidAccountId: RepoDriverId,
+  chain: SupportedChain,
+): GqlOrcidLinkedIdentity {
+  return {
+    chain,
+    account: {
+      driver: Driver.REPO,
+      accountId: orcidAccountId,
+    },
+    owner: null,
+    areSplitsValid: true,
+    isClaimed: false,
+    orcid,
+    support: [],
+    totalEarned: [],
+    withdrawableBalances: [],
+  };
 }

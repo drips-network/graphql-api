@@ -1,7 +1,9 @@
 import { describe, test, expect } from 'vitest';
-import toGqlLinkedIdentity from '../../src/linked-identity/linkedIdentityUtils';
+import toGqlLinkedIdentity, {
+  toFakeUnclaimedOrcid,
+} from '../../src/linked-identity/linkedIdentityUtils';
 import type { LinkedIdentityDataValues } from '../../src/linked-identity/LinkedIdentityModel';
-import { Driver } from '../../src/generated/graphql';
+import { Driver, SupportedChain } from '../../src/generated/graphql';
 import type {
   Address,
   AddressDriverId,
@@ -72,6 +74,34 @@ describe('linkedIdentityUtils', () => {
         },
         owner: null,
         areSplitsValid: false,
+        isClaimed: false,
+        orcid: '0009-0001-5257-5119',
+        support: [],
+        totalEarned: [],
+        withdrawableBalances: [],
+      });
+    });
+  });
+
+  describe('toFakeUnclaimedOrcid', () => {
+    test('should build unclaimed ORCID identity with defaults', () => {
+      const accountId =
+        '81320912658542974439730181977206773330805723773165208113981035642880' as RepoDriverId;
+
+      const result = toFakeUnclaimedOrcid(
+        '0009-0001-5257-5119',
+        accountId,
+        SupportedChain.MAINNET,
+      );
+
+      expect(result).toEqual({
+        chain: SupportedChain.MAINNET,
+        account: {
+          driver: Driver.REPO,
+          accountId,
+        },
+        owner: null,
+        areSplitsValid: true,
         isClaimed: false,
         orcid: '0009-0001-5257-5119',
         support: [],
