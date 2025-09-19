@@ -6,6 +6,7 @@ import type {
   OrcidLinkedIdentity as GqlOrcidLinkedIdentity,
   AddressDriverAccount,
   RepoDriverAccount,
+  OrcidMetadata as GqlOrcidMetadata,
 } from '../generated/graphql';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import type { Context } from '../server';
@@ -19,6 +20,7 @@ import {
   isOrcidId,
 } from '../utils/assert';
 import validateOrcidExists from '../orcid-account/validateOrcidExists';
+import { fetchOrcidProfile } from '../orcid-account/orcidApi';
 import { getCrossChainOrcidAccountIdByOrcidId } from '../common/dripsContracts';
 import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils';
 import validateLinkedIdentitiesInput from './linkedIdentityValidators';
@@ -121,6 +123,15 @@ const linkedIdentityResolvers = {
       Boolean(linkedIdentity.owner),
     orcid: (linkedIdentity: GqlOrcidLinkedIdentity): string =>
       extractOrcidFromAccountId(linkedIdentity.account.accountId),
+    orcidMetadata: async (
+      linkedIdentity: GqlOrcidLinkedIdentity,
+    ): Promise<GqlOrcidMetadata | null> => {
+      const orcid = extractOrcidFromAccountId(linkedIdentity.account.accountId);
+      const profile = await fetchOrcidProfile(orcid); // TODO: This could cause N+1 queries if multiple ORCID identities are resolved. Consider DataLoader pattern if that becomes an issue.
+      if (!profile) return null;
+
+      return { ...profile };
+    },
     support: (
       linkedIdentity: GqlOrcidLinkedIdentity,
       _: {},

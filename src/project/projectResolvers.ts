@@ -46,7 +46,7 @@ import getUserAddress from '../utils/getUserAddress';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
 import { calcSubRepoDriverId } from '../utils/repoSubAccountIdUtils';
 import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
-import { getGitHubRepoByUrl } from '../services/github';
+import { getGitHubRepoByUrl } from './github';
 
 const projectResolvers = {
   Query: {
