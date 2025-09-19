@@ -45,8 +45,8 @@ import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import getUserAddress from '../utils/getUserAddress';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
 import { calcSubRepoDriverId } from '../utils/repoSubAccountIdUtils';
-import { getGitHubRepoByUrl } from '../services/github';
 import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
+import { getGitHubRepoByUrl } from './github';
 
 const projectResolvers = {
   Query: {
