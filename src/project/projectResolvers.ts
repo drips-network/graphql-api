@@ -1,3 +1,4 @@
+import { GraphQLError } from 'graphql';
 import type {
   NftDriverId,
   RepoDriverId,
@@ -106,7 +107,9 @@ const projectResolvers = {
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<ResolverProject | null> => {
       if (!isGitHubUrl(url)) {
-        return null;
+        throw new GraphQLError('Only valid GitHub URLs are supported.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
       }
 
       if (chains?.length) {
