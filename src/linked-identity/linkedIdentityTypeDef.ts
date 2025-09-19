@@ -8,9 +8,15 @@ const linkedIdentityTypeDef = gql`
     areSplitsValid: Boolean!
     isClaimed: Boolean!
     orcid: String!
+    orcidMetadata: OrcidMetadata
     support: [SupportItem!]!
     totalEarned: [Amount!]!
     withdrawableBalances: [WithdrawableBalance!]!
+  }
+
+  type OrcidMetadata {
+    givenName: String
+    familyName: String
   }
 
   union LinkedIdentity = OrcidLinkedIdentity

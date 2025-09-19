@@ -24,7 +24,7 @@ import { singleOrDefault } from '../utils/linq';
 import { dbSchemaToChain } from '../utils/chainSchemaMappings';
 import assert from '../utils/assert';
 import type { projectSortFields } from './projectValidators';
-import { getGitHubRepoByUrl } from '../services/github';
+import { getGitHubRepoByUrl } from './github';
 import extractProjectInfoFromUrl from '../utils/extractProjectInfoFromUrl';
 
 export function splitProjectName(projectName: string): {

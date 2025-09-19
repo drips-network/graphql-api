@@ -32,6 +32,7 @@ vi.mock('../../src/utils/assert');
 vi.mock('../../src/orcid-account/validateOrcidExists');
 vi.mock('../../src/common/dripsContracts');
 vi.mock('../../src/orcid-account/orcidAccountIdUtils');
+vi.mock('../../src/orcid-account/orcidApi');
 
 describe('linkedIdentityResolvers', () => {
   let dataSource: LinkedIdentityDataSource;

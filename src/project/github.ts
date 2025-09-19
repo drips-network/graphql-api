@@ -1,8 +1,9 @@
 /* eslint-disable no-console */
 import { z } from 'zod';
 import appSettings from '../common/appSettings';
-import { getCache, setCache } from '../cache/redis';
+import { getCache, setCacheWithJitter } from '../cache/redis';
 import extractProjectInfoFromUrl from '../utils/extractProjectInfoFromUrl';
+import { fetchWithTimeout } from '../utils/fetchWithTimeout';
 
 export const repoSchema = z.object({
   url: z.string(),
@@ -15,9 +16,6 @@ export const repoSchema = z.object({
 });
 
 export type GitHubRepoData = z.infer<typeof repoSchema>;
-
-const SUCCESS_CACHE_TTL = 6 * 60 * 60; // 6 hours
-const ERROR_CACHE_TTL = 30 * 60; // 30 minutes
 
 function createCacheKey(owner: string, repo: string): string {
   return `github:repo:${owner.toLowerCase()}:${repo.toLowerCase()}`;
@@ -56,11 +54,12 @@ async function fetchGitHubRepoData(
   const cacheKey = createCacheKey(owner, repo);
 
   // Try cache first
-  const cachedData = await getCache(cacheKey);
+  const { value: cachedData } = await getCache(cacheKey);
   if (cachedData) {
     const parsed = JSON.parse(cachedData);
     if (parsed === null) {
       // Cached 404
+      console.log('GitHub repo cache hit with null entry.', { owner, repo });
       return null;
     }
     return repoSchema.parse(parsed);
@@ -74,7 +73,9 @@ async function fetchGitHubRepoData(
       headers.Authorization = `Bearer ${appSettings.githubToken}`;
     }
 
-    const response = await fetch(url, { headers });
+    console.log('Fetching GitHub repo from API.', { owner, repo });
+
+    const response = await fetchWithTimeout(url, { headers });
 
     const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
     const rateLimitReset = response.headers.get('x-ratelimit-reset');
@@ -90,7 +91,12 @@ async function fetchGitHubRepoData(
 
     if (response.status === 404) {
       // Cache the 404 for shorter time
-      await setCache(cacheKey, JSON.stringify(null), ERROR_CACHE_TTL);
+      await setCacheWithJitter(
+        cacheKey,
+        JSON.stringify(null),
+        appSettings.cacheSettings.projectErrorTtlSeconds,
+        appSettings.cacheSettings.ttlJitterRatio,
+      );
       return null;
     }
 
@@ -105,7 +111,14 @@ async function fetchGitHubRepoData(
     const repoData = mapGhResponse(validatedApiResponse);
     const validatedData = repoSchema.parse(repoData);
 
-    await setCache(cacheKey, JSON.stringify(validatedData), SUCCESS_CACHE_TTL);
+    await setCacheWithJitter(
+      cacheKey,
+      JSON.stringify(validatedData),
+      appSettings.cacheSettings.projectSuccessTtlSeconds,
+      appSettings.cacheSettings.ttlJitterRatio,
+    );
+
+    console.log('GitHub repo fetched from API.', { owner, repo });
 
     return validatedData;
   } catch (error: any) {
