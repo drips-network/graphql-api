@@ -25,9 +25,9 @@ export default class LinkedIdentityModel extends Model<
 > {
   public declare accountId: RepoDriverId;
   public declare identityType: LinkedIdentityType;
-  public declare ownerAddress: Address;
-  public declare ownerAccountId: AddressDriverId;
-  public declare isLinked: boolean;
+  public declare ownerAddress: Address | null;
+  public declare ownerAccountId: AddressDriverId | null;
+  public declare areSplitsValid: boolean;
   public declare lastProcessedVersion: string;
   public declare createdAt: CreationOptional<Date>;
   public declare updatedAt: CreationOptional<Date>;
@@ -44,14 +44,14 @@ export default class LinkedIdentityModel extends Model<
           type: DataTypes.ENUM(...LINKED_IDENTITY_TYPES),
         },
         ownerAddress: {
-          allowNull: false,
+          allowNull: true,
           type: DataTypes.STRING,
         },
         ownerAccountId: {
-          allowNull: false,
+          allowNull: true,
           type: DataTypes.STRING,
         },
-        isLinked: {
+        areSplitsValid: {
           allowNull: false,
           type: DataTypes.BOOLEAN,
         },

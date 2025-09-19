@@ -1,14 +1,11 @@
 import type { AnyVersion } from '@efstajas/versioned-parser';
 import type {
-  ClaimedOrcidAccountData,
   ClaimedProjectData,
   DripList,
   EcosystemMainAccount,
   Give,
-  OrcidAccount,
   Project,
   SubList,
-  UnClaimedOrcidAccountData,
   UnClaimedProjectData,
   User,
   UserData,
@@ -43,7 +40,10 @@ export type AccountId =
   | RepoDriverId
   | ImmutableSplitsDriverId
   | RepoDeadlineDriverId
-  | RepoSubAccountDriverId;
+  | RepoSubAccountDriverId
+  | LinkedIdentityId;
+
+export type LinkedIdentityId = string & { __brand: 'LinkedIdentityId' };
 
 export type Address = string & { __brand: 'Address' };
 
@@ -104,30 +104,7 @@ export type ResolverClaimedProjectData = ClaimedProjectData &
 export type ResolverUnClaimedProjectData = UnClaimedProjectData &
   ProjectDataParentProjectInfo;
 
-export type OrcidSource = {
-  url: string;
-};
-
-export type ResolverOrcidAccount = Omit<OrcidAccount, 'source'> & {
-  source: OrcidSource;
-  chainData: (
-    | ResolverClaimedOrcidAccountData
-    | ResolverUnClaimedOrcidAccountData
-  )[];
-};
-
-type OrcidAccountDataParentOrcidAccountInfo = {
-  parentOrcidAccountInfo: {
-    accountId: RepoDriverId;
-    accountChain: DbSchema;
-  };
-};
-
-export type ResolverClaimedOrcidAccountData = ClaimedOrcidAccountData &
-  OrcidAccountDataParentOrcidAccountInfo;
-
-export type ResolverUnClaimedOrcidAccountData = UnClaimedOrcidAccountData &
-  OrcidAccountDataParentOrcidAccountInfo;
+// OrcidAccount types have been removed from the schema and codebase.
 
 export interface MultiChainKey<T = AccountId> {
   accountId: T;
@@ -137,6 +114,7 @@ export type RepoDriverMultiChainKey = MultiChainKey<RepoDriverId>;
 export type NftDriverMultiChainKey = MultiChainKey<NftDriverId>;
 export type ImmutableSplitsDriverMultiChainKey =
   MultiChainKey<ImmutableSplitsDriverId>;
+export type LinkedIdentityMultiChainKey = MultiChainKey<LinkedIdentityId>;
 
 export type ResolverDripList = DripList & {
   chainData?: ResolverDripListData[];

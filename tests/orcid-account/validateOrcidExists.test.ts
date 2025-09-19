@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import validateOrcidExists from '../../src/orcid-account/validateOrcidExists';
+import appSettings from '../../src/common/appSettings';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -18,13 +19,19 @@ describe('validateOrcidExists', () => {
     const result = await validateOrcidExists('0009-0001-4272-298X');
 
     expect(result).toBe(true);
+    const expectedHeaders: Record<string, string> = {
+      Accept: 'application/json',
+    };
+
+    if (appSettings.orcidApiToken) {
+      expectedHeaders.Authorization = `Bearer ${appSettings.orcidApiToken}`;
+    }
+
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://pub.orcid.org/v3.0/0009-0001-4272-298X/person',
+      `${appSettings.orcidApiEndpoint}/0009-0001-4272-298X/person`,
       {
         method: 'HEAD',
-        headers: {
-          Accept: 'application/json',
-        },
+        headers: expectedHeaders,
         signal: expect.any(AbortSignal),
       },
     );
@@ -38,13 +45,19 @@ describe('validateOrcidExists', () => {
     const result = await validateOrcidExists('0009-0000-0000-0000');
 
     expect(result).toBe(false);
+    const expectedHeaders: Record<string, string> = {
+      Accept: 'application/json',
+    };
+
+    if (appSettings.orcidApiToken) {
+      expectedHeaders.Authorization = `Bearer ${appSettings.orcidApiToken}`;
+    }
+
     expect(mockFetch).toHaveBeenCalledWith(
-      'https://pub.orcid.org/v3.0/0009-0000-0000-0000/person',
+      `${appSettings.orcidApiEndpoint}/0009-0000-0000-0000/person`,
       {
         method: 'HEAD',
-        headers: {
-          Accept: 'application/json',
-        },
+        headers: expectedHeaders,
         signal: expect.any(AbortSignal),
       },
     );

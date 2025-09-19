@@ -29,6 +29,7 @@ import type { ProjectDataValues } from './ProjectModel';
 import validateProjectsInput from './projectValidators';
 import type { DripListDataValues } from '../drip-list/DripListModel';
 import {
+  assertIsLinkedIdentityId,
   assertIsNftDriverId,
   assertIsRepoDriverId,
   assertMany,
@@ -44,7 +45,8 @@ import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import getUserAddress from '../utils/getUserAddress';
 import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
 import { calcSubRepoDriverId } from '../utils/repoSubAccountIdUtils';
-import { getGitHubRepoByUrl } from '../services/github';
+import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
+import { getGitHubRepoByUrl } from './github';
 
 const projectResolvers = {
   Query: {
@@ -206,6 +208,7 @@ const projectResolvers = {
           projectsDataSource,
           dripListsDataSource,
           splitsReceiversDataSource,
+          linkedIdentitiesDataSource,
         },
       }: Context,
     ) => {
@@ -222,7 +225,11 @@ const projectResolvers = {
 
       assertMany(
         splitsReceivers.map((s) => s.receiverAccountType),
-        (s) => s === 'address' || s === 'project' || s === 'drip_list',
+        (s) =>
+          s === 'address' ||
+          s === 'project' ||
+          s === 'drip_list' ||
+          s === 'linked_identity',
       );
 
       const splitReceiversByReceiverAccountType = groupBy(
@@ -254,6 +261,9 @@ const projectResolvers = {
 
       const dripListReceivers =
         splitReceiversByReceiverAccountType.get('drip_list') || [];
+
+      const linkedIdentityReceivers =
+        splitReceiversByReceiverAccountType.get('linked_identity') || [];
 
       const projectIds =
         projectReceivers.length > 0
@@ -332,12 +342,39 @@ const projectResolvers = {
         }),
       );
 
+      const linkedIdentityDependencies = await Promise.all(
+        linkedIdentityReceivers.map(async (s) => {
+          assertIsLinkedIdentityId(s.receiverAccountId);
+
+          const identity =
+            await linkedIdentitiesDataSource.getLinkedIdentityById(
+              s.receiverAccountId,
+              [projectChain],
+            );
+
+          if (!identity) {
+            return shouldNeverHappen('Expected linked identity to exist');
+          }
+
+          return {
+            ...s,
+            driver: Driver.REPO,
+            account: {
+              driver: Driver.REPO,
+              accountId: s.receiverAccountId,
+            },
+            linkedIdentity: toGqlLinkedIdentity(identity),
+          };
+        }),
+      );
+
       return {
         maintainers,
         dependencies: [
           ...addressDependencies,
           ...projectDependencies,
           ...dripListDependencies,
+          ...linkedIdentityDependencies,
         ],
       };
     },

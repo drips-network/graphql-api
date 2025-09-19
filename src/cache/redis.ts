@@ -48,14 +48,78 @@ export async function setCache(
   }
 }
 
-export async function getCache(key: string): Promise<string | null> {
+type CacheLookupResult = {
+  value: string | null;
+  ttlSeconds: number | null;
+};
+
+export async function getCache(key: string): Promise<CacheLookupResult> {
   const client = await getRedisClient();
-  if (!client) return null;
+  if (!client)
+    return {
+      value: null,
+      ttlSeconds: null,
+    };
 
   try {
-    return await client.get(key);
+    const [value, ttlSeconds] = await Promise.all([
+      client.get(key),
+      client.ttl(key),
+    ]);
+
+    const stringValue = value ?? null;
+    const ttl =
+      Number.isFinite(ttlSeconds) && (ttlSeconds as number) >= 0
+        ? (ttlSeconds as number)
+        : null;
+
+    if (stringValue !== null) {
+      console.log('Cache hit.', { key, ttlSeconds: ttl });
+    } else {
+      console.log('Cache miss.', { key });
+    }
+
+    return {
+      value: stringValue,
+      ttlSeconds: ttl,
+    };
   } catch (error) {
     console.error('Redis get error:', error);
-    return null;
+    return {
+      value: null,
+      ttlSeconds: null,
+    };
   }
+}
+
+export function computeTtlWithJitter(
+  baseTtlSeconds: number,
+  jitterRatio: number,
+): number {
+  if (!Number.isFinite(baseTtlSeconds) || baseTtlSeconds <= 0) {
+    throw new Error('baseTtlSeconds must be a positive number.');
+  }
+  if (!Number.isFinite(jitterRatio) || jitterRatio < 0 || jitterRatio > 1) {
+    throw new Error('jitterRatio must be between 0 and 1.');
+  }
+
+  if (jitterRatio === 0) {
+    return Math.max(1, Math.round(baseTtlSeconds));
+  }
+
+  const jitterSpan = baseTtlSeconds * jitterRatio;
+  const minTtl = Math.max(1, baseTtlSeconds - jitterSpan);
+  const maxTtl = baseTtlSeconds + jitterSpan;
+  const selected = Math.round(minTtl + Math.random() * (maxTtl - minTtl));
+  return selected > 0 ? selected : 1;
+}
+
+export async function setCacheWithJitter(
+  key: string,
+  value: string,
+  baseTtlSeconds: number,
+  jitterRatio: number,
+): Promise<void> {
+  const ttlSeconds = computeTtlWithJitter(baseTtlSeconds, jitterRatio);
+  await setCache(key, value, ttlSeconds);
 }

@@ -1,3 +1,9 @@
+import appSettings from '../common/appSettings';
+import {
+  DEFAULT_FETCH_TIMEOUT_MS,
+  fetchWithTimeout,
+} from '../utils/fetchWithTimeout';
+
 interface IOrcidValidationCache {
   get(orcid: string): boolean | undefined;
   set(orcid: string, exists: boolean): void;
@@ -53,15 +59,24 @@ export default async function validateOrcidExists(
   }
 
   try {
-    const response = await fetch(
-      `https://pub.orcid.org/v3.0/${orcidId}/person`,
+    const token = appSettings.orcidApiToken?.trim();
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn('Missing ORCID_API_TOKEN environment variable.');
+    }
+
+    const response = await fetchWithTimeout(
+      `${appSettings.orcidApiEndpoint}/${orcidId}/person`,
       {
         method: 'HEAD',
-        headers: {
-          Accept: 'application/json',
-        },
-        signal: AbortSignal.timeout(5000),
+        headers,
       },
+      DEFAULT_FETCH_TIMEOUT_MS,
     );
 
     const exists = response.status === 200;

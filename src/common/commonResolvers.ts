@@ -4,6 +4,7 @@ import type {
   DripList,
   ImmutableSplitsDriverAccount,
   NftDriverAccount,
+  LinkedIdentity as GqlLinkedIdentity,
   Project,
   RepoDriverAccount,
   SplitsReceiver,
@@ -367,6 +368,10 @@ const commonResolvers = {
   },
   SplitsReceiver: {
     __resolveType(receiver: SplitsReceiver) {
+      if ('linkedIdentity' in receiver && receiver.linkedIdentity) {
+        return 'LinkedIdentityReceiver';
+      }
+
       if (receiver.driver === Driver.REPO) {
         return 'ProjectReceiver';
       }
@@ -376,6 +381,13 @@ const commonResolvers = {
         // If ecosystem split receivers are supported in the future, we’ll need to:
         //  - Add logic here to differentiate between DripListReceiver and EcosystemMainAccountReceiver.
         //  - Implement `EcosystemMainAccountReceiver` resolver (left unimplemented on purpose).
+
+        // Check if this is a DripList - ecosystems are not currently supported as split receivers
+        if (!('dripList' in receiver)) {
+          return shouldNeverHappen(
+            'Only DripLists can be NFT driver split receivers for now',
+          );
+        }
         return 'DripListReceiver';
       }
 
@@ -388,6 +400,22 @@ const commonResolvers = {
       }
 
       return shouldNeverHappen();
+    },
+  },
+  LinkedIdentityReceiver: {
+    weight: ({ weight }: { weight: number }) => weight,
+    driver: ({ driver }: { driver: Driver }) => driver,
+    account: ({ account }: { account: RepoDriverAccount }) => account,
+    linkedIdentity: ({
+      linkedIdentity,
+    }: {
+      linkedIdentity: GqlLinkedIdentity;
+    }) => linkedIdentity,
+  },
+  LinkedIdentity: {
+    __resolveType(linkedIdentity: Record<string, unknown>) {
+      if ('orcid' in linkedIdentity) return 'OrcidLinkedIdentity';
+      return shouldNeverHappen('Unsupported linked identity shape');
     },
   },
 };
