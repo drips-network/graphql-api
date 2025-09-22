@@ -1,10 +1,15 @@
-import appSettings from '../common/appSettings';
+/* eslint-disable no-console */
 import { getCache, setCacheWithJitter } from '../cache/redis';
 import { isOrcidId } from '../utils/assert';
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
   fetchWithTimeout,
 } from '../utils/fetchWithTimeout';
+import appSettings from '../common/appSettings';
+import {
+  getOrcidAccessToken,
+  resetOrcidAccessToken,
+} from './orcidTokenProvider';
 
 const ORCID_CACHE_PREFIX = 'linkedIdentity:orcid';
 
@@ -96,7 +101,7 @@ function parseCachedProfile(value: unknown): OrcidProfile | null {
   return null;
 }
 
-export async function fetchOrcidProfile(
+export default async function fetchOrcidProfile(
   orcidId: string,
 ): Promise<OrcidProfile | null> {
   if (!isOrcidId(orcidId)) {
@@ -110,11 +115,11 @@ export async function fetchOrcidProfile(
       const parsedJson = JSON.parse(cached) as unknown;
       const parsedProfile = parseCachedProfile(parsedJson);
       if (parsedProfile) {
-        // Cached 404
-        console.log('ORCID cache hit with null entry.', { orcidId });
         return parsedProfile;
       }
       if (parsedJson === null) {
+        // Cached 404
+        console.log('ORCID cache hit with null entry.', { orcidId });
         return null;
       }
     } catch (error) {
@@ -125,22 +130,12 @@ export async function fetchOrcidProfile(
   try {
     console.log('Fetching ORCID profile from API.', { orcidId });
 
-    const headers: Record<string, string> = {
-      Accept: 'application/json',
-    };
+    let response = await requestProfile(orcidId);
 
-    const token = appSettings.orcidApiToken?.trim();
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+    if (response.status === 401) {
+      resetOrcidAccessToken();
+      response = await requestProfile(orcidId);
     }
-
-    const response = await fetchWithTimeout(
-      `${appSettings.orcidApiEndpoint}/${orcidId}/person`,
-      {
-        headers,
-      },
-      DEFAULT_FETCH_TIMEOUT_MS,
-    );
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -190,4 +185,18 @@ export async function fetchOrcidProfile(
   }
 }
 
-export type { OrcidProfile };
+async function requestProfile(orcidId: string): Promise<Response> {
+  const token = await getOrcidAccessToken();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+
+  return fetchWithTimeout(
+    `${appSettings.orcid.apiEndpoint}/${orcidId}/person`,
+    {
+      headers,
+    },
+    DEFAULT_FETCH_TIMEOUT_MS,
+  );
+}

@@ -1,8 +1,13 @@
+/* eslint-disable no-console */
 import appSettings from '../common/appSettings';
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
   fetchWithTimeout,
 } from '../utils/fetchWithTimeout';
+import {
+  getOrcidAccessToken,
+  resetOrcidAccessToken,
+} from './orcidTokenProvider';
 
 interface IOrcidValidationCache {
   get(orcid: string): boolean | undefined;
@@ -59,25 +64,12 @@ export default async function validateOrcidExists(
   }
 
   try {
-    const token = appSettings.orcidApiToken?.trim();
-    const headers: Record<string, string> = {
-      Accept: 'application/json',
-    };
+    let response = await requestValidation(orcidId);
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    } else {
-      console.warn('Missing ORCID_API_TOKEN environment variable.');
+    if (response.status === 401) {
+      resetOrcidAccessToken();
+      response = await requestValidation(orcidId);
     }
-
-    const response = await fetchWithTimeout(
-      `${appSettings.orcidApiEndpoint}/${orcidId}/person`,
-      {
-        method: 'HEAD',
-        headers,
-      },
-      DEFAULT_FETCH_TIMEOUT_MS,
-    );
 
     const exists = response.status === 200;
     validationCache.set(orcidId, exists);
@@ -93,4 +85,21 @@ export default async function validateOrcidExists(
     );
     return false;
   }
+}
+
+async function requestValidation(orcidId: string): Promise<Response> {
+  const token = await getOrcidAccessToken();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+
+  return fetchWithTimeout(
+    `${appSettings.orcid.apiEndpoint}/${orcidId}/person`,
+    {
+      method: 'HEAD',
+      headers,
+    },
+    DEFAULT_FETCH_TIMEOUT_MS,
+  );
 }
