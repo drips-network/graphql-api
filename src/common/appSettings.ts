@@ -39,6 +39,20 @@ const RpcConfigSchema = z.record(
     .optional(),
 );
 
+const OrcidConfigSchema = z.object({
+  clientId: z.string().min(1),
+  clientSecret: z.string().min(1),
+  apiEndpoint: z.string().url().default('https://pub.orcid.org/v3.0'),
+  tokenEndpoint: z.string().url().default('https://orcid.org/oauth/token'),
+});
+
+const orcidConfig = OrcidConfigSchema.parse({
+  clientId: process.env.ORCID_CLIENT_ID,
+  apiEndpoint: process.env.ORCID_API_ENDPOINT,
+  clientSecret: process.env.ORCID_CLIENT_SECRET,
+  tokenEndpoint: process.env.ORCID_TOKEN_ENDPOINT,
+});
+
 export default {
   port: (process.env.PORT || 8080) as number,
   rpcConfig: process.env.RPC_CONFIG
@@ -64,9 +78,11 @@ export default {
     process.env.IPFS_GATEWAY_URL || 'https://drips.mypinata.cloud',
   githubToken: process.env.GITHUB_TOKEN,
   redisUrl: process.env.REDIS_URL,
-  orcidApiEndpoint:
-    process.env.ORCID_API_ENDPOINT || 'https://pub.orcid.org/v3.0',
-  orcidApiToken: process.env.ORCID_API_TOKEN,
+  orcid: {
+    clientId: orcidConfig.clientId,
+    apiEndpoint: orcidConfig.apiEndpoint,
+    tokenEndpoint: orcidConfig.tokenEndpoint,
+  },
   cacheSettings: {
     projectSuccessTtlSeconds: parsePositiveInt(
       process.env.CACHE_PROJECT_SUCCESS_TTL_SECONDS,

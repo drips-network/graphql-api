@@ -20,7 +20,7 @@ import {
   isOrcidId,
 } from '../utils/assert';
 import validateOrcidExists from '../orcid-account/validateOrcidExists';
-import { fetchOrcidProfile } from '../orcid-account/orcidApi';
+import fetchOrcidProfile from '../orcid-account/orcidApi';
 import { getCrossChainOrcidAccountIdByOrcidId } from '../common/dripsContracts';
 import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils';
 import validateLinkedIdentitiesInput from './linkedIdentityValidators';
