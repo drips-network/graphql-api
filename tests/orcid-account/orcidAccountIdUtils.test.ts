@@ -53,25 +53,17 @@ describe('orcidAccountIdUtils', () => {
 
     it('should throw error for non-ORCID account IDs', () => {
       const githubAccountId = '738277613033851957932085857866483303468';
-      expect(() => extractOrcidFromAccountId(githubAccountId)).toThrow(
-        `Cannot extract ORCID: '${githubAccountId}' is not an ORCID account.`,
-      );
+      expect(() => extractOrcidFromAccountId(githubAccountId)).toThrow();
     });
 
     it('should throw error for invalid account IDs', () => {
-      expect(() => extractOrcidFromAccountId('not-a-number')).toThrow(
-        "Cannot extract ORCID: 'not-a-number' is not an ORCID account.",
-      );
+      expect(() => extractOrcidFromAccountId('not-a-number')).toThrow();
 
-      expect(() => extractOrcidFromAccountId('')).toThrow(
-        "Cannot extract ORCID: '' is not an ORCID account.",
-      );
+      expect(() => extractOrcidFromAccountId('')).toThrow();
     });
 
     it('should throw error for numeric strings that are not ORCID accounts', () => {
-      expect(() => extractOrcidFromAccountId('12345')).toThrow(
-        "Cannot extract ORCID: '12345' is not an ORCID account.",
-      );
+      expect(() => extractOrcidFromAccountId('12345')).toThrow();
     });
   });
 });

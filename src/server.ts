@@ -16,7 +16,6 @@ import type {
 import type { ParsedQs } from 'qs';
 import depthLimit from 'graphql-depth-limit';
 import cors from 'cors';
-import { BaseError } from 'sequelize';
 import resolvers from './resolvers';
 import typeDefs from './schema';
 import appSettings from './common/appSettings';
@@ -32,6 +31,7 @@ import TotalEarnedDataSource from './dataLoaders/TotalEarnedDataSource';
 import EcosystemsDataSource from './dataLoaders/EcosystemsDataSource';
 import SubListsDataSource from './dataLoaders/SubListsDataSource';
 import LinkedIdentityDataSource from './dataLoaders/LinkedIdentityDataSource';
+import formatError from './utils/formatError';
 
 export interface Context {
   dataSources: {
@@ -51,51 +51,6 @@ export interface Context {
 
 const app = express();
 const httpServer = http.createServer(app);
-
-const formatError = (formattedError: any, error: any) => {
-  // Handle database errors (Sequelize BaseError).
-  if (error instanceof BaseError) {
-    console.error({
-      type: 'DatabaseError',
-      source: 'Sequelize',
-      message: formattedError.message,
-      internalMessage: error.message,
-      stack: error.stack,
-      path: formattedError.path,
-      extensions: formattedError.extensions,
-    });
-
-    return { message: 'Internal server error' };
-  }
-
-  // Handle unexpected internal server errors.
-  if (
-    !formattedError.extensions?.code ||
-    formattedError.extensions.code === 'INTERNAL_SERVER_ERROR'
-  ) {
-    console.error({
-      type: 'InternalServerError',
-      source: 'Generic',
-      message: formattedError.message,
-      internalMessage: error.originalError?.message,
-      stack: error.originalError?.stack,
-      path: formattedError.path,
-      extensions: formattedError.extensions,
-    });
-
-    return { message: 'Internal server error' };
-  }
-
-  // Log and return other GraphQL errors as-is.
-  console.error({
-    type: 'GraphQLError',
-    message: formattedError.message,
-    path: formattedError.path,
-    extensions: formattedError.extensions,
-  });
-
-  return formattedError;
-};
 
 const server = new ApolloServer<Context>({
   formatError,
