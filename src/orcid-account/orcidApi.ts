@@ -1,4 +1,5 @@
 /* eslint-disable no-console */
+import { GraphQLError } from 'graphql';
 import { getCache, setCacheWithJitter } from '../cache/redis';
 import { isOrcidId } from '../utils/assert';
 import {
@@ -10,6 +11,7 @@ import {
   getOrcidAccessToken,
   resetOrcidAccessToken,
 } from './orcidTokenProvider';
+import { PUBLIC_ERROR_CODES } from '../utils/formatError';
 
 const ORCID_CACHE_PREFIX = 'linkedIdentity:orcid';
 
@@ -105,7 +107,9 @@ export default async function fetchOrcidProfile(
   orcidId: string,
 ): Promise<OrcidProfile | null> {
   if (!isOrcidId(orcidId)) {
-    throw new Error('Invalid ORCID identifier provided.');
+    throw new GraphQLError('Invalid ORCID identifier provided.', {
+      extensions: { code: PUBLIC_ERROR_CODES.BadUserInput },
+    });
   }
 
   const cacheKey = buildCacheKey(orcidId);
@@ -178,10 +182,14 @@ export default async function fetchOrcidProfile(
 
     return profile;
   } catch (error) {
-    if ((error as Error).name !== 'AbortError') {
-      console.error('Failed to fetch ORCID profile:', error);
+    if ((error as Error).name === 'AbortError') {
+      return null;
     }
-    return null;
+
+    throw new GraphQLError('Failed to fetch ORCID profile.', {
+      originalError: error instanceof Error ? error : undefined,
+      extensions: { code: PUBLIC_ERROR_CODES.ExternalServiceError },
+    });
   }
 }
 
