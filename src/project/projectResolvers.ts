@@ -47,6 +47,7 @@ import { toResolverEcosystem } from '../ecosystem/ecosystemUtils';
 import { calcSubRepoDriverId } from '../utils/repoSubAccountIdUtils';
 import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
 import { getGitHubRepoByUrl } from './github';
+import { PUBLIC_ERROR_CODES } from '../utils/formatError';
 
 const projectResolvers = {
   Query: {
@@ -108,7 +109,7 @@ const projectResolvers = {
     ): Promise<ResolverProject | null> => {
       if (!isGitHubUrl(url)) {
         throw new GraphQLError('Only valid GitHub URLs are supported.', {
-          extensions: { code: 'BAD_USER_INPUT' },
+          extensions: { code: PUBLIC_ERROR_CODES.BadUserInput },
         });
       }
 
