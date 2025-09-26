@@ -52,8 +52,9 @@ describe('orcidAccountIdUtils', () => {
     });
 
     it('should throw error for non-ORCID account IDs', () => {
-      const githubAccountId = '738277613033851957932085857866483303468';
-      expect(() => extractOrcidFromAccountId(githubAccountId)).toThrow();
+      expect(() =>
+        extractOrcidFromAccountId('738277613033851957932085857866483303468'),
+      ).toThrow();
     });
 
     it('should throw error for invalid account IDs', () => {

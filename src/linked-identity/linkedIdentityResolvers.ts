@@ -1,3 +1,4 @@
+import { GraphQLError } from 'graphql';
 import type {
   LinkedIdentity,
   LinkedIdentitySortInput,
@@ -28,6 +29,7 @@ import { validateChainsQueryArg } from '../utils/commonInputValidators';
 import type { RepoDriverId } from '../common/types';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
+import { PUBLIC_ERROR_CODES } from '../utils/formatError';
 
 const linkedIdentityResolvers = {
   Query: {
@@ -85,7 +87,9 @@ const linkedIdentityResolvers = {
       { dataSources: { linkedIdentitiesDataSource } }: Context,
     ): Promise<GqlOrcidLinkedIdentity | null> => {
       if (!isOrcidId(orcid)) {
-        return null;
+        throw new GraphQLError('Invalid ORCID identifier provided.', {
+          extensions: { code: PUBLIC_ERROR_CODES.BadUserInput },
+        });
       }
 
       validateChainsQueryArg([chain]);
