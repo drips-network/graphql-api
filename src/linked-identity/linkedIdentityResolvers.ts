@@ -1,0 +1,165 @@
+import { GraphQLError } from 'graphql';
+import type {
+  LinkedIdentity,
+  LinkedIdentitySortInput,
+  LinkedIdentityWhereInput,
+  SupportedChain,
+  OrcidLinkedIdentity as GqlOrcidLinkedIdentity,
+  AddressDriverAccount,
+  RepoDriverAccount,
+  OrcidMetadata as GqlOrcidMetadata,
+} from '../generated/graphql';
+import { chainToDbSchema } from '../utils/chainSchemaMappings';
+import type { Context } from '../server';
+import queryableChains from '../common/queryableChains';
+import toGqlLinkedIdentity, {
+  toFakeUnclaimedOrcid,
+} from './linkedIdentityUtils';
+import {
+  assertIsLinkedIdentityId,
+  isLinkedIdentityId,
+  isOrcidId,
+} from '../utils/assert';
+import validateOrcidExists from '../orcid-account/validateOrcidExists';
+import fetchOrcidProfile from '../orcid-account/orcidApi';
+import { getCrossChainOrcidAccountIdByOrcidId } from '../common/dripsContracts';
+import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils';
+import validateLinkedIdentitiesInput from './linkedIdentityValidators';
+import { validateChainsQueryArg } from '../utils/commonInputValidators';
+import type { RepoDriverId } from '../common/types';
+import { resolveTotalEarned } from '../common/commonResolverLogic';
+import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
+import { PUBLIC_ERROR_CODES } from '../utils/formatError';
+
+const linkedIdentityResolvers = {
+  Query: {
+    linkedIdentities: async (
+      _: undefined,
+      args: {
+        chains?: SupportedChain[];
+        where?: LinkedIdentityWhereInput;
+        sort?: LinkedIdentitySortInput;
+        limit?: number;
+      },
+      { dataSources: { linkedIdentitiesDataSource } }: Context,
+    ): Promise<LinkedIdentity[]> => {
+      validateLinkedIdentitiesInput(args);
+
+      const { chains, where, sort, limit } = args;
+
+      const dbSchemasToQuery = (chains?.length ? chains : queryableChains).map(
+        (chain) => chainToDbSchema[chain],
+      );
+
+      const dbLinkedIdentities =
+        await linkedIdentitiesDataSource.getLinkedIdentitiesByFilter(
+          dbSchemasToQuery,
+          where,
+          sort,
+          limit,
+        );
+
+      return dbLinkedIdentities.map(toGqlLinkedIdentity);
+    },
+
+    linkedIdentityById: async (
+      _: undefined,
+      { id, chain }: { id: string; chain: SupportedChain },
+      { dataSources: { linkedIdentitiesDataSource } }: Context,
+    ): Promise<LinkedIdentity | null> => {
+      if (!isLinkedIdentityId(id)) {
+        return null;
+      }
+
+      validateChainsQueryArg([chain]);
+
+      const identity = await linkedIdentitiesDataSource.getLinkedIdentityById(
+        id,
+        [chainToDbSchema[chain]],
+      );
+
+      return identity ? toGqlLinkedIdentity(identity) : null;
+    },
+
+    orcidLinkedIdentityByOrcid: async (
+      _: undefined,
+      { orcid, chain }: { orcid: string; chain: SupportedChain },
+      { dataSources: { linkedIdentitiesDataSource } }: Context,
+    ): Promise<GqlOrcidLinkedIdentity | null> => {
+      if (!isOrcidId(orcid)) {
+        throw new GraphQLError('Invalid ORCID identifier provided.', {
+          extensions: { code: PUBLIC_ERROR_CODES.BadUserInput },
+        });
+      }
+
+      validateChainsQueryArg([chain]);
+
+      const exists = await validateOrcidExists(orcid);
+      if (!exists) return null;
+
+      const orcidAccountId: RepoDriverId =
+        await getCrossChainOrcidAccountIdByOrcidId(orcid, [
+          chainToDbSchema[chain],
+        ]);
+
+      assertIsLinkedIdentityId(orcidAccountId);
+      const identity = await linkedIdentitiesDataSource.getLinkedIdentityById(
+        orcidAccountId,
+        [chainToDbSchema[chain]],
+      );
+
+      return identity
+        ? toGqlLinkedIdentity(identity)
+        : toFakeUnclaimedOrcid(orcid, orcidAccountId, chain);
+    },
+  },
+  OrcidLinkedIdentity: {
+    chain: (linkedIdentity: GqlOrcidLinkedIdentity): SupportedChain =>
+      linkedIdentity.chain,
+    account: (linkedIdentity: GqlOrcidLinkedIdentity): RepoDriverAccount =>
+      linkedIdentity.account,
+    owner: (
+      linkedIdentity: GqlOrcidLinkedIdentity,
+    ): AddressDriverAccount | null => linkedIdentity.owner ?? null,
+    areSplitsValid: (linkedIdentity: GqlOrcidLinkedIdentity): boolean =>
+      linkedIdentity.areSplitsValid,
+    isClaimed: (linkedIdentity: GqlOrcidLinkedIdentity): boolean =>
+      Boolean(linkedIdentity.owner),
+    orcid: (linkedIdentity: GqlOrcidLinkedIdentity): string =>
+      extractOrcidFromAccountId(linkedIdentity.account.accountId),
+    orcidMetadata: async (
+      linkedIdentity: GqlOrcidLinkedIdentity,
+    ): Promise<GqlOrcidMetadata | null> => {
+      const orcid = extractOrcidFromAccountId(linkedIdentity.account.accountId);
+      const profile = await fetchOrcidProfile(orcid); // TODO: This could cause N+1 queries if multiple ORCID identities are resolved. Consider DataLoader pattern if that becomes an issue.
+      if (!profile) return null;
+
+      return { ...profile };
+    },
+    support: (
+      linkedIdentity: GqlOrcidLinkedIdentity,
+      _: {},
+      { dataSources: { supportDataSource } }: Context,
+    ) => {
+      assertIsLinkedIdentityId(linkedIdentity.account.accountId);
+      return supportDataSource.getAllSupportByAccountIdOnChain(
+        linkedIdentity.account.accountId,
+        chainToDbSchema[linkedIdentity.chain],
+      );
+    },
+    totalEarned: (
+      linkedIdentity: GqlOrcidLinkedIdentity,
+      _: {},
+      context: Context,
+    ) => resolveTotalEarned(linkedIdentity, context),
+    withdrawableBalances: (linkedIdentity: GqlOrcidLinkedIdentity) => {
+      assertIsLinkedIdentityId(linkedIdentity.account.accountId);
+      return getWithdrawableBalancesOnChain(
+        linkedIdentity.account.accountId,
+        chainToDbSchema[linkedIdentity.chain],
+      );
+    },
+  },
+};
+
+export default linkedIdentityResolvers;

@@ -3,6 +3,7 @@ import DataLoader from 'dataloader';
 import type {
   AccountId,
   DbSchema,
+  LinkedIdentityId,
   NftDriverId,
   NftDriverMultiChainKey,
   RepoDriverId,
@@ -63,7 +64,7 @@ export default class TotalEarnedDataSource {
   );
 
   public async getTotalEarnedByAccountIds(
-    accountId: NftDriverId | RepoDriverId,
+    accountId: NftDriverId | RepoDriverId | LinkedIdentityId,
     chains: DbSchema[],
   ): Promise<{
     splitEventsForAccountDataValues: SplitEventModelDataValues[];

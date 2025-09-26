@@ -1,3 +1,14 @@
+/* eslint-disable no-console */
+import appSettings from '../common/appSettings';
+import {
+  DEFAULT_FETCH_TIMEOUT_MS,
+  fetchWithTimeout,
+} from '../utils/fetchWithTimeout';
+import {
+  getOrcidAccessToken,
+  resetOrcidAccessToken,
+} from './orcidTokenProvider';
+
 interface IOrcidValidationCache {
   get(orcid: string): boolean | undefined;
   set(orcid: string, exists: boolean): void;
@@ -53,16 +64,12 @@ export default async function validateOrcidExists(
   }
 
   try {
-    const response = await fetch(
-      `https://pub.orcid.org/v3.0/${orcidId}/person`,
-      {
-        method: 'HEAD',
-        headers: {
-          Accept: 'application/json',
-        },
-        signal: AbortSignal.timeout(5000),
-      },
-    );
+    let response = await requestValidation(orcidId);
+
+    if (response.status === 401) {
+      resetOrcidAccessToken();
+      response = await requestValidation(orcidId);
+    }
 
     const exists = response.status === 200;
     validationCache.set(orcidId, exists);
@@ -78,4 +85,21 @@ export default async function validateOrcidExists(
     );
     return false;
   }
+}
+
+async function requestValidation(orcidId: string): Promise<Response> {
+  const token = await getOrcidAccessToken();
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+
+  return fetchWithTimeout(
+    `${appSettings.orcid.apiEndpoint}/${orcidId}/person`,
+    {
+      method: 'HEAD',
+      headers,
+    },
+    DEFAULT_FETCH_TIMEOUT_MS,
+  );
 }
