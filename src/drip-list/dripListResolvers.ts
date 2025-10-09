@@ -242,15 +242,15 @@ const dripListResolvers = {
                   dripListChain,
                   dripList as unknown as DripListDataValues,
                 )
-              : shouldNeverHappen(),
+              : undefined,
           };
         }),
       );
 
       return [
         ...addressDependencies,
-        ...projectDependencies,
-        ...dripListDependencies,
+        ...projectDependencies.filter((p) => p.project !== undefined),
+        ...dripListDependencies.filter((d) => d.dripList !== undefined),
       ];
     },
     support: async (

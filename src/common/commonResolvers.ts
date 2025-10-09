@@ -255,9 +255,14 @@ const commonResolvers = {
 
       const { senderAccountId, chain } = parent;
 
-      const dripListDataValues =
-        (await dripListsDataSource.getDripListById(senderAccountId, [chain])) ||
-        shouldNeverHappen(`Expected Drip List ${senderAccountId} to exist.`);
+      const dripListDataValues = await dripListsDataSource.getDripListById(
+        senderAccountId,
+        [chain],
+      );
+
+      if (!dripListDataValues) {
+        return null;
+      }
 
       const resolverDripLists = await toResolverDripLists(
         [chain],
