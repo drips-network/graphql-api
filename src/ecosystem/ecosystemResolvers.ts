@@ -196,7 +196,7 @@ const ecosystemResolvers = {
                   ecosystemChain,
                   subList as unknown as SubListDataValues,
                 )
-              : shouldNeverHappen(),
+              : shouldNeverHappen('Expected Sub List to exist.'),
           };
         }),
       );

@@ -74,7 +74,9 @@ export default class TotalEarnedDataSource {
       ? { accountId, chains }
       : isRepoDriverId(accountId)
         ? { accountId, chains }
-        : shouldNeverHappen();
+        : shouldNeverHappen(
+            'Unknown driver type for accountId when fetching total earned by account.',
+          );
 
     return this._batchTotalEarnedByAccountIds.load(key);
   }

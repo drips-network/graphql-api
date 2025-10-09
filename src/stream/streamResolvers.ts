@@ -72,14 +72,14 @@ const streamResolvers = {
         );
       }
 
-      throw shouldNeverHappen();
+      throw shouldNeverHappen('Unknown driver type for stream receiver.');
     },
     sender: async ({ chain, sender }: ProtoStream) => {
       if (sender.driver === Driver.ADDRESS) {
         return toResolverUser([chain], sender.accountId as AddressDriverId);
       }
 
-      throw shouldNeverHappen();
+      throw shouldNeverHappen('Unknown driver type for stream sender.');
     },
   },
 };

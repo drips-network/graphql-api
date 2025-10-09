@@ -180,11 +180,16 @@ const commonResolvers = {
         (await projectsDataSource.getProjectByIdOnChain(
           senderAccountId,
           chain,
-        )) || shouldNeverHappen();
+        )) ||
+        shouldNeverHappen('Expected Project to exist for project support.');
 
       return {
         driver: Driver.REPO,
-        accountId: project ? project.accountId : shouldNeverHappen(),
+        accountId: project
+          ? project.accountId
+          : shouldNeverHappen(
+              'Expected Project accountId to exist for project support.',
+            ),
       };
     },
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
@@ -208,7 +213,7 @@ const commonResolvers = {
         (await projectsDataSource.getProjectByIdOnChain(
           senderAccountId,
           chain,
-        )) || shouldNeverHappen();
+        )) || shouldNeverHappen('Expected Project to exist.');
 
       const project = await toResolverProject([chain], projectDataValues);
 
@@ -239,7 +244,11 @@ const commonResolvers = {
 
       return {
         driver: Driver.NFT,
-        accountId: dripList ? dripList.accountId : shouldNeverHappen(),
+        accountId: dripList
+          ? dripList.accountId
+          : shouldNeverHappen(
+              'Expected Drip List accountId to exist for drip list support.',
+            ),
       };
     },
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
@@ -295,7 +304,9 @@ const commonResolvers = {
         driver: Driver.NFT,
         accountId: ecosystemMainAccount
           ? ecosystemMainAccount.accountId
-          : shouldNeverHappen(),
+          : shouldNeverHappen(
+              'Expected Ecosystem accountId to exist for ecosystem support.',
+            ),
       };
     },
     date: (parent: { blockTimestamp: Date }): Date => parent.blockTimestamp,
@@ -314,7 +325,8 @@ const commonResolvers = {
       const ecosystemMainAccountDataValues =
         (await ecosystemsDataSource.getEcosystemById(senderAccountId, [
           chain,
-        ])) || shouldNeverHappen();
+        ])) ||
+        shouldNeverHappen('Expected Ecosystem to exist for ecosystem support.');
 
       const resolverDripLists = await toResolverEcosystems(
         [chain],
@@ -387,7 +399,7 @@ const commonResolvers = {
         return 'SubListReceiver';
       }
 
-      return shouldNeverHappen();
+      return shouldNeverHappen('Unknown SplitsReceiver type');
     },
   },
 };

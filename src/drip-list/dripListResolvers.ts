@@ -242,7 +242,7 @@ const dripListResolvers = {
                   dripListChain,
                   dripList as unknown as DripListDataValues,
                 )
-              : shouldNeverHappen(),
+              : shouldNeverHappen('Expected Drip List to exist.'),
           };
         }),
       );
