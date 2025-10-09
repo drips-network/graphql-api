@@ -43,7 +43,7 @@ export default {
 
     const parameters: { [key: string]: any } = { ownerAddress };
 
-    const whereClause = ` WHERE "owner_address" = :ownerAddress`;
+    const whereClause = ` WHERE LOWER("owner_address") = LOWER(:ownerAddress)`;
 
     const chainQueries = chains.map((chain) => baseSQL(chain) + whereClause);
 
@@ -77,7 +77,7 @@ export default {
     }
 
     if (where?.ownerAddress) {
-      whereClause += ` AND "owner_address" = :ownerAddress`;
+      whereClause += ` AND LOWER("owner_address") = LOWER(:ownerAddress)`;
       parameters.ownerAddress = where.ownerAddress;
     }
 

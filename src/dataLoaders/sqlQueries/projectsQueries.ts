@@ -56,7 +56,7 @@ async function getProjectsByFilter(
     parameters.accountId = where.accountId;
   }
   if (where?.ownerAddress) {
-    conditions.push(`owner_address = :ownerAddress`);
+    conditions.push(`LOWER(owner_address) = LOWER(:ownerAddress)`);
     parameters.ownerAddress = where.ownerAddress;
   }
   if (where?.url) {
