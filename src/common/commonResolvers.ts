@@ -115,42 +115,6 @@ const commonResolvers = {
     account: ({ account }: { account: ImmutableSplitsDriverAccount }) =>
       account,
   },
-  Support: {
-    __resolveType(
-      parent:
-        | SplitsReceiverModelDataValues
-        | GivenEventModelDataValues
-        | ProtoStream,
-    ) {
-      if ('relationshipType' in parent) {
-        const { relationshipType } = parent;
-
-        if (
-          relationshipType === 'project_maintainer' ||
-          relationshipType === 'project_dependency'
-        ) {
-          return 'ProjectSupport';
-        }
-
-        if (relationshipType === 'drip_list_receiver') {
-          return 'DripListSupport';
-        }
-
-        if (
-          relationshipType === 'ecosystem_receiver' ||
-          relationshipType === 'sub_list_link'
-        ) {
-          return 'EcosystemSupport';
-        }
-      }
-
-      if ('timeline' in parent) {
-        return 'StreamSupport';
-      }
-
-      return 'OneTimeDonationSupport';
-    },
-  },
   SupportItem: {
     __resolveType(
       parent:
