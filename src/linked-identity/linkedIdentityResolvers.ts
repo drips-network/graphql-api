@@ -9,6 +9,7 @@ import type {
   RepoDriverAccount,
   OrcidMetadata as GqlOrcidMetadata,
 } from '../generated/graphql';
+import { Driver } from '../generated/graphql';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import type { Context } from '../server';
 import queryableChains from '../common/queryableChains';
@@ -30,6 +31,9 @@ import type { RepoDriverId } from '../common/types';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import { PUBLIC_ERROR_CODES } from '../utils/formatError';
+import { toResolverProject } from '../project/projectUtils';
+import { toResolverDripList } from '../drip-list/dripListUtils';
+import { toResolverEcosystems } from '../ecosystem/ecosystemUtils';
 
 const linkedIdentityResolvers = {
   Query: {
@@ -136,16 +140,120 @@ const linkedIdentityResolvers = {
 
       return { ...profile };
     },
-    support: (
+    support: async (
       linkedIdentity: GqlOrcidLinkedIdentity,
       _: {},
-      { dataSources: { supportDataSource } }: Context,
+      {
+        dataSources: {
+          supportDataSource,
+          projectsDataSource,
+          dripListsDataSource,
+          ecosystemsDataSource,
+        },
+      }: Context,
     ) => {
       assertIsLinkedIdentityId(linkedIdentity.account.accountId);
-      return supportDataSource.getAllSupportByAccountIdOnChain(
-        linkedIdentity.account.accountId,
-        chainToDbSchema[linkedIdentity.chain],
+      const chain = chainToDbSchema[linkedIdentity.chain];
+
+      const splitReceivers =
+        await supportDataSource.getSplitSupportByReceiverIdOnChain(
+          linkedIdentity.account.accountId,
+          chain,
+        );
+
+      const supportItems = await Promise.all(
+        splitReceivers.map(async (receiver) => {
+          const {
+            senderAccountId,
+            receiverAccountId,
+            blockTimestamp,
+            senderAccountType,
+          } = receiver;
+
+          if (senderAccountType === 'project') {
+            const projectData = await projectsDataSource.getProjectByIdOnChain(
+              senderAccountId as any,
+              chain,
+            );
+
+            if (!projectData) {
+              return null;
+            }
+
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.REPO,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              project: await toResolverProject([chain], projectData),
+            };
+          }
+
+          if (senderAccountType === 'drip_list') {
+            const dripListData = await dripListsDataSource.getDripListById(
+              senderAccountId as any,
+              [chain],
+            );
+
+            if (!dripListData) {
+              return null;
+            }
+
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              dripList: await toResolverDripList(chain, dripListData),
+            };
+          }
+
+          if (senderAccountType === 'ecosystem_main_account') {
+            const ecosystemData = await ecosystemsDataSource.getEcosystemById(
+              senderAccountId as any,
+              [chain],
+            );
+
+            if (!ecosystemData) {
+              return null;
+            }
+
+            const [ecosystemMainAccount] = await toResolverEcosystems(
+              [chain],
+              [ecosystemData],
+            );
+
+            return {
+              ...receiver,
+              account: {
+                driver: Driver.NFT,
+                accountId: receiverAccountId,
+              },
+              date: blockTimestamp,
+              totalSplit: [],
+              ecosystemMainAccount,
+            };
+          }
+
+          return null;
+        }),
       );
+
+      const splitSupport = supportItems.filter((item) => item !== null);
+
+      const oneTimeDonationSupport =
+        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
+          linkedIdentity.account.accountId,
+          chain,
+        );
+
+      return [...splitSupport, ...oneTimeDonationSupport];
     },
     totalEarned: (
       linkedIdentity: GqlOrcidLinkedIdentity,
