@@ -72,7 +72,7 @@ export default class DripListsDataSource {
           chains: [chain],
         })),
       ) as Promise<DripListDataValues[]>)
-    ).filter((dripList) => dripList.chain === chain);
+    ).filter((dripList) => dripList && dripList.chain === chain);
   }
 
   public async getMintedTokensCountByAccountId(
