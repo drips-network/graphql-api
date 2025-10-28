@@ -45,6 +45,6 @@ export default class SubListsDataSource {
           chains: [chain],
         })),
       ) as Promise<SubListDataValues[]>)
-    ).filter((subList) => subList && subList.chain === chain);
+    ).filter((subList) => subList.chain === chain);
   }
 }

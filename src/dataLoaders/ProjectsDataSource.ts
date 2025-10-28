@@ -30,7 +30,7 @@ export default class ProjectsDataSource {
   private readonly _batchProjectsByIds = new DataLoader(
     async (
       projectKeys: readonly RepoDriverMultiChainKey[],
-    ): Promise<(ProjectDataValues | null)[]> => {
+    ): Promise<ProjectDataValues[]> => {
       const { chains, ids: projectIds } = parseMultiChainKeys(projectKeys);
 
       const projectsDataValues = await projectsQueries.getByIds(
@@ -54,7 +54,7 @@ export default class ProjectsDataSource {
         return mapping;
       }, {});
 
-      return projectIds.map((id) => projectIdToProjectMap[id] || null);
+      return projectIds.map((id) => projectIdToProjectMap[id]);
     },
   );
 
@@ -180,7 +180,7 @@ export default class ProjectsDataSource {
           chains: [chain],
         })),
       ) as Promise<ProjectDataValues[]>)
-    ).filter((p) => p && p.chain === chain);
+    ).filter((p) => p.chain === chain);
   }
 
   public async getEarnedFunds(
