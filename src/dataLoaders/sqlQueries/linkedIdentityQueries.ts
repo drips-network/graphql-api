@@ -13,8 +13,19 @@ export default {
     chains: DbSchema[],
     accountIds: RepoDriverId[],
   ): Promise<LinkedIdentityDataValues[]> {
-    const baseSQL = (schema: DbSchema) =>
-      `SELECT *, '${schema}' AS chain FROM ${schema}.linked_identities`;
+    const baseSQL = (schema: DbSchema) => `
+      SELECT
+        account_id,
+        identity_type::text as identity_type,
+        owner_address,
+        owner_account_id,
+        is_linked,
+        last_processed_version,
+        created_at,
+        updated_at,
+        '${schema}' AS chain
+      FROM ${schema}.linked_identities
+    `;
 
     const parameters: { [key: string]: any } = { accountIds };
 
@@ -38,8 +49,19 @@ export default {
     chains: DbSchema[],
     ownerAddress: Address,
   ): Promise<LinkedIdentityDataValues[]> {
-    const baseSQL = (schema: DbSchema) =>
-      `SELECT *, '${schema}' AS chain FROM ${schema}.linked_identities`;
+    const baseSQL = (schema: DbSchema) => `
+      SELECT
+        account_id,
+        identity_type::text as identity_type,
+        owner_address,
+        owner_account_id,
+        is_linked,
+        last_processed_version,
+        created_at,
+        updated_at,
+        '${schema}' AS chain
+      FROM ${schema}.linked_identities
+    `;
 
     const parameters: { [key: string]: any } = { ownerAddress };
 
@@ -65,8 +87,19 @@ export default {
     sort?: OrcidAccountSortInput,
     limit: number = 100,
   ): Promise<LinkedIdentityDataValues[]> {
-    const baseSQL = (schema: DbSchema) =>
-      `SELECT *, '${schema}' AS chain FROM ${schema}.linked_identities`;
+    const baseSQL = (schema: DbSchema) => `
+      SELECT
+        account_id,
+        identity_type::text as identity_type,
+        owner_address,
+        owner_account_id,
+        is_linked,
+        last_processed_version,
+        created_at,
+        updated_at,
+        '${schema}' AS chain
+      FROM ${schema}.linked_identities
+    `;
 
     const parameters: { [key: string]: any } = { limit };
     let whereClause = ` WHERE "identity_type" = 'orcid'`;
@@ -108,8 +141,19 @@ export default {
     accountId: RepoDriverId,
     chains: DbSchema[],
   ): Promise<LinkedIdentityDataValues[] | null> {
-    const baseSQL = (schema: DbSchema) =>
-      `SELECT *, '${schema}' AS chain FROM ${schema}.linked_identities`;
+    const baseSQL = (schema: DbSchema) => `
+      SELECT
+        account_id,
+        identity_type::text as identity_type,
+        owner_address,
+        owner_account_id,
+        is_linked,
+        last_processed_version,
+        created_at,
+        updated_at,
+        '${schema}' AS chain
+      FROM ${schema}.linked_identities
+    `;
 
     const parameters: { [key: string]: any } = { accountId };
     const whereClause = ` WHERE "account_id" = :accountId AND "identity_type" = 'orcid'`;

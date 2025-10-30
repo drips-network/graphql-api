@@ -17,7 +17,26 @@ async function getProjectByUrl(
   url: string,
 ): Promise<ProjectDataValues[]> {
   const baseSQL = (schema: DbSchema) => `
-    SELECT *, '${schema}' AS chain FROM ${schema}.projects
+    SELECT
+      account_id,
+      is_valid,
+      is_visible,
+      name,
+      verification_status::text as verification_status,
+      owner_address,
+      owner_account_id,
+      forge::text as forge,
+      url,
+      emoji,
+      avatar_cid,
+      color,
+      last_processed_ipfs_hash,
+      last_processed_version,
+      claimed_at,
+      created_at,
+      updated_at,
+      '${schema}' AS chain
+    FROM ${schema}.projects
   `;
 
   const conditions: string[] = ['url = :url', 'is_valid = true'];
@@ -45,8 +64,28 @@ async function getProjectsByFilter(
   sort?: ProjectSortInput,
   limit?: number,
 ): Promise<ProjectDataValues[]> {
-  const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM ${schema}.projects `;
+  const baseSQL = (schema: DbSchema) => `
+    SELECT
+      account_id,
+      is_valid,
+      is_visible,
+      name,
+      verification_status::text as verification_status,
+      owner_address,
+      owner_account_id,
+      forge::text as forge,
+      url,
+      emoji,
+      avatar_cid,
+      color,
+      last_processed_ipfs_hash,
+      last_processed_version,
+      claimed_at,
+      created_at,
+      updated_at,
+      '${schema}' AS chain
+    FROM ${schema}.projects
+  `;
 
   const conditions: string[] = ['is_valid = true'];
   const parameters: { [key: string]: any } = {};
@@ -95,8 +134,28 @@ async function getProjectsByIds(
   chains: DbSchema[],
   projectIds: RepoDriverId[],
 ): Promise<ProjectDataValues[]> {
-  const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM ${schema}.projects`;
+  const baseSQL = (schema: DbSchema) => `
+    SELECT
+      account_id,
+      is_valid,
+      is_visible,
+      name,
+      verification_status::text as verification_status,
+      owner_address,
+      owner_account_id,
+      forge::text as forge,
+      url,
+      emoji,
+      avatar_cid,
+      color,
+      last_processed_ipfs_hash,
+      last_processed_version,
+      claimed_at,
+      created_at,
+      updated_at,
+      '${schema}' AS chain
+    FROM ${schema}.projects
+  `;
 
   const parameters: { [key: string]: any } = { projectIds };
 
