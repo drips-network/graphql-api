@@ -8,8 +8,22 @@ export async function getSplitsReceivers(
   chains: DbSchema[],
   receiverAccountIds: AccountId[],
 ) {
-  const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM ${schema}.splits_receivers`;
+  const baseSQL = (schema: DbSchema) => `
+    SELECT
+      id,
+      receiver_account_id,
+      receiver_account_type::text as receiver_account_type,
+      sender_account_id,
+      sender_account_type::text as sender_account_type,
+      relationship_type::text as relationship_type,
+      weight,
+      block_timestamp,
+      splits_to_repo_driver_sub_account,
+      created_at,
+      updated_at,
+      '${schema}' AS chain
+    FROM ${schema}.splits_receivers
+  `;
 
   const conditions: string[] = ['receiver_account_id IN (:receiverAccountIds)'];
 
@@ -37,8 +51,22 @@ export async function getSplitsReceiversForSenderIds(
   chains: DbSchema[],
   senderAccountIds: AccountId[],
 ) {
-  const baseSQL = (schema: DbSchema) =>
-    `SELECT *, '${schema}' AS chain FROM ${schema}.splits_receivers`;
+  const baseSQL = (schema: DbSchema) => `
+    SELECT
+      id,
+      receiver_account_id,
+      receiver_account_type::text as receiver_account_type,
+      sender_account_id,
+      sender_account_type::text as sender_account_type,
+      relationship_type::text as relationship_type,
+      weight,
+      block_timestamp,
+      splits_to_repo_driver_sub_account,
+      created_at,
+      updated_at,
+      '${schema}' AS chain
+    FROM ${schema}.splits_receivers
+  `;
 
   const conditions: string[] = ['sender_account_id IN (:senderAccountIds)'];
 
