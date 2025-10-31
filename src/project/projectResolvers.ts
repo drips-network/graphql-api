@@ -167,6 +167,7 @@ const projectResolvers = {
       }
 
       return {
+        url: repoData.url,
         repoName: repoData.repoName,
         ownerName: repoData.ownerName,
         description: repoData.description,

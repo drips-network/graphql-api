@@ -23,6 +23,7 @@ const projectTypeDef = gql`
   union Avatar = EmojiAvatar | ImageAvatar
 
   type RepoMetadata {
+    url: String!
     repoName: String!
     ownerName: String!
     description: String
