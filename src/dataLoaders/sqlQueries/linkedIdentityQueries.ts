@@ -82,7 +82,7 @@ export default {
     }
 
     if (where?.ownerAddress) {
-      whereClause += ` AND LOWER("owner_address") = LOWER(:ownerAddress)`;
+      conditions.push(`LOWER("owner_address") = LOWER(:ownerAddress)`);
       parameters.ownerAddress = where.ownerAddress;
     }
 
