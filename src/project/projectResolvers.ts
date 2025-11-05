@@ -492,9 +492,17 @@ const projectResolvers = {
 
       const support = supportItems.filter((item) => item !== null);
 
+      // Query one-time donations for both the main account and sub-account
+      // Only calculate sub-account if the project ID is a valid RepoDriver ID
+      const accountIdsToQuery = [projectId];
+      if (isRepoDriverId(projectId)) {
+        const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
+        accountIdsToQuery.push(subAccountId);
+      }
+
       const oneTimeDonationSupport =
-        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
-          projectId,
+        await supportDataSource.getOneTimeDonationSupportByAccountIdsOnChain(
+          accountIdsToQuery,
           projectChain,
         );
 
@@ -632,10 +640,17 @@ const projectResolvers = {
 
       const support = supportItems.filter((item) => item !== null);
 
-      // `GivenEventModelDataValues`s that represent one time donations to the Project.
+      // Query one-time donations for both the main account and sub-account
+      // Only calculate sub-account if the project ID is a valid RepoDriver ID
+      const accountIdsToQuery = [projectId];
+      if (isRepoDriverId(projectId)) {
+        const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
+        accountIdsToQuery.push(subAccountId);
+      }
+
       const oneTimeDonationSupport =
-        await supportDataSource.getOneTimeDonationSupportByAccountIdOnChain(
-          projectId,
+        await supportDataSource.getOneTimeDonationSupportByAccountIdsOnChain(
+          accountIdsToQuery,
           projectChain,
         );
 

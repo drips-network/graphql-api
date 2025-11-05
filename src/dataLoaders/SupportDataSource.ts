@@ -124,6 +124,22 @@ export default class SupportDataSource {
     ).filter((support) => support.chain === chain);
   }
 
+  public async getOneTimeDonationSupportByAccountIdsOnChain(
+    accountIds: AccountId[],
+    chain: DbSchema,
+  ): Promise<GivenEventModelDataValues[]> {
+    const results = await Promise.all(
+      accountIds.map((accountId) =>
+        this._batchOneTimeDonationSupportByAccountIds.load({
+          accountId,
+          chains: [chain],
+        }),
+      ),
+    );
+
+    return results.flat().filter((support) => support.chain === chain);
+  }
+
   public async getStreamSupportByAccountIdOnChain(
     accountId: AccountId,
     chain: DbSchema,
