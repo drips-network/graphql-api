@@ -35,6 +35,7 @@ import {
   assertMany,
   isGitHubUrl,
   isRepoDriverId,
+  isRepoSubAccountDriverId,
 } from '../utils/assert';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
@@ -83,7 +84,8 @@ const projectResolvers = {
       { id, chains }: { id: RepoDriverId; chains?: SupportedChain[] },
       { dataSources: { projectsDataSource } }: Context,
     ): Promise<ResolverProject | null> => {
-      if (!isRepoDriverId(id)) {
+      // Accept both repo driver IDs and repo sub-account driver IDs
+      if (!isRepoDriverId(id) && !isRepoSubAccountDriverId(id)) {
         return null;
       }
 
