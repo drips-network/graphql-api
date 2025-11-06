@@ -173,14 +173,17 @@ export default class ProjectsDataSource {
     ids: RepoDriverId[],
     chain: DbSchema,
   ): Promise<ProjectDataValues[]> {
-    return (
-      await (this._batchProjectsByIds.loadMany(
-        ids.map((id) => ({
-          accountId: id,
-          chains: [chain],
-        })),
-      ) as Promise<ProjectDataValues[]>)
-    ).filter((p) => p.chain === chain);
+    const results = await this._batchProjectsByIds.loadMany(
+      ids.map((id) => ({
+        accountId: id,
+        chains: [chain],
+      })),
+    );
+
+    // Filter out errors and undefined values before accessing properties
+    return results
+      .filter((p): p is ProjectDataValues => p != null && !(p instanceof Error))
+      .filter((p) => p.chain === chain);
   }
 
   public async getEarnedFunds(

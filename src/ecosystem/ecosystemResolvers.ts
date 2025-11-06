@@ -17,8 +17,10 @@ import assert, {
   assertIsLinkedIdentityId,
   assertIsNftDriverId,
   assertIsRepoDriverId,
+  assertIsRepoSubAccountDriverId,
   assertMany,
   isNftDriverId,
+  isRepoSubAccountDriverId,
 } from '../utils/assert';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
@@ -128,10 +130,24 @@ const ecosystemResolvers = {
       const linkedIdentityReceivers =
         splitReceiversByReceiverAccountType.get('linked_identity') || [];
 
-      const projectIds =
+      // Get parent project IDs - transform sub-account IDs to parent IDs
+      // Detect ID type instead of relying solely on splitsToRepoDriverSubAccount flag
+      const { calcParentRepoDriverId } = await import(
+        '../utils/repoSubAccountIdUtils'
+      );
+      const projectIdsWithDuplicates: RepoDriverId[] =
         projectReceivers.length > 0
-          ? (projectReceivers.map((r) => r.receiverAccountId) as RepoDriverId[]) // Events processors ensure that all project IDs are RepoDriverIds.
+          ? await Promise.all(
+              projectReceivers.map(async (r) =>
+                isRepoSubAccountDriverId(r.receiverAccountId)
+                  ? calcParentRepoDriverId(r.receiverAccountId, ecosystemChain)
+                  : (r.receiverAccountId as RepoDriverId),
+              ),
+            )
           : [];
+
+      // Deduplicate project IDs (multiple sub-accounts can share the same parent)
+      const projectIds = Array.from(new Set(projectIdsWithDuplicates));
 
       const [projects, subLists] = await Promise.all([
         projectReceivers.length > 0
@@ -163,9 +179,23 @@ const ecosystemResolvers = {
 
       const projectDependencies = await Promise.all(
         projectReceivers.map(async (s) => {
-          assertIsRepoDriverId(s.receiverAccountId);
+          // Detect the ID type to determine if this is a sub-account
+          const isSubAccount = isRepoSubAccountDriverId(s.receiverAccountId);
 
-          const project = projectsMap.get(s.receiverAccountId);
+          // When the ID is a RepoSubAccountDriver ID, we need to get the parent project ID
+          // Otherwise, the receiver ID is already the project ID
+          if (isSubAccount) {
+            assertIsRepoSubAccountDriverId(s.receiverAccountId);
+          } else {
+            assertIsRepoDriverId(s.receiverAccountId);
+          }
+
+          // To get the project data, we need the parent RepoDriver ID
+          const projectId = isSubAccount
+            ? await calcParentRepoDriverId(s.receiverAccountId, ecosystemChain)
+            : (s.receiverAccountId as RepoDriverId);
+
+          const project = projectsMap.get(projectId);
 
           return {
             ...s,
