@@ -396,11 +396,23 @@ const projectResolvers = {
         },
       }: Context,
     ) => {
-      const splitReceivers =
-        await supportDataSource.getSplitSupportByReceiverIdOnChain(
-          projectId,
-          projectChain,
-        );
+      // Query split support for both the main account and sub-account
+      const accountIdsForSplitSupport = [projectId];
+      if (isRepoDriverId(projectId)) {
+        const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
+        accountIdsForSplitSupport.push(subAccountId);
+      }
+
+      const splitReceiversResults = await Promise.all(
+        accountIdsForSplitSupport.map((accountId) =>
+          supportDataSource.getSplitSupportByReceiverIdOnChain(
+            accountId,
+            projectChain,
+          ),
+        ),
+      );
+
+      const splitReceivers = splitReceiversResults.flat();
 
       const supportItems = await Promise.all(
         splitReceivers.map(async (receiver) => {
@@ -547,11 +559,23 @@ const projectResolvers = {
         },
       }: Context,
     ) => {
-      const splitsReceivers =
-        await supportDataSource.getSplitSupportByReceiverIdOnChain(
-          projectId,
-          projectChain,
-        );
+      // Query split support for both the main account and sub-account
+      const accountIdsForSplitSupport = [projectId];
+      if (isRepoDriverId(projectId)) {
+        const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
+        accountIdsForSplitSupport.push(subAccountId);
+      }
+
+      const splitReceiversResults = await Promise.all(
+        accountIdsForSplitSupport.map((accountId) =>
+          supportDataSource.getSplitSupportByReceiverIdOnChain(
+            accountId,
+            projectChain,
+          ),
+        ),
+      );
+
+      const splitsReceivers = splitReceiversResults.flat();
 
       const supportItems = await Promise.all(
         splitsReceivers.map(async (s) => {
