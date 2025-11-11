@@ -17,7 +17,6 @@ import assert, {
   assertIsLinkedIdentityId,
   assertIsNftDriverId,
   assertIsRepoDriverId,
-  assertIsRepoSubAccountDriverId,
   assertMany,
   isNftDriverId,
   isRepoSubAccountDriverId,
@@ -184,9 +183,7 @@ const ecosystemResolvers = {
 
           // When the ID is a RepoSubAccountDriver ID, we need to get the parent project ID
           // Otherwise, the receiver ID is already the project ID
-          if (isSubAccount) {
-            assertIsRepoSubAccountDriverId(s.receiverAccountId);
-          } else {
+          if (!isSubAccount) {
             assertIsRepoDriverId(s.receiverAccountId);
           }
 
