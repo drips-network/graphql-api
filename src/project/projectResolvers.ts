@@ -49,6 +49,10 @@ import { calcSubRepoDriverId } from '../utils/repoSubAccountIdUtils';
 import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
 import { getGitHubRepoByUrl } from './github';
 import { PUBLIC_ERROR_CODES } from '../utils/formatError';
+import {
+  getProjectSplitSupport,
+  getProjectOneTimeDonationSupport,
+} from './projectSupportHelpers';
 
 const projectResolvers = {
   Query: {
@@ -398,23 +402,11 @@ const projectResolvers = {
         },
       }: Context,
     ) => {
-      // Query split support for both the main account and sub-account
-      const accountIdsForSplitSupport = [projectId];
-      if (isRepoDriverId(projectId)) {
-        const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
-        accountIdsForSplitSupport.push(subAccountId);
-      }
-
-      const splitReceiversResults = await Promise.all(
-        accountIdsForSplitSupport.map((accountId) =>
-          supportDataSource.getSplitSupportByReceiverIdOnChain(
-            accountId,
-            projectChain,
-          ),
-        ),
+      const splitReceivers = await getProjectSplitSupport(
+        projectId,
+        projectChain,
+        supportDataSource,
       );
-
-      const splitReceivers = splitReceiversResults.flat();
 
       const supportItems = await Promise.all(
         splitReceivers.map(async (receiver) => {
@@ -506,19 +498,11 @@ const projectResolvers = {
 
       const support = supportItems.filter((item) => item !== null);
 
-      // Query one-time donations for both the main account and sub-account
-      // Only calculate sub-account if the project ID is a valid RepoDriver ID
-      const accountIdsToQuery = [projectId];
-      if (isRepoDriverId(projectId)) {
-        const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
-        accountIdsToQuery.push(subAccountId);
-      }
-
-      const oneTimeDonationSupport =
-        await supportDataSource.getOneTimeDonationSupportByAccountIdsOnChain(
-          accountIdsToQuery,
-          projectChain,
-        );
+      const oneTimeDonationSupport = await getProjectOneTimeDonationSupport(
+        projectId,
+        projectChain,
+        supportDataSource,
+      );
 
       return [...support, ...oneTimeDonationSupport];
     },
@@ -561,23 +545,11 @@ const projectResolvers = {
         },
       }: Context,
     ) => {
-      // Query split support for both the main account and sub-account
-      const accountIdsForSplitSupport = [projectId];
-      if (isRepoDriverId(projectId)) {
-        const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
-        accountIdsForSplitSupport.push(subAccountId);
-      }
-
-      const splitReceiversResults = await Promise.all(
-        accountIdsForSplitSupport.map((accountId) =>
-          supportDataSource.getSplitSupportByReceiverIdOnChain(
-            accountId,
-            projectChain,
-          ),
-        ),
+      const splitsReceivers = await getProjectSplitSupport(
+        projectId,
+        projectChain,
+        supportDataSource,
       );
-
-      const splitsReceivers = splitReceiversResults.flat();
 
       const supportItems = await Promise.all(
         splitsReceivers.map(async (s) => {
@@ -666,19 +638,11 @@ const projectResolvers = {
 
       const support = supportItems.filter((item) => item !== null);
 
-      // Query one-time donations for both the main account and sub-account
-      // Only calculate sub-account if the project ID is a valid RepoDriver ID
-      const accountIdsToQuery = [projectId];
-      if (isRepoDriverId(projectId)) {
-        const subAccountId = await calcSubRepoDriverId(projectId, projectChain);
-        accountIdsToQuery.push(subAccountId);
-      }
-
-      const oneTimeDonationSupport =
-        await supportDataSource.getOneTimeDonationSupportByAccountIdsOnChain(
-          accountIdsToQuery,
-          projectChain,
-        );
+      const oneTimeDonationSupport = await getProjectOneTimeDonationSupport(
+        projectId,
+        projectChain,
+        supportDataSource,
+      );
 
       return [...support, ...oneTimeDonationSupport];
     },
