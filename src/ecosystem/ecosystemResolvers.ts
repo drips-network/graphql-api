@@ -132,19 +132,25 @@ const ecosystemResolvers = {
 
       // Get parent project IDs - transform sub-account IDs to parent IDs
       // Detect ID type instead of relying solely on splitsToRepoDriverSubAccount flag
-      const projectIdsWithDuplicates: RepoDriverId[] =
-        projectReceivers.length > 0
-          ? await Promise.all(
-              projectReceivers.map(async (r) =>
-                isRepoSubAccountDriverId(r.receiverAccountId)
-                  ? calcParentRepoDriverId(r.receiverAccountId, ecosystemChain)
-                  : (r.receiverAccountId as RepoDriverId),
-              ),
-            )
-          : [];
+      // Create a map to cache transformations and avoid duplicate async calls
+      const receiverToParentIdMap = new Map<string, RepoDriverId>();
+
+      if (projectReceivers.length > 0) {
+        await Promise.all(
+          projectReceivers.map(async (r) => {
+            const parentId = isRepoSubAccountDriverId(r.receiverAccountId)
+              ? await calcParentRepoDriverId(
+                  r.receiverAccountId,
+                  ecosystemChain,
+                )
+              : (r.receiverAccountId as RepoDriverId);
+            receiverToParentIdMap.set(r.receiverAccountId, parentId);
+          }),
+        );
+      }
 
       // Deduplicate project IDs (multiple sub-accounts can share the same parent)
-      const projectIds = Array.from(new Set(projectIdsWithDuplicates));
+      const projectIds = Array.from(new Set(receiverToParentIdMap.values()));
 
       const [projects, subLists] = await Promise.all([
         projectReceivers.length > 0
@@ -185,10 +191,14 @@ const ecosystemResolvers = {
             assertIsRepoDriverId(s.receiverAccountId);
           }
 
-          // To get the project data, we need the parent RepoDriver ID
-          const projectId = isSubAccount
-            ? await calcParentRepoDriverId(s.receiverAccountId, ecosystemChain)
-            : (s.receiverAccountId as RepoDriverId);
+          // Get the parent project ID from the cached map (already calculated above)
+          const projectId = receiverToParentIdMap.get(s.receiverAccountId);
+
+          if (!projectId) {
+            return shouldNeverHappen(
+              `Expected parent ID to be cached for ${s.receiverAccountId}`,
+            );
+          }
 
           const project = projectsMap.get(projectId);
 
