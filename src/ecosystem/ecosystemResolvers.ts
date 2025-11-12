@@ -21,6 +21,7 @@ import assert, {
   isNftDriverId,
   isRepoSubAccountDriverId,
 } from '../utils/assert';
+import { calcParentRepoDriverId } from '../utils/repoSubAccountIdUtils';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { chainToDbSchema } from '../utils/chainSchemaMappings';
 import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
@@ -131,9 +132,6 @@ const ecosystemResolvers = {
 
       // Get parent project IDs - transform sub-account IDs to parent IDs
       // Detect ID type instead of relying solely on splitsToRepoDriverSubAccount flag
-      const { calcParentRepoDriverId } = await import(
-        '../utils/repoSubAccountIdUtils'
-      );
       const projectIdsWithDuplicates: RepoDriverId[] =
         projectReceivers.length > 0
           ? await Promise.all(
