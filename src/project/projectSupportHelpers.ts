@@ -2,6 +2,8 @@ import type { AccountId, DbSchema } from '../common/types';
 import { isRepoDriverId } from '../utils/assert';
 import { calcSubRepoDriverId } from '../utils/repoSubAccountIdUtils';
 import type SupportDataSource from '../dataLoaders/SupportDataSource';
+import type { SplitsReceiverModelDataValues } from '../models/SplitsReceiverModel';
+import type { GivenEventModelDataValues } from '../given-event/GivenEventModel';
 
 /**
  * Gets account IDs to query for project support (main account + sub-account if applicable)
@@ -27,7 +29,7 @@ export async function getProjectSplitSupport(
   projectId: AccountId,
   projectChain: DbSchema,
   supportDataSource: SupportDataSource,
-) {
+): Promise<SplitsReceiverModelDataValues[]> {
   const accountIdsForSplitSupport = await getProjectAccountIdsToQuery(
     projectId,
     projectChain,
@@ -52,7 +54,7 @@ export async function getProjectOneTimeDonationSupport(
   projectId: AccountId,
   projectChain: DbSchema,
   supportDataSource: SupportDataSource,
-) {
+): Promise<GivenEventModelDataValues[]> {
   const accountIdsToQuery = await getProjectAccountIdsToQuery(
     projectId,
     projectChain,
