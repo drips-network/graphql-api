@@ -1,5 +1,9 @@
 import dripsContracts from '../common/dripsContracts';
-import type { DbSchema, RepoDriverId } from '../common/types';
+import type {
+  DbSchema,
+  RepoDriverId,
+  RepoSubAccountDriverId,
+} from '../common/types';
 import { assertIsRepoDriverId, assertIsRepoSubAccountDriverId } from './assert';
 import { dbSchemaToChain } from './chainSchemaMappings';
 import shouldNeverHappen from './shouldNeverHappen';
@@ -50,6 +54,10 @@ export async function calcParentRepoDriverId(
 export async function calcSubRepoDriverId(
   parentId: string,
   chain: DbSchema,
-): Promise<RepoDriverId> {
-  return transformRepoDriverId(parentId, 'toSub', chain);
+): Promise<RepoSubAccountDriverId> {
+  return transformRepoDriverId(
+    parentId,
+    'toSub',
+    chain,
+  ) as unknown as Promise<RepoSubAccountDriverId>;
 }
