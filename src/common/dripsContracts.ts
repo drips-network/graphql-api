@@ -30,13 +30,13 @@ const chainConfigs: Record<
     dripsAddress: '0xd0Dd053392db676D57317CD4fe96Fc2cCf42D0b4',
     addressDriverAddress: '0x1455d9bD6B98f95dd8FEB2b3D60ed825fcef0610',
     repoDriverAddress: '0x770023d55D09A9C110694827F1a6B32D5c2b373E',
-    repoSubAccountDriverAddress: ZeroAddress,
+    repoSubAccountDriverAddress: '0xc219395880fa72e3ad9180b8878e0d39d144130b',
   },
   SEPOLIA: {
     dripsAddress: '0x74A32a38D945b9527524900429b083547DeB9bF4',
     addressDriverAddress: '0x70E1E1437AeFe8024B6780C94490662b45C3B567',
     repoDriverAddress: '0xa71bdf410D48d4AA9aE1517A69D7E1Ef0c179b2B',
-    repoSubAccountDriverAddress: ZeroAddress,
+    repoSubAccountDriverAddress: '0x317400fd9dfdad78d53a34455d89beb8f03f90ee',
   },
   OPTIMISM_SEPOLIA: {
     dripsAddress: '0xa15f3ebCf1e9c83442ddFa92A2A44A3d1643E406',
@@ -60,13 +60,13 @@ const chainConfigs: Record<
     dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
     addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
-    repoSubAccountDriverAddress: ZeroAddress,
+    repoSubAccountDriverAddress: '0x925a69f6d07ee4c753df139bcc2a946e1d1ee92a',
   },
   METIS: {
     dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
     addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
-    repoSubAccountDriverAddress: ZeroAddress,
+    repoSubAccountDriverAddress: '0x925a69f6d07ee4c753df139bcc2a946e1d1ee92a',
   },
   LOCALTESTNET: {
     dripsAddress: '0x7CBbD3FdF9E5eb359E6D9B12848c5Faa81629944',
@@ -78,7 +78,7 @@ const chainConfigs: Record<
     dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
     addressDriverAddress: '0x04693D13826a37dDdF973Be4275546Ad978cb9EE',
     repoDriverAddress: '0xe75f56B26857cAe06b455Bfc9481593Ae0FB4257',
-    repoSubAccountDriverAddress: ZeroAddress,
+    repoSubAccountDriverAddress: '0x925a69f6d07ee4c753df139bcc2a946e1d1ee92a',
   },
   ZKSYNC_ERA_SEPOLIA: {
     dripsAddress: '0xd320F59F109c618b19707ea5C5F068020eA333B3',
