@@ -313,13 +313,40 @@ export function assertIsLinkedIdentityId(
   }
 }
 
-// ORCID
+/**
+ * ORCID iDs in the sandbox environment should start with this prefix.
+ */
+export const ORCID_SANDBOX_PREFIX = 'sandbox-';
+
+/**
+ * Regex to match the sandbox prefix at the start of an ORCID iD.
+ */
+const ORCID_SANDBOX_PREFIX_REGEX = new RegExp(`^${ORCID_SANDBOX_PREFIX}`);
+
+/**
+ * Removes the sandbox prefix from an ORCID iD, if present.
+ *
+ * @param orcidId An ORCID iD, possibly with the sandbox prefix.
+ * @returns The ORCID iD without the sandbox prefix.
+ */
+export function unprefixOrcidId(orcidId: string): string {
+  return orcidId.replace(ORCID_SANDBOX_PREFIX_REGEX, '');
+}
+
+/**
+ * Determine if a given string is a valid ORCID iD. ORCID iDs can be
+ * prefixed with "sandbox-".
+ *
+ * @param orcidId An ORCID iD
+ * @returns true if the ORCID iD is valid, false otherwise.
+ */
 export function isOrcidId(orcidId: string): boolean {
   if (typeof orcidId !== 'string') {
     return false;
   }
 
-  const baseStr: string = orcidId.replace(/[-\s]/g, '');
+  const unprefixedOrcidId = unprefixOrcidId(orcidId);
+  const baseStr: string = unprefixedOrcidId.replace(/[-\s]/g, '');
 
   const orcidPattern: RegExp = /^\d{15}[\dX]$/;
   if (!orcidPattern.test(baseStr.toUpperCase())) {

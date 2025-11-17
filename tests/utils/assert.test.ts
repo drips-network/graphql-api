@@ -1,14 +1,33 @@
 import { describe, test, expect } from 'vitest';
 import {
   isOrcidId,
+  unprefixOrcidId,
+  ORCID_SANDBOX_PREFIX,
   isLinkedIdentityId,
   assertIsLinkedIdentityId,
 } from '../../src/utils/assert';
+
+describe('unprefixOrcidId', () => {
+  test('should remove sandbox prefix from ORCID ID', () => {
+    expect(unprefixOrcidId(`${ORCID_SANDBOX_PREFIX}0009-0007-1106-8413`)).toBe(
+      '0009-0007-1106-8413',
+    );
+  });
+
+  test('should return ORCID ID unchanged if no sandbox prefix', () => {
+    expect(unprefixOrcidId('0009-0007-1106-8413')).toBe('0009-0007-1106-8413');
+  });
+});
 
 describe('isOrcidId', () => {
   test('should return true for valid ORCID IDs', () => {
     // Valid ORCID ID patterns with correct checksums
     expect(isOrcidId('0000-0003-1527-0030')).toBe(true);
+  });
+
+  test('should return true for valid sandbox-prefixed ORCID IDs', () => {
+    // Valid sandbox ORCID ID with correct checksum after removing prefix
+    expect(isOrcidId(`${ORCID_SANDBOX_PREFIX}0009-0007-1106-8413`)).toBe(true);
   });
 
   test('should return false for invalid ORCID IDs', () => {
@@ -32,6 +51,11 @@ describe('isOrcidId', () => {
     expect(isOrcidId('')).toBe(false); // Empty string
     expect(isOrcidId('abc-def-ghi-jkl')).toBe(false); // Letters instead of digits
     expect(isOrcidId('0000-0000-0000-000@')).toBe(false); // Invalid special character
+  });
+
+  test('should return false for sandbox-prefixed invalid ORCID IDs', () => {
+    // Invalid checksum even with sandbox prefix
+    expect(isOrcidId('sandbox-0000-0002-1825-009X')).toBe(false);
   });
 });
 
