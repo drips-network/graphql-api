@@ -101,6 +101,7 @@ const linkedIdentityResolvers = {
       const exists = await validateOrcidExists(orcid);
       if (!exists) return null;
 
+      // Try to find the account with the ORCID as provided (which may include sandbox- prefix)
       const orcidAccountId: RepoDriverId =
         await getCrossChainOrcidAccountIdByOrcidId(orcid, [
           chainToDbSchema[chain],

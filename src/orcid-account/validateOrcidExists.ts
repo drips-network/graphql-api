@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import appSettings from '../common/appSettings';
+import { unprefixOrcidId } from '../utils/assert';
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
   fetchWithTimeout,
@@ -58,30 +59,32 @@ const validationCache = new OrcidValidationCache();
 export default async function validateOrcidExists(
   orcidId: string,
 ): Promise<boolean> {
-  const cachedResult = validationCache.get(orcidId);
+  const unprefixedOrcidId = unprefixOrcidId(orcidId);
+
+  const cachedResult = validationCache.get(unprefixedOrcidId);
   if (cachedResult !== undefined) {
     return cachedResult;
   }
 
   try {
-    let response = await requestValidation(orcidId);
+    let response = await requestValidation(unprefixedOrcidId);
 
     if (response.status === 401) {
       resetOrcidAccessToken();
-      response = await requestValidation(orcidId);
+      response = await requestValidation(unprefixedOrcidId);
     }
 
     const exists = response.status === 200;
-    validationCache.set(orcidId, exists);
+    validationCache.set(unprefixedOrcidId, exists);
 
     if (!exists && response.status === 404) {
-      console.log(`ORCID ${orcidId} does not exist on orcid.org`);
+      console.log(`ORCID ${unprefixedOrcidId} does not exist on orcid.org`);
     }
 
     return exists;
   } catch (error) {
     console.error(
-      `Failed to validate ORCID ${orcidId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      `Failed to validate ORCID ${unprefixedOrcidId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
     );
     return false;
   }
