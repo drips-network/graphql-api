@@ -112,10 +112,8 @@ export default async function fetchOrcidProfile(
     });
   }
 
-  // Strip sandbox- prefix for API call since ORCID API doesn't recognize it in the URL
-  const unprefixedOrcidId = unprefixOrcidId(orcidId);
-
-  const cacheKey = buildCacheKey(unprefixedOrcidId);
+  // Sandbox ORCIDs are cached prefixed to avoid conflicts with production ORCIDs
+  const cacheKey = buildCacheKey(orcidId);
   const { value: cached } = await getCache(cacheKey);
   if (cached) {
     try {
@@ -127,7 +125,7 @@ export default async function fetchOrcidProfile(
       if (parsedJson === null) {
         // Cached 404
         console.log('ORCID cache hit with null entry.', {
-          orcidId: unprefixedOrcidId,
+          orcidId,
         });
         return null;
       }
@@ -135,6 +133,9 @@ export default async function fetchOrcidProfile(
       console.error('Failed to parse cached ORCID profile:', error);
     }
   }
+
+  // Strip sandbox- prefix for API call since ORCID API doesn't recognize it in the URL
+  const unprefixedOrcidId = unprefixOrcidId(orcidId);
 
   try {
     console.log('Fetching ORCID profile from API.', {
