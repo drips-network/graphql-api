@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import { GraphQLError } from 'graphql';
 import { getCache, setCacheWithJitter } from '../cache/redis';
-import { isOrcidId } from '../utils/assert';
+import { isOrcidId, unprefixOrcidId } from '../utils/assert';
 import {
   DEFAULT_FETCH_TIMEOUT_MS,
   fetchWithTimeout,
@@ -112,6 +112,7 @@ export default async function fetchOrcidProfile(
     });
   }
 
+  // Sandbox ORCIDs are cached prefixed to avoid conflicts with production ORCIDs
   const cacheKey = buildCacheKey(orcidId);
   const { value: cached } = await getCache(cacheKey);
   if (cached) {
@@ -123,7 +124,9 @@ export default async function fetchOrcidProfile(
       }
       if (parsedJson === null) {
         // Cached 404
-        console.log('ORCID cache hit with null entry.', { orcidId });
+        console.log('ORCID cache hit with null entry.', {
+          orcidId,
+        });
         return null;
       }
     } catch (error) {
@@ -131,14 +134,19 @@ export default async function fetchOrcidProfile(
     }
   }
 
-  try {
-    console.log('Fetching ORCID profile from API.', { orcidId });
+  // Strip sandbox- prefix for API call since ORCID API doesn't recognize it in the URL
+  const unprefixedOrcidId = unprefixOrcidId(orcidId);
 
-    let response = await requestProfile(orcidId);
+  try {
+    console.log('Fetching ORCID profile from API.', {
+      orcidId: unprefixedOrcidId,
+    });
+
+    let response = await requestProfile(unprefixedOrcidId);
 
     if (response.status === 401) {
       resetOrcidAccessToken();
-      response = await requestProfile(orcidId);
+      response = await requestProfile(unprefixedOrcidId);
     }
 
     if (!response.ok) {
@@ -166,7 +174,7 @@ export default async function fetchOrcidProfile(
     }
 
     const profile: OrcidProfile = {
-      orcidId,
+      orcidId: unprefixedOrcidId,
       givenName: nameParts.givenName,
       familyName: nameParts.familyName,
     };
@@ -178,7 +186,9 @@ export default async function fetchOrcidProfile(
       appSettings.cacheSettings.ttlJitterRatio,
     );
 
-    console.log('ORCID profile fetched from API.', { orcidId });
+    console.log('ORCID profile fetched from API.', {
+      orcidId: unprefixedOrcidId,
+    });
 
     return profile;
   } catch (error) {
