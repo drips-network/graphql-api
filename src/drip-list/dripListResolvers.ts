@@ -29,11 +29,17 @@ import verifyDripListsInput from './dripListValidators';
 import type { DripListDataValues } from './DripListModel';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import { toResolverProject } from '../project/projectUtils';
-import { chainToDbSchema } from '../utils/chainSchemaMappings';
+import { chainToDbSchema, dbSchemaToChain } from '../utils/chainSchemaMappings';
 import { getLatestMetadataHashOnChain } from '../utils/getLatestAccountMetadata';
 import groupBy from '../utils/linq';
 import getUserAddress from '../utils/getUserAddress';
-import toGqlLinkedIdentity from '../linked-identity/linkedIdentityUtils';
+import toGqlLinkedIdentity, {
+  toFakeUnclaimedOrcid,
+} from '../linked-identity/linkedIdentityUtils';
+import {
+  extractOrcidFromAccountId,
+  isOrcidAccount,
+} from '../orcid-account/orcidAccountIdUtils';
 
 const dripListResolvers = {
   Query: {
@@ -268,6 +274,25 @@ const dripListResolvers = {
             );
 
           if (!identity) {
+            // an ORCID iD was added to the drip list, but no identity was found
+            // in the database. This can happen if the ORCID iD was added to the
+            // to the drip list before it was claimed.
+            if (isOrcidAccount(s.receiverAccountId)) {
+              return {
+                ...s,
+                driver: Driver.REPO,
+                account: {
+                  driver: Driver.REPO,
+                  accountId: s.receiverAccountId,
+                },
+                linkedIdentity: toFakeUnclaimedOrcid(
+                  extractOrcidFromAccountId(s.receiverAccountId),
+                  s.receiverAccountId as unknown as RepoDriverId,
+                  dbSchemaToChain[dripListChain],
+                ),
+              };
+            }
+
             return shouldNeverHappen('Expected linked identity to exist');
           }
 
