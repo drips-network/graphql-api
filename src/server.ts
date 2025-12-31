@@ -14,8 +14,8 @@ import type {
   Response,
 } from 'express-serve-static-core';
 import type { ParsedQs } from 'qs';
-import depthLimit from 'graphql-depth-limit';
 import cors from 'cors';
+import safeDepthLimit from './utils/safeDepthLimit';
 import resolvers from './resolvers';
 import typeDefs from './schema';
 import appSettings from './common/appSettings';
@@ -55,7 +55,7 @@ const httpServer = http.createServer(app);
 const server = new ApolloServer<Context>({
   formatError,
   introspection: true,
-  validationRules: [depthLimit(appSettings.maxQueryDepth)],
+  validationRules: [safeDepthLimit(appSettings.maxQueryDepth)],
   typeDefs,
   resolvers,
   plugins: [
