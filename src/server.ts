@@ -6,14 +6,6 @@ import { expressMiddleware } from '@apollo/server/express4';
 import express from 'express';
 import http from 'http';
 import bodyParser from 'body-parser';
-import rateLimit from 'express-rate-limit';
-import type {
-  NextFunction,
-  ParamsDictionary,
-  Request,
-  Response,
-} from 'express-serve-static-core';
-import type { ParsedQs } from 'qs';
 import depthLimit from 'graphql-depth-limit';
 import cors from 'cors';
 import resolvers from './resolvers';
@@ -64,44 +56,10 @@ const server = new ApolloServer<Context>({
   ],
 });
 
-const limiter = rateLimit({
-  skipFailedRequests: true,
-  windowMs: appSettings.rateLimitWindowInMinutes * 60 * 1000,
-  limit: appSettings.rateLimitMaxRequestsPerWindow,
-  standardHeaders: 'draft-7',
-  legacyHeaders: false,
-  handler: (req, res /* , next */) => {
-    res.status(429).json({
-      error: {
-        message: `Too many requests. Please try again at ${new Date(
-          (req as any).rateLimit.resetTime,
-        )}`,
-        statusCode: 429,
-      },
-    });
-  },
-});
-
-const customRateLimiter = (
-  req: Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>,
-  res: Response<any, Record<string, any>, number>,
-  next: NextFunction,
-) => {
-  const apiKey = req.headers.authorization?.split(' ')[1];
-
-  if (apiKey && apiKey === appSettings.dripsApiKey) {
-    next();
-  } else {
-    limiter(req, res, next);
-  }
-};
-
 const startServer = async () => {
   await connectToDatabase();
 
   await server.start();
-
-  app.use(customRateLimiter);
 
   app.use((req, res, next) => {
     res.setTimeout(appSettings.timeoutInSeconds * 1000, () => {
