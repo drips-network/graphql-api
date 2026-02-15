@@ -251,3 +251,51 @@ export async function getCrossChainOrcidAccountIdByOrcidId(
 
   return accountId as RepoDriverId;
 }
+
+/**
+ * Returns all possible ORCID account IDs for a given ORCID iD.
+ *
+ * This is needed for backwards compatibility: legacy ORCID sandbox accounts use
+ * sourceId=2 with "sandbox-" prefixed names, while Lit-claimed sandbox accounts
+ * use sourceId=4 with plain ORCID iDs. This function computes both possible
+ * account IDs so the resolver can try each one.
+ */
+export async function getAllPossibleOrcidAccountIds(
+  orcidId: string,
+  chainsToQuery: DbSchema[],
+): Promise<RepoDriverId[]> {
+  const availableChain = chainsToQuery.find(
+    (chain) =>
+      dripsContracts[dbSchemaToChain[chain]] &&
+      dripsContracts[dbSchemaToChain[chain]]!.repoDriver,
+  );
+
+  if (!availableChain) {
+    throw new Error('No available chain with initialized contracts.');
+  }
+
+  const { repoDriver } = dripsContracts[dbSchemaToChain[availableChain]]!;
+
+  const accountIds: RepoDriverId[] = [];
+
+  // Legacy account ID: sourceId=2, with the orcid string as provided
+  // (may include "sandbox-" prefix for legacy sandbox accounts)
+  const legacyAccountId = (
+    await repoDriver.calcAccountId(2, ethers.toUtf8Bytes(orcidId))
+  ).toString() as RepoDriverId;
+  accountIds.push(legacyAccountId);
+
+  // Lit sandbox account ID: sourceId=4, with plain ORCID (no "sandbox-" prefix)
+  const plainOrcid = orcidId.startsWith('sandbox-')
+    ? orcidId.slice('sandbox-'.length)
+    : orcidId;
+  const litSandboxAccountId = (
+    await repoDriver.calcAccountId(4, ethers.toUtf8Bytes(plainOrcid))
+  ).toString() as RepoDriverId;
+
+  if (litSandboxAccountId !== legacyAccountId) {
+    accountIds.push(litSandboxAccountId);
+  }
+
+  return accountIds;
+}

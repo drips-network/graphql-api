@@ -3,38 +3,37 @@
 import { isRepoDriverId } from '../utils/assert';
 
 /**
- * ForgeId for ORCID in RepoDriver account IDs.
- *
- * Value is 4 (not 2 like the Forge.ORCID enum) because the forgeId field encodes
- * both forge type and name length constraints:
- * - 0,1: GitHub (supports different name lengths)
- * - 2,3: GitLab (supports different name lengths)
- * - 4: ORCID (fixed format: XXXX-XXXX-XXXX-XXXX)
- *
- * This allows the account ID bit structure to efficiently pack forge identification
- * and validation rules into a single field.
+ * Source IDs for ORCID in the contract.
+ * - 2: regular ORCID
+ * - 4: sandbox ORCID (Lit oracle uses a separate sourceId instead of a name prefix)
  */
-export const ORCID_FORGE_ID = 4;
+export const ORCID_SOURCE_IDS = [2, 4];
 
-function extractForgeFromAccountId(accountId: string): number {
+/**
+ * Extracts the sourceId from a RepoDriver account ID.
+ *
+ * Account ID layout: `driverId (32 bits) | sourceId (7 bits) | isHash (1 bit) | nameEncoded (216 bits)`
+ *
+ * The 8 bits at positions 216-223 encode `sourceId (7 bits) | isHash (1 bit)`.
+ * We shift right by 1 to drop the isHash bit and get the pure sourceId.
+ */
+function extractSourceIdFromAccountId(accountId: string): number {
   if (!isRepoDriverId(accountId)) {
     throw new Error(
-      `Cannot extract forge: '${accountId}' is not a RepoDriver ID.`,
+      `Cannot extract sourceId: '${accountId}' is not a RepoDriver ID.`,
     );
   }
 
   const accountIdAsBigInt = BigInt(accountId);
-  // RepoDriver account ID structure: [32-bit driverId][8-bit forgeId][216-bit nameEncoded]
-  // Extract forgeId from bits 216-223 (8 bits) by shifting right 216 bits and masking
-  const forgeId = (accountIdAsBigInt >> 216n) & 0xffn;
-  return Number(forgeId);
+  const sourceIdAndHash = (accountIdAsBigInt >> 216n) & 0xffn;
+  return Number(sourceIdAndHash >> 1n);
 }
 
 export function isOrcidAccount(accountId: string): boolean {
   try {
     return (
       isRepoDriverId(accountId) &&
-      extractForgeFromAccountId(accountId) === ORCID_FORGE_ID
+      ORCID_SOURCE_IDS.includes(extractSourceIdFromAccountId(accountId))
     );
   } catch {
     return false;

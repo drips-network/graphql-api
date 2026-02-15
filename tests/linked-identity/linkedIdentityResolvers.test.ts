@@ -23,7 +23,7 @@ import validateLinkedIdentitiesInput from '../../src/linked-identity/linkedIdent
 import { validateChainsQueryArg } from '../../src/utils/commonInputValidators';
 import * as assertUtils from '../../src/utils/assert';
 import validateOrcidExists from '../../src/orcid-account/validateOrcidExists';
-import { getCrossChainOrcidAccountIdByOrcidId } from '../../src/common/dripsContracts';
+import { getAllPossibleOrcidAccountIds } from '../../src/common/dripsContracts';
 
 vi.mock('../../src/linked-identity/linkedIdentityUtils');
 vi.mock('../../src/linked-identity/linkedIdentityValidators');
@@ -183,9 +183,9 @@ describe('linkedIdentityResolvers', () => {
 
       vi.mocked(assertUtils.isOrcidId).mockReturnValue(true);
       vi.mocked(validateOrcidExists).mockResolvedValue(true);
-      vi.mocked(getCrossChainOrcidAccountIdByOrcidId).mockResolvedValue(
+      vi.mocked(getAllPossibleOrcidAccountIds).mockResolvedValue([
         linkedIdentityId as unknown as RepoDriverId,
-      );
+      ]);
       vi.mocked(assertUtils.assertIsLinkedIdentityId).mockImplementation(
         () => {}, // eslint-disable-line no-empty-function
       );
@@ -211,7 +211,7 @@ describe('linkedIdentityResolvers', () => {
 
       expect(validateOrcidExists).toHaveBeenCalledWith(orcid);
 
-      expect(getCrossChainOrcidAccountIdByOrcidId).toHaveBeenCalledWith(orcid, [
+      expect(getAllPossibleOrcidAccountIds).toHaveBeenCalledWith(orcid, [
         'mainnet',
       ]);
 
@@ -244,9 +244,9 @@ describe('linkedIdentityResolvers', () => {
 
       vi.mocked(assertUtils.isOrcidId).mockReturnValue(true);
       vi.mocked(validateOrcidExists).mockResolvedValue(true);
-      vi.mocked(getCrossChainOrcidAccountIdByOrcidId).mockResolvedValue(
+      vi.mocked(getAllPossibleOrcidAccountIds).mockResolvedValue([
         linkedIdentityId as unknown as RepoDriverId,
-      );
+      ]);
       vi.mocked(assertUtils.assertIsLinkedIdentityId).mockImplementation(
         () => {}, // eslint-disable-line no-empty-function
       );
@@ -266,7 +266,7 @@ describe('linkedIdentityResolvers', () => {
 
       expect(validateChainsQueryArg).toHaveBeenCalledWith([args.chain]);
       expect(validateOrcidExists).toHaveBeenCalledWith(orcid);
-      expect(getCrossChainOrcidAccountIdByOrcidId).toHaveBeenCalledWith(orcid, [
+      expect(getAllPossibleOrcidAccountIds).toHaveBeenCalledWith(orcid, [
         'mainnet',
       ]);
       expect(assertUtils.assertIsLinkedIdentityId).toHaveBeenCalledWith(

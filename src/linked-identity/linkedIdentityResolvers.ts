@@ -23,11 +23,10 @@ import {
 } from '../utils/assert';
 import validateOrcidExists from '../orcid-account/validateOrcidExists';
 import fetchOrcidProfile from '../orcid-account/orcidApi';
-import { getCrossChainOrcidAccountIdByOrcidId } from '../common/dripsContracts';
+import { getAllPossibleOrcidAccountIds } from '../common/dripsContracts';
 import { extractOrcidFromAccountId } from '../orcid-account/orcidAccountIdUtils';
 import validateLinkedIdentitiesInput from './linkedIdentityValidators';
 import { validateChainsQueryArg } from '../utils/commonInputValidators';
-import type { RepoDriverId } from '../common/types';
 import { resolveTotalEarned } from '../common/commonResolverLogic';
 import getWithdrawableBalancesOnChain from '../utils/getWithdrawableBalances';
 import { PUBLIC_ERROR_CODES } from '../utils/formatError';
@@ -101,21 +100,29 @@ const linkedIdentityResolvers = {
       const exists = await validateOrcidExists(orcid);
       if (!exists) return null;
 
-      // Try to find the account with the ORCID as provided (which may include sandbox- prefix)
-      const orcidAccountId: RepoDriverId =
-        await getCrossChainOrcidAccountIdByOrcidId(orcid, [
-          chainToDbSchema[chain],
-        ]);
+      // Compute all possible account IDs for this ORCID. Legacy sandbox accounts
+      // use sourceId=2 with "sandbox-" prefixed names, while Lit-claimed sandbox
+      // accounts use sourceId=4 with plain ORCID iDs.
+      const candidateAccountIds = await getAllPossibleOrcidAccountIds(orcid, [
+        chainToDbSchema[chain],
+      ]);
 
-      assertIsLinkedIdentityId(orcidAccountId);
-      const identity = await linkedIdentitiesDataSource.getLinkedIdentityById(
-        orcidAccountId,
-        [chainToDbSchema[chain]],
-      );
+      // Try each candidate account ID, return the first match found
+      for (const accountId of candidateAccountIds) {
+        assertIsLinkedIdentityId(accountId);
+        const identity = await linkedIdentitiesDataSource.getLinkedIdentityById(
+          accountId,
+          [chainToDbSchema[chain]],
+        );
 
-      return identity
-        ? toGqlLinkedIdentity(identity)
-        : toFakeUnclaimedOrcid(orcid, orcidAccountId, chain);
+        if (identity) {
+          return toGqlLinkedIdentity(identity);
+        }
+      }
+
+      // No identity found — return a fake unclaimed entry using the first candidate
+      assertIsLinkedIdentityId(candidateAccountIds[0]);
+      return toFakeUnclaimedOrcid(orcid, candidateAccountIds[0], chain);
     },
   },
   OrcidLinkedIdentity: {
